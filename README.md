@@ -80,6 +80,10 @@ uv sync --group ai   # AI 워커용
 
 생성된 `env` 파일 내의 환경변수들은 프로젝트 상황에 맞게 수정하세요.
 
+> ⚠️ `Config`, `docker-compose.yml`, `scripts/ci/run_test.sh`는 모두 **프로젝트 루트의 `.env`** 를 읽습니다.
+> 로컬에서는 `cp envs/.local.env .env` 로 루트에도 복사하고, `SECRET_KEY`는 반드시 고유 값으로 교체하세요.
+> (호스트에서 실행 시 `DB_HOST=localhost`, 컨테이너에서 실행 시 `DB_HOST=mysql`)
+
 ---
 
 ## 🏃 실행 방법
@@ -104,14 +108,14 @@ docker-compose up -d --build
 ```bash
 uv run uvicorn app.main:app --reload
 # or
-docker compose up -d --build app
+docker compose up -d --build fastapi
 ```
 
 **AI Worker 실행:**
 ```bash
 uv run python -m ai_worker.main
 # or
-docker compose up -d --build ai_worker
+docker compose up -d --build ai-worker
 ```
 
 ### 2. EC2 배포 환경 (Production)
@@ -173,5 +177,5 @@ chmod +x scripts/certbot.sh
 ## 📝 개발 가이드
 
 - **API 추가**: `app/apis/v1/` 아래에 새로운 라우터 파일을 생성하고 `app/apis/v1/__init__.py`에 등록하세요.
-- **DB 모델 추가**: `app/models/`에 Tortoise 모델을 정의하고 `app/db/databases.py`의 `MODELS` 리스트에 추가하세요.
+- **DB 모델 추가**: `app/models/`에 Tortoise 모델을 정의하고 `app/core/db/databases.py`의 `TORTOISE_APP_MODELS` 리스트에 추가한 뒤 `uv run aerich migrate` / `uv run aerich upgrade`로 마이그레이션하세요.
 - **AI 로직 추가**: `ai_worker/tasks/`에 새로운 처리 로직을 작성하고 `ai_worker/main.py`에서 호출하도록 구성하세요.

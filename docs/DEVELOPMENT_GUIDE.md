@@ -2,7 +2,7 @@
 
 > 작성일: 2026-11-20
 > 대상: PillyMate 백엔드·AI 개발 팀원
-> 기준: 현재 `main` 브랜치에 스테이징된 템플릿 코드(FastAPI + AI Worker)
+> 기준: 현재 `main` 브랜치의 템플릿 코드(FastAPI + AI Worker)
 
 ---
 
@@ -32,7 +32,7 @@ PillyMate/
 │   ├── tests/                # pytest + tortoise TestCase (MySQL 필요)
 │   └── Dockerfile
 ├── ai_worker/                # AI 추론 워커 (현재 뼈대만 존재)
-│   ├── main.py               # 비어 있음
+│   ├── main.py               # 대기 루프(작업 처리 로직은 TODO), SIGTERM 시 정상 종료
 │   ├── core/                 # config, logger
 │   ├── schemas/  tasks/      # 비어 있음
 │   └── Dockerfile
@@ -110,7 +110,6 @@ PillyMate 1차 MVP(로그인 → 처방전 업로드 → OCR → 가이드 생�
 ### 3.1 새 도메인(예: 처방전 `prescriptions`) 추가
 1. **모델**: `app/models/prescriptions.py` 작성
 2. **모델 등록**: `app/core/db/databases.py`의 `TORTOISE_APP_MODELS`에 `"app.models.prescriptions"` 추가
-   - README에는 `app/db/databases.py`의 `MODELS`라고 적혀 있지만 **실제 경로·변수명은 위와 같습니다.**
 3. **마이그레이션 생성/적용**
    ```bash
    uv run aerich migrate --name add_prescriptions
@@ -137,18 +136,20 @@ PillyMate 1차 MVP(로그인 → 처방전 업로드 → OCR → 가이드 생�
 
 ### 4.1 환경변수 / 실행 환경 ⚠️
 - **`.env` 위치 문제**
-  - README는 `envs/.local.env`로 복사하라고 하지만, `Config`·`docker-compose.yml`(`env_file: .env`, `${DB_...}` 치환)·`scripts/ci/run_test.sh`(`source .env`)는 모두 **프로젝트 루트의 `.env`** 를 읽습니다.
+  - `Config`·`docker-compose.yml`(`env_file: .env`, `${DB_...}` 치환)·`scripts/ci/run_test.sh`(`source .env`)는 모두 **프로젝트 루트의 `.env`** 를 읽습니다.
   - 로컬에서는 `cp envs/.local.env .env` 로 루트에도 두거나, `docker compose --env-file envs/.local.env` 를 사용하세요.
   - `Config`는 실행 디렉터리 기준으로 `.env`를 찾으므로 **항상 프로젝트 루트에서 실행**해야 합니다.
 - **`DB_HOST` 값**
   - 호스트에서 `uv run uvicorn ...`으로 실행 → `DB_HOST=localhost`
   - Docker 컨테이너(fastapi) 안에서 실행 → `DB_HOST=mysql` (서비스명). `example.local.env`의 `localhost`를 그대로 쓰면 컨테이너에서 DB 연결이 실패합니다.
-- **`SECRET_KEY` 필수 설정**: 미설정 시 프로세스마다 랜덤 키가 생성됩니다. 운영 Dockerfile은 `--workers 3`이라 **워커마다 키가 달라져 토큰 검증이 무작위로 실패**하고, 재시작 시 모든 토큰이 무효화됩니다.
-- **`ENV` 변수 누락**: example env 파일에 `ENV`가 없어 기본값 `local`이 됩니다. 운영에서 `ENV=prod`를 넣지 않으면 refresh 쿠키에 `secure` 플래그가 붙지 않습니다.
+- **`SECRET_KEY` 필수 설정**: example env의 값은 템플릿 값이니 `python -c "import secrets; print(secrets.token_urlsafe(48))"`로 생성한 값으로 교체하세요. 미설정 시 프로세스마다 랜덤 키가 생성됩니다. 운영 Dockerfile은 `--workers 3`이라 **워커마다 키가 달라져 토큰 검증이 무작위로 실패**하고, 재시작 시 모든 토큰이 무효화됩니다.
+- **`ENV` 변수**: example env 파일에 `ENV=local` / `ENV=prod`가 들어 있습니다. 운영에서 `ENV=prod`가 빠지면 refresh 쿠키에 `secure` 플래그가 붙지 않습니다.
 - example env의 `DOCKER_USER=ozcodingschool`, 비밀번호·SECRET_KEY는 템플릿 값입니다. **팀 값으로 교체하고, 실제 값은 절대 커밋하지 마세요** (`.gitignore`의 `.*.env`, `.env` 규칙 유지).
 
-### 4.2 서비스명 / 명령어 불일치
-- compose 서비스명은 **`fastapi`**, **`ai-worker`** 입니다. README의 `docker compose up app`, `docker compose up ai_worker`는 동작하지 않습니다.
+- **로컬 MySQL 포트 충돌**: Homebrew 등으로 Mac에 MySQL이 설치·실행 중이면 `127.0.0.1:3306`을 먼저 점유해 Docker MySQL 대신 로컬 MySQL로 접속됩니다(`Access denied for user ...@'localhost'`). `brew services stop mysql@8.4` 등으로 끄거나 `DB_EXPOSE_PORT`/`DB_PORT`를 3307 등으로 바꾸세요.
+
+### 4.2 서비스명
+- compose 서비스명은 **`fastapi`**, **`ai-worker`** 입니다.
   ```bash
   docker compose up -d --build fastapi
   docker compose up -d --build ai-worker
@@ -156,21 +157,21 @@ PillyMate 1차 MVP(로그인 → 처방전 업로드 → OCR → 가이드 생�
 
 ### 4.3 DB / 마이그레이션
 - 테이블 자동 생성이 없으므로 **최초 실행 시 `uv run aerich upgrade`** 가 필요합니다.
-- `users.email`, `users.phone_number`에 **UNIQUE 제약이 없습니다.** 중복 검사는 서비스에서 `exists()`로만 하므로 동시 요청 시 중복 가입이 가능합니다. 신규 모델에서 고유해야 하는 컬럼은 `unique=True`를 지정하세요.
+- ⏳ `users.email`, `users.phone_number`에 **UNIQUE 제약이 없습니다** (마이그레이션이 필요해 아직 미적용). 중복 검사는 서비스에서 `exists()`로만 하므로 동시 요청 시 중복 가입이 가능합니다. 신규 모델에서 고유해야 하는 컬럼은 `unique=True`를 지정하세요.
 - 한글 저장을 위해 MySQL은 `utf8mb4`로 설정되어 있습니다. 컨테이너 설정을 바꿀 때 이 옵션을 유지하세요.
 - 시간대는 `Asia/Seoul`로 통일되어 있습니다(`config.TIMEZONE`, Tortoise `timezone`). 시간 생성 시 `datetime.now(config.TIMEZONE)`을 사용하세요.
 
-### 4.4 템플릿 코드에 남아 있는 버그 (인증 담당 확인 필요)
-| 위치 | 문제 | 영향 |
+### 4.4 템플릿 코드 버그 수정 내역 (2026-11-20 ✅ 수정 완료)
+| 위치 | 기존 문제 | 수정 |
 | --- | --- | --- |
-| `app/core/jwt/tokens.py` `RefreshToken.lifetime` | `timedelta(days=REFRESH_TOKEN_EXPIRE_MINUTES)` — 분 값을 일(day)로 사용 | 리프레시 토큰 만료가 14일이 아닌 약 55년 |
-| `app/apis/v1/auth_routers.py` `login` | 쿠키 `expires`에 **access token**의 exp 사용 | 리프레시 쿠키가 60분 뒤 사라져 refresh가 사실상 무의미 |
-| `app/dtos/auth.py` `SignUpRequest.email` | `Field(None, ...)` → email이 선택값이 됨 | email 없이 요청 시 DB 단계에서 500 에러 |
-| `app/repositories/user_repository.py` | `ALLOWED_UPDATE_FIELDS`가 정의만 되고 사용되지 않음 | 업데이트 허용 필드 제한이 실제로 동작하지 않음 |
-| `app/services/users.py` `update_user` | 본인의 현재 이메일/전화번호를 그대로 보내도 중복으로 409 | PATCH 시 의도치 않은 실패 |
+| `app/core/jwt/tokens.py` `RefreshToken.lifetime` | 분 값을 일(day)로 사용 → 만료 약 55년 | `timedelta(minutes=...)` (14일) |
+| `app/apis/v1/auth_routers.py` `login` | 쿠키 `expires`에 access token exp(정수) 사용. Starlette는 정수를 "지금부터 N초"로 해석해 사실상 무기한 | refresh token exp를 UTC `datetime`으로 전달 |
+| `app/dtos/auth.py` `SignUpRequest.email` | `Field(None, ...)` → email 누락 시 500 | 필수값(422) |
+| `app/repositories/user_repository.py` | `ALLOWED_UPDATE_FIELDS` 미사용 | `update_instance`에서 허용 필드만 반영 (`email` 포함) |
+| `app/services/users.py` `update_user` | 본인 현재 이메일/전화번호도 409 | 현재 값과 다를 때만 중복 검사 |
 
 ### 4.5 코드 컨벤션 / 품질
-- **import 정렬**: ruff의 `I`(isort) 규칙이 켜져 있습니다. 현재 일부 파일(`app/core/jwt/tokens.py`, `app/dtos/*.py`, `app/services/*.py`)은 `app.models`가 `app.core`보다 먼저 import되어 있어 CI lint에서 걸릴 가능성이 높습니다. 커밋 전 `./scripts/ci/code_fommatting.sh` 실행을 습관화하세요.
+- **import 정렬**: ruff의 `I`(isort) 규칙이 켜져 있습니다. 커밋 전 `./scripts/ci/code_fommatting.sh` 실행을 습관화하세요.
 - 라인 길이 120, 더블쿼트. `__init__.py`는 F401(미사용 import) 예외.
 - ruff `target-version = "py312"`, 실제 런타임은 Python 3.13입니다. 3.13 전용 문법을 쓰면 pyupgrade 규칙과 엇갈릴 수 있습니다.
 - `pyproject.toml`에 mypy 설정이 없습니다. `check_mypy.sh`는 `mypy .` 전체를 검사하므로 필요하면 `[tool.mypy]`에 `exclude`/`strict` 범위를 정하세요.
@@ -186,10 +187,9 @@ PillyMate 1차 MVP(로그인 → 처방전 업로드 → OCR → 가이드 생�
 - CI의 MySQL 서비스에는 healthcheck가 없어 간헐적으로 연결 실패가 날 수 있습니다.
 
 ### 4.7 AI Worker
-- `ai_worker/main.py`가 비어 있고 Dockerfile CMD가 `echo 'hello world'`라 **컨테이너가 바로 종료 → `restart: always`로 재시작 반복**합니다. 구현 전까지는 compose에서 제외하거나 CMD를 수정하세요.
-- `ai_worker/Dockerfile`이 `COPY ./ai_worker ./app` 으로 복사합니다. 컨테이너 안에서는 `ai_worker` 패키지명으로 import할 수 없고 `app`이라는 이름이 됩니다. `COPY ./ai_worker ./ai_worker` + `CMD ["uv", "run", "--no-sync", "python", "-m", "ai_worker.main"]` 형태로 바꾸는 것을 권장합니다.
-- `ai_worker/core/__init__.py`가 자신의 config가 아닌 **`app.core.config`/`app.core.logger`를 import**합니다. 로컬과 컨테이너에서 서로 다른 모듈을 읽게 되므로 `ai_worker.core.config`로 수정하세요.
-- 로거 이름이 뒤바뀌어 있습니다 (`app/core/logger.py` 기본 이름이 `"ai_worker"`). 로그 구분이 필요하면 수정하세요.
+- ✅ (2026-11-20 수정) 컨테이너 재시작 반복 문제 해결: Dockerfile이 `COPY ./ai_worker ./ai_worker` + `CMD ["uv", "run", "--no-sync", "python", "-m", "ai_worker.main"]`로 변경되었고, `main.py`는 SIGTERM까지 대기하는 루프입니다. 실제 작업 수신 로직은 통신 방식 확정 후 `run()`의 TODO 위치에 구현하세요.
+- ✅ `ai_worker/core/__init__.py`는 이제 자신의 `ai_worker.core.config`/`logger`를 사용합니다. `ai_worker` 코드에서 `app.*`를 import하지 마세요(컨테이너에 `app` 코드가 없습니다).
+- ✅ 로거 이름: API는 `"app"`, 워커는 `"AI Worker"`.
 - torch 등 `ai` 그룹은 무겁습니다(CPU 인덱스 사용). 컨테이너 메모리 제한은 4G입니다.
 
 ### 4.8 배포 / 보안
@@ -204,7 +204,7 @@ PillyMate 1차 MVP(로그인 → 처방전 업로드 → OCR → 가이드 생�
 - 커밋 메시지: `.github/commit_template.txt` 규칙 (`✨ feat: ...`, `🐛 fix: ...`). 적용: `git config commit.template .github/commit_template.txt`
 - PR은 `.github/PULL_REQUEST_TEMPLATE.md` 양식을 따릅니다.
 - CI가 `develop`, `release/*`, `hotfix/*`를 대상으로 하므로 Git Flow(`feature/*` → `develop` → `main`) 사용을 전제로 합니다.
-- 현재 `PillyMate/docs/` → `docs/` 이동이 스테이징되어 있습니다. 문서는 루트 `docs/`에 두세요.
+- 문서는 루트 `docs/`에 두세요.
 
 ---
 
@@ -216,7 +216,7 @@ uv sync --group app --group dev
 
 # 2) 환경변수 (루트 .env 필요)
 cp envs/example.local.env envs/.local.env
-cp envs/.local.env .env          # SECRET_KEY, DB 비밀번호 수정, ENV=local 추가 권장
+cp envs/.local.env .env          # SECRET_KEY, DB 비밀번호 수정
 
 # 3) DB 기동
 docker compose up -d mysql redis
