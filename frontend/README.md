@@ -27,14 +27,15 @@ npm run dev   # http://localhost:5173
 | `guide` | `/guide` | S-05 복약 가이드 |
 | `guide-error` | `/guide/error` | S-05 실패 |
 | `history` | `/history` | S-07 기록 |
+| `chat` | `/chat` | 챗봇 |
 
 화면 컴포넌트는 `go('confirm')`처럼 키로 이동하고, 주소는 `src/App.jsx`의 `ROUTES`에서만 관리해요.
 
 ## 구조
 
 - `tailwind.config.js`: Figma 색 변수, 글자 크기(줄 간격·자간 포함), 모서리, 그림자 토큰
-- `src/components/ui`: Button, SmallButton, IconButton, Field, Segmented, SelectChip, FilterChip, Tag, Panel, Avatar, ChildSwitcher, Logo, Header, TabBar, TopBar, AppShell
-- `src/components/rx`: RxPaper(처방전 일러스트), Highlight·LowValue(흐릿함 형광펜), LowConfidenceBanner, MedList(모바일), MedTable(데스크톱), 가이드 섹션들
+- `src/components/ui`: Button, SmallButton, IconButton, Field, Segmented, SelectChip, FilterChip, Tag, Panel, Avatar, ChildSwitcher, Logo, Header, TabBar, NavBar(상단 바: 로고 + 메뉴 드로어), Drawer, Modal, AppShell
+- `src/components/rx`: RxPaper(처방전 일러스트), Highlight·LowValue(흐릿함 형광펜), LowConfidenceBanner, MedCard·MedList(약 카드, 고치기·추가·빼기), 가이드 섹션들
 - `src/screens`: S-01 ~ S-07 화면 10개
 - `src/data/sample.js`: 예시 데이터(실제 의학 정보 아님). API 연동 시 응답으로 바꿔 주세요.
 

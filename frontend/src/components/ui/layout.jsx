@@ -1,12 +1,8 @@
-import { ChevronLeft, FileText, ScanLine, CircleUserRound } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { IconButton } from './Button.jsx';
-import { ChildSwitcher, Logo } from './misc.jsx';
+import { NavBar, TABS } from './NavBar.jsx';
 
-export const TABS = [
-  { key: 'history', label: '기록', icon: FileText },
-  { key: 'upload', label: '처방 올리기', icon: ScanLine },
-  { key: 'children', label: '아이', icon: CircleUserRound },
-];
+export { TABS };
 
 /** 모바일 헤더 — 세로 패딩 8, 오른쪽 12, 왼쪽 20(뒤로가기 있으면 4). 제목 22 Bold, 뒤로가기 있으면 18 */
 export function Header({ title, onBack, right, className = '' }) {
@@ -45,44 +41,18 @@ export function TabBar({ active, onChange }) {
   );
 }
 
-/** 데스크톱 상단 바 — 높이 68, 가로 40, 간격 32. 1024px 이상에서만 보여요 */
-export function TopBar({ active, onChange, childName = '지우' }) {
-  return (
-    <header className="sticky top-0 z-20 hidden h-17 items-center gap-8 border-b border-line bg-surface px-10 lg:flex">
-      <Logo size={26} />
-      <nav aria-label="주요 메뉴" className="flex items-center gap-1">
-        {TABS.map(({ key, label }) => {
-          const on = key === active;
-          return (
-            <button
-              key={key}
-              type="button"
-              aria-current={on ? 'page' : undefined}
-              onClick={() => onChange?.(key)}
-              className={`rounded-md px-3.5 py-2.5 text-15 ${on ? 'bg-brand-soft font-semibold text-brand' : 'font-medium text-muted hover:bg-paper'}`}
-            >
-              {label}
-            </button>
-          );
-        })}
-      </nav>
-      <div className="flex-1" />
-      <ChildSwitcher name={childName} />
-    </header>
-  );
-}
-
 /**
  * 화면 틀.
  * 모바일: (헤더) + 본문 + 아래 고정 영역(주요 버튼, 탭 바)
- * 데스크톱(lg): 상단 바 + 가운데 정렬 본문. 주요 버튼은 본문 끝에 오른쪽 정렬로 놓여요.
+ * 모든 폭: 맨 위 NavBar(로고 + 메뉴 드로어).
+ * 데스크톱(lg): 가운데 정렬 본문. 주요 버튼은 본문 끝에 오른쪽 정렬로 놓여요.
  * width: 'form'은 데스크톱에서 480px 한 단, 'wide'는 1120px.
  */
 export function AppShell({ tab, onTab, header, actions, showTabs = true, showTopBar = true, width = 'form', children }) {
   const inner = width === 'wide' ? 'lg:max-w-content' : 'lg:max-w-form';
   return (
     <div className="flex min-h-dvh flex-col bg-paper">
-      {showTopBar && <TopBar active={tab} onChange={onTab} />}
+      {showTopBar && <NavBar active={tab} onNavigate={onTab} />}
       <div className={`mx-auto flex w-full max-w-[560px] flex-1 flex-col ${inner}`}>
         {header}
         <main className="flex flex-1 flex-col">{children}</main>
