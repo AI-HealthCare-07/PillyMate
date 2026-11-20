@@ -6,6 +6,7 @@ import { ReadingScreen, UploadScreen } from './screens/upload.jsx';
 import { ConfirmScreen } from './screens/confirm.jsx';
 import { GuideErrorScreen, GuideLoadingScreen, GuideScreen } from './screens/guide.jsx';
 import { HistoryScreen } from './screens/history.jsx';
+import { ChatScreen } from './screens/chat.jsx';
 
 /**
  * 화면 키 → 주소. 화면 컴포넌트는 go('confirm')처럼 키로 이동하고,
@@ -22,6 +23,7 @@ export const ROUTES = {
   guide: { path: '/guide', Screen: GuideScreen },
   'guide-error': { path: '/guide/error', Screen: GuideErrorScreen },
   history: { path: '/history', Screen: HistoryScreen },
+  chat: { path: '/chat', Screen: ChatScreen },
 };
 
 export default function App() {

@@ -1,18 +1,19 @@
 /**
  * 처방전 사진 자리에 쓰는 일러스트. 실제 서비스에서는 업로드한 사진(<img>)으로 바꿔 쓰세요.
  * marks: [x, y, w] (300 기준 좌표) — 흐릿하게 읽힌 자리에 형광펜 표시
+ * fluid: 부모 폭에 맞춰 늘어나요(width 무시).
  */
-export function RxPaper({ width = 72, marks = [], scanning = false, className = '' }) {
+export function RxPaper({ width = 72, marks = [], scanning = false, fluid = false, className = '' }) {
   const h = Math.round((width * 380) / 300);
   const rows = [[70, 120], [64, 90], [70, 150], [64, 70]];
   return (
     <svg
-      width={width}
-      height={h}
+      width={fluid ? undefined : width}
+      height={fluid ? undefined : h}
       viewBox="0 0 300 380"
       role="img"
       aria-label="처방전 사진"
-      className={`shrink-0 rounded-[6px] border border-line bg-surface shadow-paper ${className}`}
+      className={`${fluid ? 'h-auto w-full' : 'shrink-0'} rounded-[6px] border border-line bg-surface shadow-paper ${className}`}
     >
       {marks.map(([x, y, w], i) => (
         <rect key={i} x={x - 4} y={y - 3} width={w + 8} height={14} rx={2} fill="#FFDD5C" opacity={0.85} transform={`rotate(1.2 ${x} ${y})`} />

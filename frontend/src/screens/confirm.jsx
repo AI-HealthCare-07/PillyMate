@@ -1,14 +1,16 @@
+import { useCallback, useState } from 'react';
 import { Camera, ChevronLeft, Eye } from 'lucide-react';
 import { Button, SmallButton } from '../components/ui/Button.jsx';
 import { Panel } from '../components/ui/misc.jsx';
+import { Modal } from '../components/ui/Modal.jsx';
 import { AppShell, Header } from '../components/ui/layout.jsx';
 import { RxPaper } from '../components/rx/RxPaper.jsx';
-import { LowConfidenceBanner } from '../components/rx/Highlight.jsx';
-import { MedList, MedTable } from '../components/rx/meds.jsx';
-import { meds, prescription as rx } from '../data/sample.js';
+import { Highlight, LowConfidenceBanner } from '../components/rx/Highlight.jsx';
+import { MedList, emptyMed } from '../components/rx/meds.jsx';
+import { medFields, meds as sampleMeds, prescription as rx } from '../data/sample.js';
 
 const MARKS = [[140, 186, 30], [190, 226, 22]];
-const lowCount = meds.reduce((n, m) => n + ['dose', 'perDay', 'days', 'timing'].filter((k) => m[k].low).length, 0);
+const countLow = (list) => list.reduce((n, m) => n + medFields.filter(([k]) => m[k].low).length, 0);
 
 export function BackLink({ children, onClick }) {
   return (
@@ -24,7 +26,33 @@ export function BackLink({ children, onClick }) {
  * 모바일: 한 단 (원본 요약 → 약 목록) + 아래 고정 버튼
  * 데스크톱: 왼쪽 420px 원본 사진, 오른쪽 약 표 + 버튼
  */
+/** 원본 사진 모달 — 실제 서비스에서는 RxPaper 대신 업로드한 사진(<img>)을 넣어요 */
+function OriginalModal({ open, onClose }) {
+  return (
+    <Modal open={open} onClose={onClose} title="처방전 원본" description={`${rx.hospital}, ${rx.date}`}>
+      <div className="flex flex-col gap-3 bg-sunk p-4">
+        <RxPaper fluid marks={MARKS} />
+        <p className="flex items-center gap-2 text-13 text-muted">
+          <Highlight className="text-13">노란 표시</Highlight>
+          흐릿하게 읽힌 곳이에요.
+        </p>
+      </div>
+    </Modal>
+  );
+}
+
 export function ConfirmScreen({ go, onTab }) {
+  const [meds, setMeds] = useState(sampleMeds);
+  const [showOriginal, setShowOriginal] = useState(false);
+  const openOriginal = () => setShowOriginal(true);
+  const closeOriginal = useCallback(() => setShowOriginal(false), []);
+
+  const updateMed = (next) => setMeds((list) => list.map((m) => (m.id === next.id ? next : m)));
+  const removeMed = (id) => setMeds((list) => list.filter((m) => m.id !== id));
+  const addMed = () => setMeds((list) => [...list, emptyMed()]);
+  const lowCount = countLow(meds);
+  const saved = meds.filter((m) => !m.isNew);
+
   const make = () => go('guide-loading');
   const retake = () => go('upload');
   const actions = {
@@ -50,13 +78,13 @@ export function ConfirmScreen({ go, onTab }) {
           <div className="hidden w-[420px] shrink-0 flex-col gap-3 lg:sticky lg:top-[100px] lg:flex">
             <RxPaper width={420} marks={MARKS} />
             <div className="flex gap-2">
-              <SmallButton icon={Eye}>크게 보기</SmallButton>
+              <SmallButton icon={Eye} onClick={openOriginal}>크게 보기</SmallButton>
               <SmallButton icon={Camera} onClick={retake}>다시 찍기</SmallButton>
             </div>
           </div>
 
           <div className="flex min-w-0 flex-1 flex-col gap-5">
-            <LowConfidenceBanner count={lowCount} />
+            {lowCount > 0 && <LowConfidenceBanner count={lowCount} />}
 
             {/* 모바일 원본 요약 */}
             <Panel className="flex items-center gap-3 p-3 lg:hidden">
@@ -65,7 +93,7 @@ export function ConfirmScreen({ go, onTab }) {
                 <p className="text-15 font-semibold">{rx.hospital}</p>
                 <p className="text-13 text-muted">{rx.shortDate} 처방, 사진 1장</p>
               </div>
-              <SmallButton icon={Eye}>원본</SmallButton>
+              <SmallButton icon={Eye} onClick={openOriginal}>원본</SmallButton>
             </Panel>
 
             {/* 데스크톱 메타 */}
@@ -78,9 +106,8 @@ export function ConfirmScreen({ go, onTab }) {
               ))}
             </dl>
 
-            <h3 className="text-18 font-bold">약 {meds.length}개</h3>
-            <div className="lg:hidden"><MedList meds={meds} /></div>
-            <div className="hidden lg:block"><MedTable meds={meds} /></div>
+            <h3 className="text-18 font-bold">약 {saved.length}개</h3>
+            <MedList meds={meds} onChange={updateMed} onAdd={addMed} onRemove={removeMed} />
 
             <div className="hidden justify-end gap-3 lg:flex">
               <Button variant="secondary" className="w-[140px]" onClick={retake}>다시 찍기</Button>
@@ -89,6 +116,7 @@ export function ConfirmScreen({ go, onTab }) {
           </div>
         </div>
       </div>
+      <OriginalModal open={showOriginal} onClose={closeOriginal} />
     </AppShell>
   );
 }

@@ -1,3 +1,5 @@
+import { forwardRef } from 'react';
+
 const variants = {
   primary: 'bg-brand text-on-brand hover:bg-[#0B4A41] active:bg-[#093E37]',
   secondary: 'bg-surface text-ink border border-line hover:bg-paper active:bg-sunk',
@@ -34,9 +36,10 @@ export function SmallButton({ icon: Icon, children, className = '', ...props }) 
 }
 
 /** 44px 아이콘 버튼 — 패딩 10, 모서리 10 */
-export function IconButton({ icon: Icon, label, tone = 'ink', className = '', ...props }) {
+export const IconButton = forwardRef(function IconButton({ icon: Icon, label, tone = 'ink', className = '', ...props }, ref) {
   return (
     <button
+      ref={ref}
       type="button"
       aria-label={label}
       className={`inline-flex size-11 shrink-0 items-center justify-center rounded-md hover:bg-sunk ${tone === 'muted' ? 'text-muted' : 'text-ink'} ${className}`}
@@ -45,4 +48,4 @@ export function IconButton({ icon: Icon, label, tone = 'ink', className = '', ..
       <Icon size={24} strokeWidth={1.75} aria-hidden />
     </button>
   );
-}
+});

@@ -49,3 +49,15 @@ export const history = [
   ] },
   { month: '10월', rows: [{ id: 'h3', day: '2', weekday: '금', title: '장염', sub: '지우, 약 2개' }] },
 ];
+
+export const chat = {
+  childName: '지우',
+  context: '11월 18일 중이염',
+  messages: [
+    { id: 'q0', from: 'bot', text: '안녕하세요, 지우 보호자님. 11월 18일에 받은 중이염 약에 대해 궁금한 걸 물어보세요.' },
+    { id: 'q1', from: 'me', text: '이부프로펜은 언제 다시 먹일 수 있어요?' },
+    { id: 'q2', from: 'bot', text: '처방 내용으로는 열이 날 때만 5mL를 먹이고, 다음 번까지 6시간 넘게 띄우라고 되어 있어요.\n하루 4번을 넘기지 마세요.' },
+  ],
+  suggestions: ['약을 먹고 토했어요', '시럽은 어떻게 보관해요?', '아목시실린을 빼먹었어요'],
+  demoReply: '지금은 화면 확인용 예시 답변이에요. 정확한 내용은 약사나 의사에게 꼭 물어봐 주세요.',
+};
