@@ -10,7 +10,7 @@ from app.models.users import Gender
 class SignUpRequest(BaseModel):
     email: Annotated[
         EmailStr,
-        Field(None, max_length=40),
+        Field(max_length=40),
     ]
     password: Annotated[str, Field(min_length=8), AfterValidator(validate_password)]
     name: Annotated[str, Field(max_length=20)]
