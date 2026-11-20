@@ -1,4 +1,3 @@
-from calendar import timegm
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any, Self
 from uuid import uuid4
@@ -70,7 +69,7 @@ class Token:
         assert lifetime is not None
 
         dt = from_time + lifetime
-        self.payload["exp"] = timegm(dt.timetuple())
+        self.payload["exp"] = int(dt.timestamp())
 
     def set_jti(self) -> None:
         self.payload["jti"] = uuid4().hex

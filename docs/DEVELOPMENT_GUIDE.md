@@ -165,6 +165,7 @@ PillyMate 1차 MVP(로그인 → 처방전 업로드 → OCR → 가이드 생�
 | 위치 | 기존 문제 | 수정 |
 | --- | --- | --- |
 | `app/core/jwt/tokens.py` `RefreshToken.lifetime` | 분 값을 일(day)로 사용 → 만료 약 55년 | `timedelta(minutes=...)` (14일) |
+| `app/core/jwt/tokens.py` `set_exp` | `timegm(dt.timetuple())`이 KST 시각을 UTC로 계산 → 모든 토큰 `exp`가 9시간 늦음 | `int(dt.timestamp())` |
 | `app/apis/v1/auth_routers.py` `login` | 쿠키 `expires`에 access token exp(정수) 사용. Starlette는 정수를 "지금부터 N초"로 해석해 사실상 무기한 | refresh token exp를 UTC `datetime`으로 전달 |
 | `app/dtos/auth.py` `SignUpRequest.email` | `Field(None, ...)` → email 누락 시 500 | 필수값(422) |
 | `app/repositories/user_repository.py` | `ALLOWED_UPDATE_FIELDS` 미사용 | `update_instance`에서 허용 필드만 반영 (`email` 포함) |
