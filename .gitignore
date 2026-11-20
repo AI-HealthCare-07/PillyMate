@@ -14,3 +14,6 @@ wheels/
 .coverage.*
 
 .DS_Store
+
+# frontend
+node_modules/
