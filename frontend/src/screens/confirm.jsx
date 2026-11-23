@@ -11,7 +11,6 @@ import { medFields, meds as sampleMeds, prescription as rx } from '../data/sampl
 import { getPrescriptionDraft, setPrescriptionDraft } from './fe2Draft.js';
 import { dateParts, useRecords } from '../state/records.jsx';
 import { useSelectedChild } from '../state/selectedChild.jsx';
-import { children as sampleChildren } from '../data/sample.js';
 
 const MARKS = [[140, 186, 30], [190, 226, 22]];
 const countLow = (list) => list.reduce((n, m) => n + medFields.filter(([k]) => Boolean(m[k]?.low)).length, 0);
@@ -48,8 +47,8 @@ function OriginalModal({ open, onClose, previewUrl, head }) {
 export function ConfirmScreen({ go, back, onTab }) {
   const draft = getPrescriptionDraft();
   const { recordPrescription } = useRecords();
-  const { child: selectedChild } = useSelectedChild();
-  const child = sampleChildren.find((c) => c.id === draft?.childId) ?? selectedChild;
+  const { child: selectedChild, childList } = useSelectedChild();
+  const child = childList.find((c) => c.id === draft?.childId) ?? selectedChild;
   // 처방전 머리 정보 — OCR 결과가 없으면(주소로 바로 들어온 경우 등) 예시 값을 보여요.
   const ocr = draft?.ocr ?? { hospital: rx.hospital, date: rx.isoDate, disease: rx.disease };
   const when = dateParts(ocr.date);
@@ -119,14 +118,16 @@ export function ConfirmScreen({ go, back, onTab }) {
     });
     // 처방전에서 읽은 병원·날짜·병명·약으로 건강기록과 복약 일정을 자동으로 남겨요.
     // 병명은 보호자가 처방 올리기에서 적은 값이 있으면 그걸, 없으면 처방전에서 읽은 값을 써요.
+    // 만든 가이드의 id를 임시 데이터에 남겨서, 만드는 중 화면 → 가이드 화면이 이 아이의 이 가이드를 보여 줘요.
     if (child) {
-      recordPrescription({
+      const { guide } = recordPrescription({
         childId: child.id,
         date: ocr.date,
         hospital: ocr.hospital,
         title: draft?.disease?.trim() || ocr.disease || '진료',
         meds,
       });
+      setPrescriptionDraft({ ...getPrescriptionDraft(), childId: child.id, guideId: guide.id });
     }
     go('guide-loading');
   };

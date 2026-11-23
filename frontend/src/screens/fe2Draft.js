@@ -12,3 +12,25 @@ export function clearPrescriptionDraft() {
   if (draft?.previewUrl) URL.revokeObjectURL(draft.previewUrl);
   draft = null;
 }
+
+/**
+ * 건강기록의 '확인 전' 처방을 확인하러 갈 때 — 그 기록의 병원·날짜·병명·읽어 둔 약을 임시 데이터로 채워요.
+ * 확인을 마치면 같은 아이·날짜·병원의 기록으로 저장돼서 '확인 전' 기록을 대신해요.
+ */
+export function draftFromVisit(visit) {
+  const ocrMeds =
+    visit.ocrMeds ??
+    visit.meds.map((m, i) => ({
+      id: `${visit.id}m${i}`, name: m.name, dose: { value: '' }, perDay: { value: '' }, days: { value: m.days ?? '' }, timing: { value: '' },
+    }));
+  setPrescriptionDraft({
+    childId: visit.childId,
+    disease: visit.title,
+    note: visit.note ?? '',
+    status: 'pending-visit',
+    visitId: visit.id,
+    ocr: { hospital: visit.hospital, date: visit.date, disease: visit.title },
+    ocrMeds: ocrMeds.map((m) => ({ ...m })),
+    guideReady: false,
+  });
+}

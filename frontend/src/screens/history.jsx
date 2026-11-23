@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Check, ChevronLeft, ChevronRight, Pill, Plus, ScanLine, Trash2 } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Minus, Pill, Plus, ScanLine, Trash2 } from 'lucide-react';
 import { Button } from '../components/ui/Button.jsx';
 import { Field } from '../components/ui/Field.jsx';
-import { Avatar, Panel, Segmented, Tag } from '../components/ui/misc.jsx';
+import { Panel, Segmented, Tag } from '../components/ui/misc.jsx';
 import { AppShell, Body, Header } from '../components/ui/layout.jsx';
 import { useSelectedChild } from '../state/selectedChild.jsx';
-import { dateParts, fromKey, shiftDays, todayKey, useRecords } from '../state/records.jsx';
+import { draftFromVisit } from './fe2Draft.js';
+import { dateParts, fromKey, groupBySlot, shiftDays, todayKey, useRecords } from '../state/records.jsx';
 
 /** 그 날짜가 들어 있는 주의 일요일 */
 const weekStart = (key) => shiftDays(key, -fromKey(key).getDay());
@@ -25,18 +26,8 @@ export function HistoryScreen({ go, onTab }) {
   const setTab = (next) => setParams(next === 'meds' ? {} : { tab: next }, { replace: true });
 
   return (
-    <AppShell tab="history" onTab={onTab} header={<Header title="기록" />}>
+    <AppShell tab="history" onTab={onTab} header={<Header title={child ? `${child.name}의 기록` : '기록'} />}>
       <Body className="gap-4 pt-1">
-        <div className="flex items-center gap-3 rounded-xl border border-line bg-surface px-4 py-3">
-          <Avatar name={child?.name ?? '?'} size={32} />
-          <p className="flex-1 text-15">
-            <span className="font-semibold">{child?.name ?? '아이'}</span>
-            <span className="text-muted">의 기록</span>
-          </p>
-          <button type="button" onClick={() => go('children')} className="rounded-md px-2 py-1.5 text-14 font-semibold text-brand hover:bg-paper">
-            아이 바꾸기
-          </button>
-        </div>
         <Segmented label="기록 종류" value={tab} onChange={setTab} options={TABS} />
         {child && (tab === 'meds' ? <MedCalendar childId={child.id} /> : <HealthLog childId={child.id} go={go} />)}
       </Body>
@@ -72,7 +63,7 @@ const LEGEND = [
 ];
 
 function MedCalendar({ childId }) {
-  const { dosesOn, toggleDose } = useRecords();
+  const { dosesOn, toggleSlot } = useRecords();
   const today = todayKey();
   const [selected, setSelected] = useState(today);
   // 한 주(일~토)씩 보여요. 화살표로 넘기면 같은 요일이 선택돼요.
@@ -89,8 +80,9 @@ function MedCalendar({ childId }) {
   };
 
   // 이번 주 요약: 오늘까지 먹일 횟수 중 먹인 횟수
-  const weekDoses = cells.filter((d) => d <= today).flatMap((d) => dosesOn(childId, d));
-  const givenCount = weekDoses.filter((d) => d.given).length;
+  // 먹는 때 단위로 세요(아침에 약 3개를 먹어도 1번).
+  const weekDoses = cells.filter((d) => d <= today).flatMap((d) => groupBySlot(dosesOn(childId, d)));
+  const givenCount = weekDoses.filter((g) => g.done).length;
   const a = dateParts(cells[0]);
   const b = dateParts(cells[6]);
   const range = `${a.month}월 ${a.day}일 – ${b.month === a.month ? '' : `${b.month}월 `}${b.day}일`;
@@ -98,6 +90,7 @@ function MedCalendar({ childId }) {
 
   const sel = dateParts(selected);
   const selDoses = dosesOn(childId, selected);
+  const selSlots = groupBySlot(selDoses);
   const future = selected > today;
   const courseNames = [...new Set(selDoses.map((d) => `${d.course.title}, ${d.course.hospital}`))];
 
@@ -175,41 +168,48 @@ function MedCalendar({ childId }) {
         </div>
         {selDoses.length ? (
           <Panel as="ul" aria-label="이 날 먹일 약">
-            {selDoses.map((d, j) => (
-              <li key={d.key} className={j ? 'border-t border-line' : ''}>
-                <button
-                  type="button"
-                  disabled={future}
-                  aria-pressed={d.given}
-                  onClick={() => toggleDose(d)}
-                  className="flex w-full items-center gap-3.5 px-4 py-3 text-left enabled:hover:bg-paper disabled:cursor-default"
-                >
-                  <span className="w-14 shrink-0 text-14 font-semibold text-brand">{d.slot}</span>
-                  <span className="flex flex-1 flex-col">
-                    <span className="text-15 font-medium">{d.name}</span>
-                    <span className="text-13 text-muted">{d.dose}</span>
-                  </span>
-                  {future ? (
-                    <span className="text-13 text-faint">예정</span>
-                  ) : (
-                    <span
-                      className={`flex size-7 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
-                        d.given ? 'border-brand bg-brand text-on-brand' : 'border-line text-transparent'
-                      }`}
-                      aria-hidden
-                    >
-                      <Check size={16} strokeWidth={3} />
-                    </span>
-                  )}
-                  <span className="sr-only">{future ? '먹일 예정' : d.given ? '먹였어요' : '안 먹였어요'}</span>
-                </button>
-              </li>
-            ))}
+            {selSlots.map((g, j) => {
+              const partial = !g.done && g.given > 0;
+              return (
+                <li key={g.slot} className={j ? 'border-t border-line' : ''}>
+                  <button
+                    type="button"
+                    disabled={future}
+                    aria-pressed={g.done}
+                    aria-label={`${g.slot} 약 ${g.doses.length}개, ${future ? '먹일 예정' : g.done ? '먹였어요' : partial ? `${g.doses.length}개 중 ${g.given}개 먹였어요` : '안 먹였어요'}`}
+                    onClick={() => toggleSlot(g)}
+                    className="flex w-full items-center gap-3.5 px-4 py-3 text-left enabled:hover:bg-paper disabled:cursor-default"
+                  >
+                    <span className="w-14 shrink-0 self-start pt-0.5 text-14 font-semibold text-brand">{g.slot}</span>
+                    <ul className="flex flex-1 flex-col gap-1.5">
+                      {g.doses.map((d) => (
+                        <li key={d.key} className={`flex items-baseline justify-between gap-2 ${!future && d.given ? 'text-faint' : ''}`}>
+                          <span className="text-15 font-medium">{d.name}</span>
+                          <span className={`shrink-0 text-13 ${!future && d.given ? '' : 'text-muted'}`}>{d.dose}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    {future ? (
+                      <span className="text-13 text-faint">예정</span>
+                    ) : (
+                      <span
+                        className={`flex size-7 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
+                          g.done ? 'border-brand bg-brand text-on-brand' : partial ? 'border-brand text-brand' : 'border-line text-transparent'
+                        }`}
+                        aria-hidden
+                      >
+                        {partial ? <Minus size={16} strokeWidth={3} /> : <Check size={16} strokeWidth={3} />}
+                      </span>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
           </Panel>
         ) : (
           <Panel className="px-4 py-6 text-center text-15 text-muted">이 날은 먹일 약이 없어요.</Panel>
         )}
-        {!future && selDoses.length > 0 && <p className="px-1 text-13 text-muted">약을 누르면 먹였는지 고칠 수 있어요.</p>}
+        {!future && selDoses.length > 0 && <p className="px-1 text-13 text-muted">먹는 때를 누르면 그때 먹을 약을 한 번에 고칠 수 있어요.</p>}
       </section>
     </div>
   );
@@ -284,14 +284,20 @@ function HealthLog({ childId, go }) {
                     <p className="text-13 text-faint">처방받은 약 없음</p>
                   )}
                   {v.note && <p className="text-14 text-muted">{v.note}</p>}
+                  {/* 복약 가이드는 가이드 탭에서 봐요. 여기선 아직 확인 안 한 처방만 확인하러 갈 수 있어요. */}
                   {v.source === 'ocr' ? (
-                    <button
-                      type="button"
-                      onClick={() => go(v.status ? 'confirm' : 'guide')}
-                      className="flex items-center gap-0.5 self-start text-14 font-semibold text-brand"
-                    >
-                      {v.status ? '처방 확인하기' : '복약 가이드 보기'}<ChevronRight size={16} aria-hidden />
-                    </button>
+                    v.status && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          draftFromVisit(v);
+                          go('confirm');
+                        }}
+                        className="flex items-center gap-0.5 self-start text-14 font-semibold text-brand"
+                      >
+                        처방 확인하기<ChevronRight size={16} aria-hidden />
+                      </button>
+                    )
                   ) : (
                     v.source === 'manual' && !v.id.startsWith('v') && (
                       <button

@@ -1,14 +1,15 @@
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, Check, ChevronRight, Clock, MessageCircle, ScanLine } from 'lucide-react';
-import { Avatar, Panel, Tag } from '../components/ui/misc.jsx';
+import { AlertTriangle, Check, ChevronRight, Clock, Minus, ScanLine } from 'lucide-react';
+import { Button } from '../components/ui/Button.jsx';
+import { Panel, Tag } from '../components/ui/misc.jsx';
 import { AppShell, Body } from '../components/ui/layout.jsx';
-import { guide } from '../data/sample.js';
-import { dateParts, fromKey, todayKey, useRecords } from '../state/records.jsx';
+import { dateParts, fromKey, groupBySlot, todayKey, useRecords } from '../state/records.jsx';
 import { useSelectedChild } from '../state/selectedChild.jsx';
+import { draftFromVisit } from './fe2Draft.js';
 
 const H2 = ({ children, action }) => (
   <div className="flex items-center justify-between">
-    <h2 className="text-18 font-bold">{children}</h2>
+    <h2 className="text-16 font-bold text-muted">{children}</h2>
     {action}
   </div>
 );
@@ -25,7 +26,7 @@ const MoreLink = ({ onClick, children }) => (
  */
 export function HomeScreen({ go, onTab }) {
   const { childId, child } = useSelectedChild();
-  const { activeCourse, dosesOn, toggleDose, visitsOf } = useRecords();
+  const { activeCourse, dosesOn, guidesOf, toggleSlot, visitsOf } = useRecords();
   const navigate = useNavigate();
   const openHealthLog = () => navigate('/history?tab=health');
   const today = todayKey();
@@ -38,7 +39,11 @@ export function HomeScreen({ go, onTab }) {
     : [];
   const pending = rows.filter((r) => r.status);
   const doses = childId ? dosesOn(childId, today) : [];
-  const doneCount = doses.filter((d) => d.given).length;
+  // 가이드 바로가기 — 가이드 탭을 지금 보는 아이로 걸러 열고, 지금 먹는 약의 가이드 카드를 펴 둬요.
+  const careGuide = care ? guidesOf(childId).find((g) => g.visitId === care.visitId) : null;
+  const careGuideId = careGuide?.id ?? null;
+  const openGuides = () =>
+    navigate(`/guides?${new URLSearchParams({ child: childId, ...(careGuideId ? { open: careGuideId } : {}) })}`);
   const careDay = care ? Math.round((fromKey(today) - fromKey(care.start)) / 86400000) + 1 : 0;
 
   if (!child) {
@@ -52,28 +57,26 @@ export function HomeScreen({ go, onTab }) {
     );
   }
 
+  // 먹는 때(아침/점심/저녁/자기 전)별로 묶어서, 그때 먹을 약을 한 번에 체크해요.
+  const slots = groupBySlot(doses);
+  const slotsDone = slots.filter((g) => g.done).length;
+  const nextSlot = slots.find((g) => !g.done)?.slot;
+  const allDone = slots.length > 0 && slotsDone === slots.length;
+
   return (
     <AppShell tab="home" onTab={onTab}>
-      <Body className="gap-7 pt-5 lg:pt-8">
-        {/* 지금 보는 아이 */}
-        <section className="flex flex-col gap-4">
+      <Body className="gap-6 pt-5 lg:pt-8">
+        {/* 지금 보는 아이 — 아이 전환은 상단 바 칩에서 해요 */}
+        <section className="flex flex-col gap-1.5">
           <h1 className="text-24 font-bold">{child.name}의 하루</h1>
-          <Panel className="flex items-center gap-3.5 py-3.5 pl-4 pr-2">
-            <Avatar name={child.name} size={44} />
-            <div className="flex flex-1 flex-col gap-0.5">
-              <p className="text-14 text-muted">{child.age}, {child.weight}</p>
-              {child.allergy ? (
-                <p className="flex items-center gap-1.5 text-14 font-medium text-danger">
-                  <AlertTriangle size={15} strokeWidth={2} aria-hidden />{child.allergy}
-                </p>
-              ) : (
-                <p className="text-14 text-muted">알레르기 없음</p>
-              )}
-            </div>
-            <button type="button" onClick={() => go('children')} className="rounded-md px-2 py-1.5 text-14 font-semibold text-brand hover:bg-paper">
-              아이 바꾸기
-            </button>
-          </Panel>
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-14 text-muted">
+            <span>{child.age} · {child.weight}{child.allergy ? '' : ' · 알레르기 없음'}</span>
+            {child.allergy && (
+              <span className="inline-flex items-center gap-1 rounded-pill bg-danger-soft px-2 py-0.5 text-13 font-semibold text-danger">
+                <AlertTriangle size={13} strokeWidth={2.25} aria-hidden />{child.allergy}
+              </span>
+            )}
+          </p>
         </section>
 
         {/* 확인 전 처방 */}
@@ -81,88 +84,109 @@ export function HomeScreen({ go, onTab }) {
           <button
             key={r.id}
             type="button"
-            onClick={() => go('confirm')}
-            className="flex items-center gap-3 rounded-xl border border-brand/30 bg-brand-soft px-4 py-3.5 text-left"
+            onClick={() => {
+              draftFromVisit(r);
+              go('confirm');
+            }}
+            className="flex items-center gap-3 rounded-xl border border-mark bg-mark-soft px-4 py-3.5 text-left"
           >
             <span className="flex flex-1 flex-col gap-0.5">
-              <span className="text-15 font-semibold text-brand">확인하지 않은 처방이 있어요</span>
+              <span className="text-15 font-semibold text-mark-ink">확인하지 않은 처방이 있어요</span>
               <span className="text-14 text-ink">{r.month} {r.day}일 {r.title}, 약 {r.medCount}개. 약 내용을 확인하면 가이드를 만들어요.</span>
             </span>
-            <ChevronRight size={20} className="text-brand" aria-hidden />
+            <ChevronRight size={20} className="text-mark-ink" aria-hidden />
           </button>
         ))}
 
-        {/* 오늘 먹을 약 */}
-        <section className="flex flex-col gap-3">
-          <H2 action={care && <MoreLink onClick={() => go('guide')}>가이드 보기</MoreLink>}>오늘 먹을 약</H2>
-          {care ? (
-            <>
-              <div className="flex items-center justify-between text-14">
-                <span className="text-muted">{care.title}, {care.hospital} · {care.days}일 중 {careDay}일째</span>
-                <span className="shrink-0 font-semibold text-brand">{doneCount}/{doses.length}</span>
+        {/* 오늘 먹을 약 — 화면의 핵심 카드 */}
+        {care ? (
+          <Panel as="section" tone="raised" aria-labelledby="today-meds">
+            <div className="flex flex-col gap-4 px-5 pb-4 pt-5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex flex-col gap-0.5">
+                  <h2 id="today-meds" className="text-18 font-bold">오늘 먹을 약</h2>
+                  <p className="text-13 text-muted">{care.title} · {care.hospital} · {care.days}일 중 {careDay}일째</p>
+                </div>
+                <MoreLink onClick={openGuides}>가이드</MoreLink>
               </div>
-              <Panel as="ul" aria-label="오늘 먹을 약">
-                {doses.map((d, j) => {
-                  const on = d.given;
-                  return (
-                    <li key={d.key} className={j ? 'border-t border-line' : ''}>
-                      <button
-                        type="button"
-                        aria-pressed={on}
-                        onClick={() => toggleDose(d)}
-                        className="flex w-full items-center gap-3.5 px-4 py-3 text-left hover:bg-paper"
+              <div className="flex flex-col gap-2">
+                <div className="flex items-baseline justify-between">
+                  <p className="text-15 font-semibold text-brand">
+                    {allDone ? '오늘 약을 모두 먹였어요' : `${slots.length - slotsDone}번 남았어요`}
+                  </p>
+                  <p className="text-14 text-muted"><span className="text-17 font-bold text-ink">{slotsDone}</span> / {slots.length}</p>
+                </div>
+                <div
+                  role="progressbar"
+                  aria-label="오늘 복약 진행"
+                  aria-valuemin={0}
+                  aria-valuemax={slots.length}
+                  aria-valuenow={slotsDone}
+                  className="h-2 overflow-hidden rounded-pill bg-sunk"
+                >
+                  <div className="h-full rounded-pill bg-brand transition-[width] duration-300" style={{ width: `${slots.length ? (slotsDone / slots.length) * 100 : 0}%` }} />
+                </div>
+              </div>
+            </div>
+            <ul aria-label="오늘 먹을 약 목록" className="flex flex-col gap-1.5 px-3 pb-3">
+              {slots.map((g) => {
+                const on = g.done;
+                const partial = !on && g.given > 0;
+                const next = g.slot === nextSlot;
+                return (
+                  <li key={g.slot}>
+                    <button
+                      type="button"
+                      aria-pressed={on}
+                      aria-label={`${g.slot} 약 ${g.doses.length}개${on ? ', 먹였어요' : partial ? `, ${g.doses.length}개 중 ${g.given}개 먹였어요` : ', 아직 안 먹였어요'}`}
+                      onClick={() => toggleSlot(g)}
+                      className={`flex w-full items-center gap-3.5 rounded-lg px-3 py-3 text-left transition-colors ${next ? 'bg-brand-soft ring-1 ring-inset ring-brand/25' : 'hover:bg-paper'}`}
+                    >
+                      <span className={`flex w-14 shrink-0 flex-col self-start pt-0.5 text-14 font-semibold ${on ? 'text-faint' : 'text-brand'}`}>
+                        {g.slot}
+                        {next && <span className="text-12 font-medium text-brand/80">다음 복용</span>}
+                      </span>
+                      <ul className={`flex flex-1 flex-col gap-1.5 ${on ? 'text-faint line-through' : ''}`}>
+                        {g.doses.map((d) => (
+                          <li key={d.key} className={`flex items-baseline justify-between gap-2 ${d.given && !on ? 'text-faint line-through' : ''}`}>
+                            <span className="text-15 font-medium">{d.name}</span>
+                            <span className={`shrink-0 text-13 ${on || d.given ? '' : 'text-muted'}`}>{d.dose}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <span
+                        className={`flex size-8 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${on ? 'border-brand bg-brand text-on-brand' : partial ? 'border-brand bg-surface text-brand' : next ? 'border-brand bg-surface text-transparent' : 'border-line bg-surface text-transparent'}`}
+                        aria-hidden
                       >
-                        <span className="w-14 shrink-0 text-14 font-semibold text-brand">{d.slot}</span>
-                        <span className={`flex flex-1 flex-col ${on ? 'text-faint line-through' : ''}`}>
-                          <span className="text-15 font-medium">{d.name}</span>
-                          <span className="text-13 text-muted">{d.dose}</span>
-                        </span>
-                        <span
-                          className={`flex size-7 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${on ? 'border-brand bg-brand text-on-brand' : 'border-line text-transparent'}`}
-                          aria-hidden
-                        >
-                          <Check size={16} strokeWidth={3} />
-                        </span>
-                        <span className="sr-only">{on ? '먹였어요' : '아직 안 먹였어요'}</span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </Panel>
-              {care.schedule === guide.schedule && (
-                <p className="flex items-start gap-2.5 rounded-lg bg-sunk px-3.5 py-3 text-14">
-                  <Clock size={20} strokeWidth={1.75} className="shrink-0" aria-hidden />
-                  {guide.asNeeded}
-                </p>
-              )}
-            </>
-          ) : (
-            <Panel className="px-4 py-6 text-center text-15 text-muted">
-              지금 먹고 있는 약이 없어요.
-            </Panel>
-          )}
-        </section>
-
-        {/* 바로가기 */}
-        <section className="grid grid-cols-2 gap-3">
-          <button type="button" onClick={() => go('upload')} className="flex flex-col items-start gap-3 rounded-xl bg-brand p-4 text-left text-on-brand">
-            <ScanLine size={26} strokeWidth={1.75} aria-hidden />
-            <span className="flex flex-col gap-0.5">
-              <span className="text-16 font-semibold">처방 올리기</span>
-              <span className="text-13 opacity-80">처방전 사진으로 가이드 만들기</span>
+                        {partial ? <Minus size={17} strokeWidth={3} /> : <Check size={17} strokeWidth={3} />}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            {careGuide?.asNeeded && (
+              <p className="flex items-start gap-2.5 border-t border-line px-5 py-3.5 text-14 text-muted">
+                <Clock size={18} strokeWidth={1.75} className="mt-0.5 shrink-0" aria-hidden />
+                {careGuide.asNeeded}
+              </p>
+            )}
+          </Panel>
+        ) : (
+          <Panel as="section" tone="raised" className="flex flex-col items-center gap-4 px-5 py-8 text-center">
+            <span className="flex size-12 items-center justify-center rounded-full bg-brand-soft text-brand">
+              <ScanLine size={24} strokeWidth={1.75} aria-hidden />
             </span>
-          </button>
-          <button type="button" onClick={() => go('chat')} className="flex flex-col items-start gap-3 rounded-xl border border-line bg-surface p-4 text-left hover:bg-paper">
-            <MessageCircle size={26} strokeWidth={1.75} className="text-brand" aria-hidden />
-            <span className="flex flex-col gap-0.5">
-              <span className="text-16 font-semibold">챗봇에 묻기</span>
-              <span className="text-13 text-muted">약 먹이다 궁금한 것</span>
+            <span className="flex flex-col gap-1">
+              <span className="text-17 font-semibold">지금 먹고 있는 약이 없어요</span>
+              <span className="text-14 text-muted">처방전 사진을 올리면 복약 일정과 가이드를 만들어 드려요.</span>
             </span>
-          </button>
-        </section>
+            <Button onClick={() => go('upload')} className="w-full max-w-[280px]">처방 올리기</Button>
+          </Panel>
+        )}
 
         {/* 최근 기록 */}
-        <section className="flex flex-col gap-3">
+        <section className="flex flex-col gap-2.5 pt-2">
           <H2 action={<MoreLink onClick={openHealthLog}>전체 보기</MoreLink>}>최근 병원 기록</H2>
           {rows.length ? (
             <Panel as="ul">
@@ -170,7 +194,15 @@ export function HomeScreen({ go, onTab }) {
                 <li key={r.id} className={j ? 'border-t border-line' : ''}>
                   <button
                     type="button"
-                    onClick={() => (r.source === 'ocr' ? go(r.status ? 'confirm' : 'guide') : openHealthLog())}
+                    onClick={() => {
+                      const guideId = guidesOf(childId).find((g) => g.visitId === r.id)?.id;
+                      if (r.status) {
+                        draftFromVisit(r);
+                        go('confirm');
+                      }
+                      else if (guideId) go('guide', { guideId });
+                      else openHealthLog();
+                    }}
                     className="flex w-full items-center gap-3.5 py-3 pl-4 pr-3 text-left hover:bg-paper"
                   >
                     <span className="w-[72px] shrink-0 whitespace-nowrap text-14 text-muted">{r.month} {r.day}일</span>

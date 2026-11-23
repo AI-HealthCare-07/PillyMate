@@ -6,6 +6,7 @@ import { ReadingScreen, UploadScreen } from './screens/upload.jsx';
 import { ConfirmScreen } from './screens/confirm.jsx';
 import { GuideErrorScreen, GuideLoadingScreen, GuideScreen } from './screens/guide.jsx';
 import { HistoryScreen } from './screens/history.jsx';
+import { GuidesScreen } from './screens/guides.jsx';
 import { ChatScreen } from './screens/chat.jsx';
 import { HomeScreen } from './screens/home.jsx';
 import { SelectedChildProvider } from './state/selectedChild.jsx';
@@ -30,6 +31,7 @@ export const ROUTES = {
   guide: { path: '/guide', Screen: GuideScreen },
   'guide-error': { path: '/guide/error', Screen: GuideErrorScreen },
   history: { path: '/history', Screen: HistoryScreen },
+  guides: { path: '/guides', Screen: GuidesScreen },
   chat: { path: '/chat', Screen: ChatScreen },
 };
 

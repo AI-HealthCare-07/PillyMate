@@ -1,142 +1,135 @@
-import { useCallback, useId, useRef, useState } from 'react';
-import { ChevronRight, CircleUserRound, FileText, House, LogOut, Menu, MessageCircle, ScanLine, X } from 'lucide-react';
-import { IconButton } from './Button.jsx';
+import { BookOpen, Check, ChevronDown, FileText, House, LogOut, MessageCircle, Plus, ScanLine, Settings2 } from 'lucide-react';
 import { Avatar, Logo } from './misc.jsx';
-import { useDialog } from './useDialog.js';
+import { Popover } from './Popover.jsx';
+import { NotificationMenu } from './Notifications.jsx';
 import { useSelectedChild } from '../../state/selectedChild.jsx';
 
-/** 모바일 하단 탭 바 메뉴 */
+/** 주요 메뉴 — 모바일은 하단 탭 바, 데스크톱(lg)은 상단 바 가운데에 놓여요. */
 export const TABS = [
   { key: 'home', label: '홈', icon: House },
   { key: 'history', label: '기록', icon: FileText },
   { key: 'upload', label: '처방 올리기', icon: ScanLine },
+  { key: 'guides', label: '가이드', icon: BookOpen },
   { key: 'chat', label: '챗봇', icon: MessageCircle },
 ];
 
-/** 드로어 메뉴 — 하단 탭 + 드로어에만 있는 항목(아이) */
-export const MENU = [...TABS, { key: 'children', label: '아이', icon: CircleUserRound }];
-
 /**
- * 상단 네비게이션 바 — 왼쪽 로고, 오른쪽 메뉴(드로어) 버튼.
- * 높이: 모바일 56, 데스크톱(lg) 68. 가로 패딩: 모바일 왼쪽 20 / 오른쪽 8, 데스크톱 40.
+ * 상단 바 — 왼쪽 로고, (데스크톱) 가운데 주요 메뉴, 오른쪽 알림 버튼과 아이 전환 칩.
+ * 아이 관리·로그아웃처럼 탭에 없는 메뉴는 아이 전환 칩을 눌러 여는 메뉴에 모았어요.
+ * 높이: 모바일 56, 데스크톱(lg) 68.
  */
 export function NavBar({ active, onNavigate }) {
-  const childName = useSelectedChild().child?.name ?? '아이 없음';
-  const [open, setOpen] = useState(false);
-  const triggerRef = useRef(null);
-  const drawerId = useId();
-
-  const close = useCallback(() => {
-    setOpen(false);
-    triggerRef.current?.focus();
-  }, []);
-  const navigate = (key) => {
-    setOpen(false);
-    onNavigate?.(key);
-  };
-
   return (
-    <>
-      <header className="sticky top-0 z-30 border-b border-line bg-surface">
-        <div className="flex h-14 items-center justify-between pl-5 pr-2 lg:h-17 lg:px-10">
-          <button type="button" onClick={() => onNavigate?.('home')} aria-label="PillyMate 홈으로" className="rounded-md">
-            <Logo size={26} />
-          </button>
-          <IconButton
-            ref={triggerRef}
-            icon={Menu}
-            label="메뉴 열기"
-            aria-haspopup="dialog"
-            aria-expanded={open}
-            aria-controls={drawerId}
-            onClick={() => setOpen(true)}
-          />
+    <header className="sticky top-0 z-30 border-b border-line bg-surface/95 backdrop-blur">
+      <div className="relative mx-auto flex h-14 max-w-content items-center gap-6 pl-5 pr-3 lg:h-17 lg:px-10">
+        <button type="button" onClick={() => onNavigate?.('home')} aria-label="PillyMate 홈으로" className="rounded-md">
+          <Logo size={26} />
+        </button>
+        <nav aria-label="주요 메뉴" className="hidden flex-1 lg:block">
+          <ul className="flex gap-1">
+            {TABS.map(({ key, label }) => {
+              const on = key === active;
+              return (
+                <li key={key}>
+                  <button
+                    type="button"
+                    aria-current={on ? 'page' : undefined}
+                    onClick={() => onNavigate?.(key)}
+                    className={`rounded-md px-3 py-2 text-15 ${on ? 'bg-brand-soft font-semibold text-brand' : 'font-medium text-muted hover:bg-paper hover:text-ink'}`}
+                  >
+                    {label}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+        <div className="ml-auto flex items-center gap-1.5">
+          <NotificationMenu onNavigate={onNavigate} />
+          <ChildMenu active={active} onNavigate={onNavigate} />
         </div>
-      </header>
-      <Drawer id={drawerId} open={open} onClose={close} active={active} onNavigate={navigate} childName={childName} />
-    </>
+      </div>
+    </header>
   );
 }
 
-/**
- * 오른쪽에서 열리는 드로어 — 폭 320(화면의 최대 85%), 바탕 surface, 왼쪽 그림자.
- * Esc·바깥 누르기로 닫히고, 열려 있는 동안 뒤 화면 스크롤과 Tab 이동을 막아요.
- */
-export function Drawer({ id, open, onClose, active, onNavigate, childName }) {
-  const panelRef = useRef(null);
-  const titleId = `${id}-title`;
-
-  useDialog(open, onClose, panelRef);
+/** 아이 전환 칩 + 펼침 메뉴. 아이를 바로 바꾸고, 아이 관리·추가·로그아웃으로 갈 수 있어요. */
+function ChildMenu({ active, onNavigate }) {
+  const { childList, childId, child, selectChild } = useSelectedChild();
+  const name = child?.name ?? '아이 없음';
 
   return (
-    <div className={`fixed inset-0 z-40 ${open ? '' : 'pointer-events-none'}`} aria-hidden={!open}>
-      <div
-        className={`absolute inset-0 bg-ink/40 transition-opacity duration-200 ${open ? 'opacity-100' : 'opacity-0'}`}
-        onClick={onClose}
-      />
-      <div
-        ref={panelRef}
-        id={id}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        inert={open ? undefined : ''}
-        className={`absolute inset-y-0 right-0 flex w-[320px] max-w-[85vw] flex-col bg-surface transition-transform duration-200 ease-out ${open ? 'translate-x-0 shadow-[-8px_0_24px_rgba(13,51,41,0.14)]' : 'translate-x-full'}`}
-      >
-        <div className="flex h-14 items-center justify-between pl-5 pr-2 lg:h-17 lg:pr-6">
-          <h2 id={titleId} className="text-17 font-bold">메뉴</h2>
-          <IconButton icon={X} label="메뉴 닫기" onClick={onClose} />
-        </div>
-
-        <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-4 pb-6 pt-2">
-          {/* 지금 고른 아이 */}
-          <button
-            type="button"
-            onClick={() => onNavigate('children')}
-            className="flex items-center gap-3 rounded-xl border border-line px-4 py-3.5 text-left hover:bg-paper"
-          >
-            <Avatar name={childName} size={40} />
-            <span className="flex flex-1 flex-col gap-0.5">
-              <span className="text-13 text-muted">지금 보는 아이</span>
-              <span className="text-16 font-semibold">{childName}</span>
-            </span>
-            <span className="text-14 font-semibold text-brand">바꾸기</span>
-          </button>
-
-          <nav aria-label="주요 메뉴">
-            <ul className="flex flex-col gap-1">
-              {MENU.map(({ key, label, icon: Icon }) => {
-                const on = key === active;
+    <Popover
+      label="아이 선택과 메뉴"
+      className="w-[280px] p-2"
+      trigger={({ open, toggle, props }) => (
+        <button
+          type="button"
+          onClick={toggle}
+          aria-label={`아이 바꾸기, 지금은 ${name}`}
+          className={`inline-flex h-10 items-center gap-1.5 rounded-pill border py-1.5 pl-1.5 pr-2.5 transition-colors ${open || active === 'children' ? 'border-brand bg-brand-soft' : 'border-line bg-surface hover:bg-paper'}`}
+          {...props}
+        >
+          {child ? <Avatar name={name} size={28} /> : <span className="size-7 rounded-full bg-sunk" aria-hidden />}
+          <span className="text-15 font-semibold">{name}</span>
+          <ChevronDown size={16} className={`text-muted transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden />
+        </button>
+      )}
+    >
+      {({ close }) => {
+        const go = (key) => {
+          close();
+          onNavigate?.(key);
+        };
+        return (
+          <>
+            <p className="px-3 pb-1 pt-2 text-13 font-medium text-faint">지금 볼 아이</p>
+            {!childList.length && <p className="px-3 py-2 text-14 text-muted">등록된 아이가 없어요.</p>}
+            <ul>
+              {childList.map((c) => {
+                const on = c.id === childId;
                 return (
-                  <li key={key}>
+                  <li key={c.id}>
                     <button
                       type="button"
-                      aria-current={on ? 'page' : undefined}
-                      onClick={() => onNavigate(key)}
-                      className={`flex w-full items-center gap-3 rounded-lg px-3 py-3.5 text-16 ${on ? 'bg-brand-soft font-semibold text-brand' : 'font-medium text-ink hover:bg-paper'}`}
+                      aria-pressed={on}
+                      onClick={() => {
+                        selectChild(c.id);
+                        close();
+                      }}
+                      className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left ${on ? 'bg-brand-soft' : 'hover:bg-paper'}`}
                     >
-                      <Icon size={22} strokeWidth={on ? 2 : 1.75} aria-hidden />
-                      <span className="flex-1 text-left">{label}</span>
-                      <ChevronRight size={18} className={on ? 'text-brand' : 'text-faint'} aria-hidden />
+                      <Avatar name={c.name} size={34} />
+                      <span className="flex flex-1 flex-col">
+                        <span className={`text-15 font-semibold ${on ? 'text-brand' : ''}`}>{c.name}</span>
+                        <span className="text-13 text-muted">{c.age}, {c.weight}</span>
+                      </span>
+                      {on && <Check size={18} strokeWidth={2.5} className="text-brand" aria-hidden />}
                     </button>
                   </li>
                 );
               })}
             </ul>
-          </nav>
+            <div className="my-2 border-t border-line" />
+            <MenuItem icon={Settings2} onClick={() => go('children')}>아이 정보 관리</MenuItem>
+            <MenuItem icon={Plus} onClick={() => go('child-add')}>아이 추가하기</MenuItem>
+            <MenuItem icon={LogOut} onClick={() => go('login')} muted>로그아웃</MenuItem>
+          </>
+        );
+      }}
+    </Popover>
+  );
+}
 
-          <div className="mt-auto border-t border-line pt-4">
-            <button
-              type="button"
-              onClick={() => onNavigate('login')}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-15 font-medium text-muted hover:bg-paper"
-            >
-              <LogOut size={20} strokeWidth={1.75} aria-hidden />
-              로그아웃
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+function MenuItem({ icon: Icon, muted, children, ...props }) {
+  return (
+    <button
+      type="button"
+      className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-15 font-medium hover:bg-paper ${muted ? 'text-muted' : 'text-ink'}`}
+      {...props}
+    >
+      <Icon size={19} strokeWidth={1.75} aria-hidden />
+      {children}
+    </button>
   );
 }

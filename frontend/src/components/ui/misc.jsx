@@ -84,10 +84,16 @@ export function Tag({ children, tone = 'muted' }) {
   );
 }
 
-/** 흰 바탕 + 테두리 + 모서리 14 목록 패널. 행 사이는 위쪽 1px 선 */
-export function Panel({ className = '', children, as: As = 'div', ...props }) {
+const PANEL_TONES = {
+  default: 'rounded-xl border border-line bg-surface',
+  // 화면의 핵심 카드 — 테두리 대신 그림자로 띄우고 모서리를 더 둥글게
+  raised: 'rounded-[20px] bg-surface shadow-card',
+};
+
+/** 흰 바탕 + 테두리 + 모서리 14 목록 패널. 행 사이는 위쪽 1px 선. tone="raised"는 화면의 핵심 카드용 */
+export function Panel({ className = '', tone = 'default', children, as: As = 'div', ...props }) {
   return (
-    <As className={`overflow-hidden rounded-xl border border-line bg-surface ${className}`} {...props}>
+    <As className={`overflow-hidden ${PANEL_TONES[tone]} ${className}`} {...props}>
       {children}
     </As>
   );
@@ -108,5 +114,22 @@ export function Logo({ size = 28 }) {
       </svg>
       <span className="font-bold tracking-[-0.02em] text-brand" style={{ fontSize: size * 0.7 }}>PillyMate</span>
     </span>
+  );
+}
+
+/** 켜고 끄는 스위치 — 52×30, 켜지면 브랜드 색. 라벨은 aria-labelledby나 aria-label로 붙여요. */
+export function Switch({ checked, onChange, disabled, className = '', ...props }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      className={`relative inline-flex h-[30px] w-[52px] shrink-0 items-center rounded-pill transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${checked ? 'bg-brand' : 'bg-line'} ${className}`}
+      {...props}
+    >
+      <span className={`inline-block size-6 rounded-full bg-surface shadow transition-transform duration-200 ${checked ? 'translate-x-[25px]' : 'translate-x-[3px]'}`} />
+    </button>
   );
 }
