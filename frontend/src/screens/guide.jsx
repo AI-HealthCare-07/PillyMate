@@ -12,13 +12,13 @@ import { BackLink } from './confirm.jsx';
  * 모바일: 한 단 (제목 → 하루 먹는 때 → 위험 신호 → 복용법 → 생활 습관 → 알림 → 면책)
  * 데스크톱: 본문 672px + 오른쪽 단(위험 신호, 알림, 처방 다시 보기)
  */
-export function GuideScreen({ go, onTab }) {
+export function GuideScreen({ go, back, onTab }) {
   const title = <GuideTitle childName="지우" disease={rx.disease} hospital={rx.hospital} date={rx.shortDate} large />;
   return (
     <AppShell tab="history" onTab={onTab} showTabs={false} width="wide"
-      header={<Header title="" onBack={() => go('history')} right={<ChildSwitcher name="지우" />} className="lg:hidden" />}>
+      header={<Header title="" onBack={() => back('history')} right={<ChildSwitcher name="지우" />} className="lg:hidden" />}>
       <div className="flex flex-col gap-8 px-5 pb-10 pt-1 lg:gap-5 lg:px-0 lg:pb-[72px] lg:pt-8">
-        <BackLink onClick={() => go('history')}>기록으로 돌아가기</BackLink>
+        <BackLink onClick={() => back('history')}>돌아가기</BackLink>
         <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-14">
           <div className="flex w-full flex-col gap-8 lg:w-[672px] lg:shrink-0 lg:gap-9">
             {title}
@@ -43,13 +43,13 @@ export function GuideScreen({ go, onTab }) {
 const Sk = ({ className }) => <div className={`animate-pulse rounded-md bg-sunk ${className}`} />;
 
 /** S-05 만드는 중 — 실제 가이드와 같은 모양의 뼈대. 데모에서는 2.5초 뒤 가이드로 넘어가요 */
-export function GuideLoadingScreen({ go, onTab }) {
+export function GuideLoadingScreen({ go, back, onTab }) {
   useEffect(() => {
-    const t = setTimeout(() => go('guide'), 2500);
+    const t = setTimeout(() => go('guide', undefined, { replace: true }), 2500);
     return () => clearTimeout(t);
   }, [go]);
   return (
-    <AppShell tab="history" onTab={onTab} showTabs={false} header={<Header title="" onBack={() => go('confirm')} />}>
+    <AppShell tab="history" onTab={onTab} showTabs={false} header={<Header title="" onBack={() => back('confirm')} />}>
       <div className="flex flex-1 flex-col gap-6 px-5 pb-8 pt-1 lg:px-0" aria-busy="true" aria-live="polite">
         <div className="flex flex-col gap-2">
           <h1 className="text-22 font-bold">가이드를 만들고 있어요</h1>
@@ -71,7 +71,7 @@ export function GuideLoadingScreen({ go, onTab }) {
 }
 
 /** S-05 실패 — 무엇이 실패했는지, 데이터는 안전한지, 다음에 할 일 */
-export function GuideErrorScreen({ go, onTab }) {
+export function GuideErrorScreen({ go, back, onTab }) {
   const actions = {
     mobile: (
       <>
@@ -81,7 +81,7 @@ export function GuideErrorScreen({ go, onTab }) {
     ),
   };
   return (
-    <AppShell tab="history" onTab={onTab} showTabs={false} header={<Header title="" onBack={() => go('confirm')} />} actions={actions}>
+    <AppShell tab="history" onTab={onTab} showTabs={false} header={<Header title="" onBack={() => back('confirm')} />} actions={actions}>
       <div role="alert" className="flex flex-1 flex-col items-center justify-center gap-4 px-7 pb-10 text-center lg:px-0">
         <span className="flex size-16 items-center justify-center rounded-full bg-danger-soft text-danger">
           <AlertTriangle size={28} strokeWidth={2} aria-hidden />

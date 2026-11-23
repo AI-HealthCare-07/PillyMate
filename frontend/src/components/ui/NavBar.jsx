@@ -1,11 +1,13 @@
 import { useCallback, useId, useRef, useState } from 'react';
-import { ChevronRight, CircleUserRound, FileText, LogOut, Menu, MessageCircle, ScanLine, X } from 'lucide-react';
+import { ChevronRight, CircleUserRound, FileText, House, LogOut, Menu, MessageCircle, ScanLine, X } from 'lucide-react';
 import { IconButton } from './Button.jsx';
 import { Avatar, Logo } from './misc.jsx';
 import { useDialog } from './useDialog.js';
+import { useSelectedChild } from '../../state/selectedChild.jsx';
 
 /** 모바일 하단 탭 바 메뉴 */
 export const TABS = [
+  { key: 'home', label: '홈', icon: House },
   { key: 'history', label: '기록', icon: FileText },
   { key: 'upload', label: '처방 올리기', icon: ScanLine },
   { key: 'chat', label: '챗봇', icon: MessageCircle },
@@ -18,7 +20,8 @@ export const MENU = [...TABS, { key: 'children', label: '아이', icon: CircleUs
  * 상단 네비게이션 바 — 왼쪽 로고, 오른쪽 메뉴(드로어) 버튼.
  * 높이: 모바일 56, 데스크톱(lg) 68. 가로 패딩: 모바일 왼쪽 20 / 오른쪽 8, 데스크톱 40.
  */
-export function NavBar({ active, onNavigate, childName = '지우' }) {
+export function NavBar({ active, onNavigate }) {
+  const childName = useSelectedChild().child?.name ?? '아이 없음';
   const [open, setOpen] = useState(false);
   const triggerRef = useRef(null);
   const drawerId = useId();
@@ -36,7 +39,7 @@ export function NavBar({ active, onNavigate, childName = '지우' }) {
     <>
       <header className="sticky top-0 z-30 border-b border-line bg-surface">
         <div className="flex h-14 items-center justify-between pl-5 pr-2 lg:h-17 lg:px-10">
-          <button type="button" onClick={() => onNavigate?.('history')} aria-label="PillyMate 처음으로" className="rounded-md">
+          <button type="button" onClick={() => onNavigate?.('home')} aria-label="PillyMate 홈으로" className="rounded-md">
             <Logo size={26} />
           </button>
           <IconButton
