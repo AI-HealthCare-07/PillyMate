@@ -47,8 +47,9 @@ export function TabBar({ active, onChange }) {
  * 모든 폭: 맨 위 NavBar(로고 + 메뉴 드로어).
  * 데스크톱(lg): 가운데 정렬 본문. 주요 버튼은 본문 끝에 오른쪽 정렬로 놓여요.
  * width: 'form'은 데스크톱에서 480px 한 단, 'wide'는 1120px.
+ * actionsBar: false면 모바일 아래 버튼 영역의 흰 바탕과 윗줄을 빼고 버튼만 띄워요.
  */
-export function AppShell({ tab, onTab, header, actions, showTabs = true, showTopBar = true, width = 'form', children }) {
+export function AppShell({ tab, onTab, header, actions, actionsBar = true, showTabs = true, showTopBar = true, width = 'form', children }) {
   const inner = width === 'wide' ? 'lg:max-w-content' : 'lg:max-w-form';
   return (
     <div className="flex min-h-dvh flex-col bg-paper">
@@ -63,7 +64,7 @@ export function AppShell({ tab, onTab, header, actions, showTabs = true, showTop
       {(actions || showTabs) && (
         <div className="sticky bottom-0 z-10 lg:hidden">
           {actions && (
-            <div className="border-t border-line bg-surface px-5 pb-5 pt-3">
+            <div className={`px-5 pb-5 pt-3 ${actionsBar ? 'border-t border-line bg-surface' : ''}`}>
               <div className="mx-auto flex max-w-[520px] flex-col gap-2">{actions.mobile}</div>
             </div>
           )}

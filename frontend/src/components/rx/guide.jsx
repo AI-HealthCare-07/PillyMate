@@ -1,5 +1,7 @@
-import { AlertTriangle, Bell, Check, Clock } from 'lucide-react';
-import { Tag } from '../ui/misc.jsx';
+import { useId } from 'react';
+import { AlertTriangle, Bell, BellOff, Check, Clock } from 'lucide-react';
+import { Switch } from '../ui/misc.jsx';
+import { SLOT_TIME, hhmm } from '../../state/records.jsx';
 
 const H2 = ({ children }) => <h2 className="text-18 font-bold">{children}</h2>;
 
@@ -30,10 +32,12 @@ export function Schedule({ schedule, asNeeded }) {
           </li>
         ))}
       </ol>
-      <p className="flex items-start gap-2.5 rounded-lg bg-sunk px-3.5 py-3 text-14">
-        <Clock size={20} strokeWidth={1.75} className="shrink-0" aria-hidden />
-        {asNeeded}
-      </p>
+      {asNeeded && (
+        <p className="flex items-start gap-2.5 rounded-lg bg-sunk px-3.5 py-3 text-14">
+          <Clock size={20} strokeWidth={1.75} className="shrink-0" aria-hidden />
+          {asNeeded}
+        </p>
+      )}
     </section>
   );
 }
@@ -47,7 +51,7 @@ export function HowTo({ items }) {
         <article key={m.name} className={`flex flex-col gap-1 py-3.5 ${j ? 'border-t border-line' : ''}`}>
           <h3 className="text-16 font-semibold">{m.name}</h3>
           <p className="text-15">{m.how}</p>
-          <p className="text-14 text-muted">{m.note}</p>
+          {m.note && <p className="text-14 text-muted">{m.note}</p>}
         </article>
       ))}
     </section>
@@ -72,9 +76,10 @@ export function LifeTips({ items }) {
 
 /** 위험 신호 — 패딩 16, 모서리 14, 연빨강 바탕 */
 export function DangerSignals({ items }) {
+  const titleId = useId();
   return (
-    <section className="flex flex-col gap-2.5 rounded-xl bg-danger-soft p-4" aria-labelledby="danger-title">
-      <h2 id="danger-title" className="flex items-center gap-2 text-16 font-bold text-danger">
+    <section className="flex flex-col gap-2.5 rounded-xl bg-danger-soft p-4" aria-labelledby={titleId}>
+      <h2 id={titleId} className="flex items-center gap-2 text-16 font-bold text-danger">
         <AlertTriangle size={22} strokeWidth={2} aria-hidden />
         이럴 땐 바로 병원에 가세요
       </h2>
@@ -90,16 +95,49 @@ export function DangerSignals({ items }) {
   );
 }
 
-/** 복약 알림 — 1차 MVP에서는 UI만 두고 '준비 중' */
-export function AlarmCard() {
+/**
+ * 복약 알림 켜고 끄기 — 켜 두면 먹일 시간에 상단 알림(종 아이콘)으로 알려 줘요.
+ * slots: 이 처방의 먹는 때(아침/점심…). 정해진 때가 없는 처방이면 토글을 끄고 안내만 보여요.
+ */
+export function AlarmCard({ on, onChange, slots = [], timeOf = (slot) => SLOT_TIME[slot] ?? [9, 0], onEditTimes }) {
+  const labelId = useId();
+  const descId = useId();
+  const available = slots.length > 0;
+  const times = slots.map((slot) => `${slot} ${hhmm(timeOf(slot))}`).join(' · ');
+  const active = available && on;
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-line bg-surface p-4">
-      <Bell size={22} strokeWidth={1.75} className="shrink-0 text-muted" aria-hidden />
-      <div className="flex flex-1 flex-col gap-0.5">
-        <p className="text-15 font-semibold">복약 알림</p>
-        <p className="text-13 text-muted">먹일 시간에 알려 주는 기능을 준비하고 있어요.</p>
+    <div className={`flex items-center gap-3 rounded-xl border p-4 transition-colors ${active ? 'border-brand/40 bg-brand-soft' : 'border-line bg-surface'}`}>
+      {active ? (
+        <Bell size={22} strokeWidth={1.75} className="shrink-0 text-brand" aria-hidden />
+      ) : (
+        <BellOff size={22} strokeWidth={1.75} className="shrink-0 text-muted" aria-hidden />
+      )}
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <p id={labelId} className="text-15 font-semibold">복약 알림</p>
+        <p id={descId} className="text-13 text-muted">
+          {!available
+            ? '알림을 보낼 먹는 때가 없는 처방이에요. (자기 전 약은 알리지 않아요)'
+            : on
+              ? `켠 뒤부터 먹일 시간에 알려 드려요. ${times}`
+              : '꺼져 있어요. 켜면 먹일 시간에 알려 드려요.'}
+        </p>
+        {available && onEditTimes && (
+          <button
+            type="button"
+            onClick={onEditTimes}
+            className="mt-1 inline-flex items-center gap-1 self-start text-14 font-semibold text-brand hover:underline"
+          >
+            <Clock size={15} strokeWidth={2} aria-hidden />알림 시간 바꾸기
+          </button>
+        )}
       </div>
-      <Tag tone="faint">준비 중</Tag>
+      <Switch
+        checked={active}
+        onChange={() => onChange(!on)}
+        disabled={!available}
+        aria-labelledby={labelId}
+        aria-describedby={descId}
+      />
     </div>
   );
 }

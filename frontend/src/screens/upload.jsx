@@ -1,20 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
-import { Camera, Check, Circle, ImageIcon, RefreshCw } from 'lucide-react';
+import { AlertTriangle, Camera, Check, Circle, ImageIcon, RefreshCw } from 'lucide-react';
 import { Button, SmallButton } from '../components/ui/Button.jsx';
 import { Field } from '../components/ui/Field.jsx';
-import { Panel, SectionLabel, Segmented } from '../components/ui/misc.jsx';
+import { Avatar, Panel, SectionLabel } from '../components/ui/misc.jsx';
 import { AppShell, Body, Header } from '../components/ui/layout.jsx';
 import { RxPaper } from '../components/rx/RxPaper.jsx';
-import { children as sampleChildren } from '../data/sample.js';
+import { useSelectedChild } from '../state/selectedChild.jsx';
+import { prescription as sampleRx } from '../data/sample.js';
 import { getPrescriptionDraft, setPrescriptionDraft } from './fe2Draft.js';
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 /** S-03 처방 올리기 — 파일 선택/검증/미리보기는 실제 동작합니다. */
-export function UploadScreen({ go, onTab }) {
+export function UploadScreen({ go, back, onTab }) {
   const previous = getPrescriptionDraft();
-  const [child, setChild] = useState(previous?.childId ?? sampleChildren[0]?.id ?? '');
+  // 처방은 항상 아이 화면에서 고른 아이의 약으로 올려요. 바꾸려면 아이 화면에서 다시 골라요.
+  const { childId: child, child: childInfo } = useSelectedChild();
   const [disease, setDisease] = useState(previous?.disease ?? '');
   const [note, setNote] = useState(previous?.note ?? '');
   const [file, setFile] = useState(previous?.file ?? null);
@@ -60,12 +62,29 @@ export function UploadScreen({ go, onTab }) {
   };
   const read = <Button className="w-full lg:w-auto lg:min-w-[200px]" onClick={startReading}>처방 내용 읽기</Button>;
   return (
-    <AppShell tab="upload" onTab={onTab} header={<Header title="처방 올리기" onBack={() => go('children')} />} actions={{ mobile: read, desktop: null }}>
+    <AppShell tab="upload" onTab={onTab} header={<Header title="처방 올리기" onBack={() => back('home')} />} actions={{ mobile: read, desktop: null }} actionsBar={false}>
       <Body className="gap-[22px] pt-1">
         <div className="flex flex-col gap-2.5">
           <SectionLabel>누구의 약인가요?</SectionLabel>
-          <Segmented label="아이 선택" value={child} onChange={setChild} options={sampleChildren.map((c) => ({ value: c.id, label: c.name }))} />
-          {/* TODO(API): FE-1의 실제 아이 목록 조회 응답으로 교체. */}
+          {childInfo ? (
+            <Panel className="flex items-center gap-3.5 py-3 pl-3.5 pr-2">
+              <Avatar name={childInfo.name} size={40} />
+              <div className="flex flex-1 flex-col gap-0.5">
+                <p className="text-16 font-semibold">{childInfo.name}의 약</p>
+                <p className="text-13 text-muted">{childInfo.age}, {childInfo.weight}</p>
+                {childInfo.allergy && (
+                  <p className="flex items-center gap-1 text-13 font-medium text-danger">
+                    <AlertTriangle size={14} strokeWidth={2} aria-hidden />{childInfo.allergy}
+                  </p>
+                )}
+              </div>
+              <button type="button" onClick={() => go('children')} className="rounded-md px-2 py-1.5 text-14 font-semibold text-brand hover:bg-paper">
+                아이 바꾸기
+              </button>
+            </Panel>
+          ) : (
+            <Button variant="secondary" className="w-full" onClick={() => go('children')}>아이 먼저 고르기</Button>
+          )}
         </div>
         <div className="flex flex-col gap-2.5">
           <SectionLabel>처방전 사진</SectionLabel>
@@ -105,23 +124,28 @@ const STEPS = [
 ];
 
 /** S-03 읽는 중 — API 연결 전 명시적 데모 동작 */
-export function ReadingScreen({ go, onTab }) {
+export function ReadingScreen({ go, back, onTab }) {
   const draft = getPrescriptionDraft();
   useEffect(() => {
-    if (!draft?.file) { go('upload'); return undefined; }
+    if (!draft?.file) { go('upload', undefined, { replace: true }); return undefined; }
     // TODO(API): BE-2 처방 이미지 업로드 + OCR 동기 API를 호출하고
     // 성공 응답의 약 목록/처방 ID를 setPrescriptionDraft에 저장한 뒤 confirm으로 이동.
     // 실패 시 이 화면에서 오류/재시도를 표시하고 자동으로 넘어가지 않도록 변경.
     // 현재는 화면 흐름 점검용 데모이며 실제 OCR은 수행하지 않습니다.
     const timer = setTimeout(() => {
-      setPrescriptionDraft({ ...draft, status: 'mock-ocr' });
-      go('confirm');
+      // 데모 OCR 결과: 처방전 머리(병원, 처방일, 병명)는 예시 값이에요.
+      setPrescriptionDraft({
+        ...draft,
+        status: 'mock-ocr',
+        ocr: { hospital: sampleRx.hospital, date: sampleRx.isoDate, disease: sampleRx.disease },
+      });
+      go('confirm', undefined, { replace: true });
     }, 2500);
     return () => clearTimeout(timer);
   }, [go]);
-  const cancel = <Button variant="secondary" className="w-full lg:w-auto lg:min-w-[160px]" onClick={() => go('upload')}>취소</Button>;
+  const cancel = <Button variant="secondary" className="w-full lg:w-auto lg:min-w-[160px]" onClick={() => back('upload')}>취소</Button>;
   return (
-    <AppShell tab="upload" onTab={onTab} showTabs={false} header={<Header title="처방 읽는 중" onBack={() => go('upload')} />} actions={{ mobile: cancel }}>
+    <AppShell tab="upload" onTab={onTab} showTabs={false} header={<Header title="처방 읽는 중" onBack={() => back('upload')} />} actions={{ mobile: cancel }}>
       <div className="flex flex-1 flex-col items-center gap-7 p-6 lg:px-0" aria-live="polite">
         <RxPaper width={200} marks={[[140, 186, 30], [232, 206, 30]]} scanning />
         <div className="flex flex-col gap-2 text-center">

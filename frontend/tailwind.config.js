@@ -46,7 +46,12 @@ export default {
       },
       spacing: { 13: '52px', 17: '68px' },
       maxWidth: { content: '1120px', screen: '390px', form: '480px' },
-      boxShadow: { paper: '0 6px 18px rgba(13, 51, 41, 0.12)' },
+      // card: 화면의 핵심 카드(오늘 먹을 약) / raised: 떠 있는 메뉴 / paper: 처방전 그림
+      boxShadow: {
+        paper: '0 6px 18px rgba(13, 51, 41, 0.12)',
+        card: '0 1px 2px rgba(13, 51, 41, 0.06), 0 8px 24px rgba(13, 51, 41, 0.08)',
+        raised: '0 12px 32px rgba(13, 51, 41, 0.18)',
+      },
     },
   },
   plugins: [],
