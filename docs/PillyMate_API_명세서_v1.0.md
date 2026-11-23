@@ -27,7 +27,8 @@
 | 권한 | 내 자녀·내 처방전만 조회·수정. 남의 데이터는 `404` (존재 여부를 알리지 않음) |
 | 에러 형식 | `{"detail": "한국어 메시지"}` (FastAPI 기본). 메시지는 "~해요" 말투로 통일 |
 | 날짜·시각 | 날짜 `YYYY-MM-DD`, 일시 ISO 8601 + KST (`2026-11-20T10:30:00+09:00`) |
-| ID | 모두 정수 (DB BIGSERIAL) |
+| ID | 모두 정수 (DB AUTO_INCREMENT) |
+| DB | MySQL 8.0 · Tortoise ORM(asyncmy 드라이버) · aerich 마이그레이션 (저장소 기존 세팅 기준) |
 | 오래 걸리는 요청 | **동기 처리.** OCR 최대 30초, 가이드 최대 60초. 넘으면 `502` |
 | 명세 확인 | 서버 실행 후 `/docs`(Swagger)에서 실제 요청·응답 확인 |
 
@@ -380,7 +381,7 @@ AI-2의 가이드 JSON 스키마를 따릅니다 (AI-2·FE-1 합의). 아래 두
 | `prescription.status`의 `UPLOADED`·`FAILED` | 5, 8 | 1차 흐름에서는 쓰지 않으며, CHECK 목록에만 남김 |
 | 데모 보호자·자녀 시드 데이터 | A1 | BE-1(보호자), BE-2(자녀·처방 예시) |
 
-DB 변경은 Alembic 마이그레이션으로 추가합니다 (초기 세팅 BE-1, 이후 변경 BE-2).
+DB 변경은 aerich 마이그레이션으로 추가합니다 (`aerich migrate` → `aerich upgrade`, 초기 세팅 BE-1, 이후 변경 BE-2).
 
 ## 11. 결정 사항 (채택, 11/23)
 
