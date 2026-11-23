@@ -7,7 +7,7 @@ import { AppShell, Header } from '../components/ui/layout.jsx';
 import { RxPaper } from '../components/rx/RxPaper.jsx';
 import { Highlight, LowConfidenceBanner } from '../components/rx/Highlight.jsx';
 import { MedList, emptyMed } from '../components/rx/meds.jsx';
-import { children as sampleChildren, medFields, meds as sampleMeds, prescription as rx } from '../data/sample.js';
+import { medFields, meds as sampleMeds, prescription as rx } from '../data/sample.js';
 import { getPrescriptionDraft, setPrescriptionDraft } from './fe2Draft.js';
 
 const MARKS = [[140, 186, 30], [190, 226, 22]];
@@ -30,7 +30,7 @@ export function BackLink({ children, onClick }) {
 /** 원본 사진 모달 — 실제 서비스에서는 RxPaper 대신 업로드한 사진(<img>)을 넣어요 */
 function OriginalModal({ open, onClose, previewUrl }) {
   return (
-    <Modal open={open} onClose={onClose} title="처방전 원본" description={previewUrl ? "사용자가 선택한 이미지" : `${rx.hospital}, ${rx.date} (예시)`}>
+    <Modal open={open} onClose={onClose} title="처방전 원본" description={`${rx.hospital}, ${rx.date}`}>
       <div className="flex flex-col gap-3 bg-sunk p-4">
         {previewUrl ? <img src={previewUrl} alt="업로드한 처방전 원본" className="max-h-[70vh] w-full object-contain" /> : <RxPaper fluid marks={MARKS} />}
         {!previewUrl && <p className="flex items-center gap-2 text-13 text-muted">
@@ -44,48 +44,76 @@ function OriginalModal({ open, onClose, previewUrl }) {
 
 export function ConfirmScreen({ go, onTab }) {
   const draft = getPrescriptionDraft();
-  const selectedChild = sampleChildren.find((item) => item.id === draft?.childId);
-  const hasUploadedImage = Boolean(draft?.file);
   // TODO(API): OCR 응답의 약 목록을 정규화해 초기 상태로 사용하세요.
   // 현재 목록은 데모 데이터이며 업로드한 이미지에서 읽어낸 결과가 아닙니다.
   const [meds, setMeds] = useState(() => draft?.ocrMeds ?? sampleMeds);
   const [showOriginal, setShowOriginal] = useState(false);
-  const [guideReady, setGuideReady] = useState(Boolean(draft?.guideReady));
+  const [editingIds, setEditingIds] = useState(() => new Set());
+  const onEditingChange = useCallback((id, editing) => {
+    setEditingIds((previous) => {
+      if (previous.has(id) === editing) return previous;
+      const next = new Set(previous);
+      if (editing) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }, []);
   const openOriginal = () => setShowOriginal(true);
   const closeOriginal = useCallback(() => setShowOriginal(false), []);
 
-  const markChanged = () => {
-    setGuideReady(false);
-    const current = getPrescriptionDraft();
-    if (current) setPrescriptionDraft({ ...current, guideReady: false });
-  };
-  const updateMed = (next) => { markChanged(); setMeds((list) => list.map((m) => (m.id === next.id ? next : m))); };
-  const removeMed = (id) => { markChanged(); setMeds((list) => list.filter((m) => m.id !== id)); };
-  const addMed = () => { markChanged(); setMeds((list) => [...list, emptyMed()]); };
+  const updateMed = (next) => setMeds((list) => list.map((m) => (m.id === next.id ? next : m)));
+  const removeMed = (id) => setMeds((list) => list.filter((m) => m.id !== id));
+  const addMed = () => setMeds((list) => [...list, emptyMed()]);
   const lowCount = countLow(meds);
   const saved = meds.filter((m) => !m.isNew);
 
   const make = () => {
+    if (editingIds.size > 0) {
+      window.alert('수정 중인 약 정보가 있습니다. 저장하거나 취소한 후 가이드를 만들어 주세요.');
+      return;
+    }
+    if (meds.length === 0) {
+      window.alert('확인할 약이 없습니다. 약을 추가한 후 가이드를 만들어 주세요.');
+      return;
+    }
     if (meds.some((m) => m.isNew || !m.name.trim())) {
       window.alert('추가 중인 약을 저장하고 약 이름을 확인해 주세요.');
       return;
     }
-    // 동일한 처방의 가이드를 이미 생성했다면 로딩 화면을 다시 거치지 않습니다.
-    if (guideReady) { go('guide'); return; }
-    // TODO(API): 실제 서버의 가이드 생성 완료 여부와 처방 버전을 기준으로 판단하세요.
-    // TODO(API): 수정한 약 목록과 처방 ID를 BE-2 확정 API에 전송하고 저장 성공을 확인하세요.
-    // TODO(INTEGRATION): FE-1의 가이드 생성 완료 응답 시 guideReady를 설정하도록 연결하세요.
-    // 현재 데모에서는 로딩 화면 이후 성공한다고 가정합니다.
-    const current = getPrescriptionDraft();
-    if (current) setPrescriptionDraft({ ...current, ocrMeds: meds, guideReady: true });
-    setGuideReady(true);
+    // ISSUE-07: 편집 내용은 임시 저장할 수 있지만,
+    // 가이드 생성 전에 핵심 복약 정보가 모두 확인되었는지 검사합니다.
+    const requiredFields = [
+      ['dose', '1회 양'],
+      ['perDay', '하루 횟수'],
+      ['days', '복용 기간'],
+    ];
+    for (const med of meds) {
+      for (const [key, label] of requiredFields) {
+        if (!String(med[key]?.value ?? '').trim()) {
+          window.alert(
+            `「${med.name}」의 ${label} 정보가 없습니다. 처방전 원본을 확인하거나 의료기관·약국에 문의해 주세요. 확인 전에는 가이드를 만들 수 없습니다.`
+          );
+          return;
+        }
+      }
+    }
+    // TODO(API): 수정한 약 목록과 처방 ID를 BE-2 확정 API에 전송하고
+    // 저장 성공 시에만 가이드 생성 화면으로 이동해야 합니다.
+    // TODO(INTEGRATION): FE-1과 확정 처방 데이터 전달 계약을 합의하세요.
+    // 화면을 다시 열어도 확정한 약 목록을 복원할 수 있도록 임시 저장합니다.
+    // 실제 서버 저장/API 호출은 추후 연동하며, 이 저장은 새로고침 후 유지되지 않습니다.
+    setPrescriptionDraft({
+      ...getPrescriptionDraft(),
+      ocrMeds: meds,
+      guideReady: true,
+    });
     go('guide-loading');
   };
   const retake = () => go('upload');
   const actions = {
     mobile: (
       <>
-        <Button className="w-full" onClick={make}>{guideReady ? '가이드 다시 보기' : '확인했어요, 가이드 만들기'}</Button>
+        <Button className="w-full" onClick={make}>확인했어요, 가이드 만들기</Button>
         <Button variant="secondary" className="w-full" onClick={retake}>다시 찍기</Button>
       </>
     ),
@@ -117,15 +145,15 @@ export function ConfirmScreen({ go, onTab }) {
             <Panel className="flex items-center gap-3 p-3 lg:hidden">
               {draft?.previewUrl ? <img src={draft.previewUrl} alt="처방전 미리보기" className="h-[76px] w-[54px] rounded border border-line object-cover" /> : <RxPaper width={54} marks={MARKS} />}
               <div className="flex flex-1 flex-col gap-0.5">
-                <p className="text-15 font-semibold">{hasUploadedImage ? '선택한 처방전' : `${rx.hospital} (예시)`}</p>
-                <p className="text-13 text-muted">{hasUploadedImage ? `${draft.file.name} · ${selectedChild?.name ?? '아이 미선택'}` : `${rx.shortDate} 처방, 사진 1장 (예시)`}</p>
+                <p className="text-15 font-semibold">{rx.hospital}</p>
+                <p className="text-13 text-muted">{rx.shortDate} 처방, 사진 1장</p>
               </div>
               <SmallButton icon={Eye} onClick={openOriginal}>원본</SmallButton>
             </Panel>
 
             {/* 데스크톱 메타 */}
             <dl className="hidden gap-10 lg:flex">
-              {[['병원', hasUploadedImage ? 'OCR 연동 전' : `${rx.hospital} (예시)`], ['처방일', hasUploadedImage ? 'OCR 연동 전' : rx.date], ['아이', selectedChild ? `${selectedChild.name}, ${selectedChild.age}` : '선택 전']].map(([k, v]) => (
+              {[['병원', rx.hospital], ['처방일', rx.date], ['아이', '지우, 만 4세']].map(([k, v]) => (
                 <div key={k} className="flex flex-col gap-0.5">
                   <dt className="text-13 text-muted">{k}</dt>
                   <dd className="text-16 font-medium">{v}</dd>
@@ -134,14 +162,11 @@ export function ConfirmScreen({ go, onTab }) {
             </dl>
 
             <h3 className="text-18 font-bold">약 {saved.length}개</h3>
-            <MedList meds={meds} onChange={updateMed} onAdd={addMed} onRemove={removeMed} />
+            <MedList meds={meds} onChange={updateMed} onAdd={addMed} onRemove={removeMed} onEditingChange={onEditingChange} />
 
             <div className="hidden justify-end gap-3 lg:flex">
-              <Button variant="secondary" className="w-[140px]" onClick={retake}>
-                <Camera size={18} aria-hidden="true" />
-                다시 찍기
-              </Button>
-              <Button className="w-[260px]" onClick={make}>{guideReady ? '가이드 다시 보기' : '확인했어요, 가이드 만들기'}</Button>
+              <Button variant="secondary" className="w-[140px]" onClick={retake}>다시 찍기</Button>
+              <Button className="w-[260px]" onClick={make}>확인했어요, 가이드 만들기</Button>
             </div>
           </div>
         </div>

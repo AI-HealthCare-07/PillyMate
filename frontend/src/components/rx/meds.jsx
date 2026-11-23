@@ -52,7 +52,11 @@ function MedEdit({ med, onSave, onCancel, onDelete }) {
     formRef.current?.querySelector('input')?.focus();
   }, []);
 
-  const set = (k) => (e) => setDraft((d) => ({ ...d, [k]: e.target.value }));
+  const set = (k) => (e) => {
+    const value = e.target.value;
+    setDraft((d) => ({ ...d, [k]: value }));
+    if (k === 'name') setError('');
+  };
   const submit = (e) => {
     e.preventDefault();
     const name = draft.name.trim();
@@ -77,6 +81,7 @@ function MedEdit({ med, onSave, onCancel, onDelete }) {
           <Field
             key={k}
             label={label}
+            name={k}
             value={draft[k]}
             onChange={set(k)}
             helper={med[k].low ? '흐릿하게 읽혔어요' : undefined}
@@ -100,11 +105,16 @@ function MedEdit({ med, onSave, onCancel, onDelete }) {
 }
 
 /** 약 카드 — 바탕 surface, 테두리, 모서리 14. 고치는 중에는 브랜드 테두리 */
-export function MedCard({ med, onChange, onRemove }) {
+export function MedCard({ med, onChange, onRemove, onEditingChange }) {
   const [editing, setEditing] = useState(!!med.isNew);
   const cardRef = useRef(null);
   const editRef = useRef(null);
   const restoreFocus = useRef(false);
+
+  useEffect(() => {
+    onEditingChange?.(med.id, editing);
+    return () => onEditingChange?.(med.id, false);
+  }, [med.id, editing, onEditingChange]);
 
   useEffect(() => {
     if (med.isNew) cardRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
@@ -145,12 +155,12 @@ export function MedCard({ med, onChange, onRemove }) {
 }
 
 /** 약 카드 목록 + 빠진 약 추가 버튼. 모바일·데스크톱 같은 모양이고, 값 칸만 폭에 따라 2칸/4칸 */
-export function MedList({ meds, onChange, onAdd, onRemove }) {
+export function MedList({ meds, onChange, onAdd, onRemove, onEditingChange }) {
   return (
     <section aria-label="약 목록" className="flex flex-col gap-3">
       <ul className="flex flex-col gap-3">
         {meds.map((m) => (
-          <MedCard key={m.id} med={m} onChange={onChange} onRemove={() => onRemove(m.id)} />
+          <MedCard key={m.id} med={m} onChange={onChange} onRemove={() => onRemove(m.id)} onEditingChange={onEditingChange} />
         ))}
       </ul>
       <button
