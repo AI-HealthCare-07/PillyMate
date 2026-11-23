@@ -9,6 +9,9 @@ import { Highlight, LowConfidenceBanner } from '../components/rx/Highlight.jsx';
 import { MedList, emptyMed } from '../components/rx/meds.jsx';
 import { medFields, meds as sampleMeds, prescription as rx } from '../data/sample.js';
 import { getPrescriptionDraft, setPrescriptionDraft } from './fe2Draft.js';
+import { dateParts, useRecords } from '../state/records.jsx';
+import { useSelectedChild } from '../state/selectedChild.jsx';
+import { children as sampleChildren } from '../data/sample.js';
 
 const MARKS = [[140, 186, 30], [190, 226, 22]];
 const countLow = (list) => list.reduce((n, m) => n + medFields.filter(([k]) => Boolean(m[k]?.low)).length, 0);
@@ -28,9 +31,9 @@ export function BackLink({ children, onClick }) {
  * 데스크톱: 왼쪽 420px 원본 사진, 오른쪽 약 표 + 버튼
  */
 /** 원본 사진 모달 — 실제 서비스에서는 RxPaper 대신 업로드한 사진(<img>)을 넣어요 */
-function OriginalModal({ open, onClose, previewUrl }) {
+function OriginalModal({ open, onClose, previewUrl, head }) {
   return (
-    <Modal open={open} onClose={onClose} title="처방전 원본" description={`${rx.hospital}, ${rx.date}`}>
+    <Modal open={open} onClose={onClose} title="처방전 원본" description={`${head.hospital}, ${head.date}`}>
       <div className="flex flex-col gap-3 bg-sunk p-4">
         {previewUrl ? <img src={previewUrl} alt="업로드한 처방전 원본" className="max-h-[70vh] w-full object-contain" /> : <RxPaper fluid marks={MARKS} />}
         {!previewUrl && <p className="flex items-center gap-2 text-13 text-muted">
@@ -42,8 +45,15 @@ function OriginalModal({ open, onClose, previewUrl }) {
   );
 }
 
-export function ConfirmScreen({ go, onTab }) {
+export function ConfirmScreen({ go, back, onTab }) {
   const draft = getPrescriptionDraft();
+  const { recordPrescription } = useRecords();
+  const { child: selectedChild } = useSelectedChild();
+  const child = sampleChildren.find((c) => c.id === draft?.childId) ?? selectedChild;
+  // 처방전 머리 정보 — OCR 결과가 없으면(주소로 바로 들어온 경우 등) 예시 값을 보여요.
+  const ocr = draft?.ocr ?? { hospital: rx.hospital, date: rx.isoDate, disease: rx.disease };
+  const when = dateParts(ocr.date);
+  const head = { hospital: ocr.hospital, date: `${when.year}년 ${when.month}월 ${when.day}일`, shortDate: `${when.month}월 ${when.day}일` };
   // TODO(API): OCR 응답의 약 목록을 정규화해 초기 상태로 사용하세요.
   // 현재 목록은 데모 데이터이며 업로드한 이미지에서 읽어낸 결과가 아닙니다.
   const [meds, setMeds] = useState(() => draft?.ocrMeds ?? sampleMeds);
@@ -107,6 +117,17 @@ export function ConfirmScreen({ go, onTab }) {
       ocrMeds: meds,
       guideReady: true,
     });
+    // 처방전에서 읽은 병원·날짜·병명·약으로 건강기록과 복약 일정을 자동으로 남겨요.
+    // 병명은 보호자가 처방 올리기에서 적은 값이 있으면 그걸, 없으면 처방전에서 읽은 값을 써요.
+    if (child) {
+      recordPrescription({
+        childId: child.id,
+        date: ocr.date,
+        hospital: ocr.hospital,
+        title: draft?.disease?.trim() || ocr.disease || '진료',
+        meds,
+      });
+    }
     go('guide-loading');
   };
   const retake = () => go('upload');
@@ -121,14 +142,15 @@ export function ConfirmScreen({ go, onTab }) {
   };
   return (
     <AppShell tab="upload" onTab={onTab} showTabs={false} width="wide" actions={actions}
-      header={<Header title="처방 내용 확인" onBack={retake} className="lg:hidden" />}>
+      header={<Header title="처방 내용 확인" onBack={() => back('upload')} className="lg:hidden" />}>
       <div className="flex flex-col gap-5 px-5 pb-7 pt-1 lg:gap-5 lg:px-0 lg:pb-16 lg:pt-8">
-        <BackLink onClick={retake}>처방 올리기로 돌아가기</BackLink>
+        <BackLink onClick={() => back('upload')}>돌아가기</BackLink>
         <h2 className="text-22 font-bold lg:text-28">
           읽은 내용이 처방전과<br className="lg:hidden" /> 같은지 확인해 주세요
         </h2>
 
         <p role="status" className="text-13 text-muted">현재 약 목록은 예시 데이터입니다. 업로드한 사진의 실제 OCR 결과가 아닙니다.</p>
+        <p className="text-14 text-muted">확인을 누르면 병원, 처방일, 병명, 약이 {child?.name ?? '아이'}의 건강기록에 자동으로 남고, 복약 달력에 먹일 약이 채워져요.</p>
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:gap-10">
           {/* 데스크톱 원본 */}
           <div className="hidden w-[420px] shrink-0 flex-col gap-3 lg:sticky lg:top-[100px] lg:flex">
@@ -145,15 +167,15 @@ export function ConfirmScreen({ go, onTab }) {
             <Panel className="flex items-center gap-3 p-3 lg:hidden">
               {draft?.previewUrl ? <img src={draft.previewUrl} alt="처방전 미리보기" className="h-[76px] w-[54px] rounded border border-line object-cover" /> : <RxPaper width={54} marks={MARKS} />}
               <div className="flex flex-1 flex-col gap-0.5">
-                <p className="text-15 font-semibold">{rx.hospital}</p>
-                <p className="text-13 text-muted">{rx.shortDate} 처방, 사진 1장</p>
+                <p className="text-15 font-semibold">{head.hospital}</p>
+                <p className="text-13 text-muted">{head.shortDate} 처방, 사진 1장</p>
               </div>
               <SmallButton icon={Eye} onClick={openOriginal}>원본</SmallButton>
             </Panel>
 
             {/* 데스크톱 메타 */}
             <dl className="hidden gap-10 lg:flex">
-              {[['병원', rx.hospital], ['처방일', rx.date], ['아이', '지우, 만 4세']].map(([k, v]) => (
+              {[['병원', head.hospital], ['처방일', head.date], ['아이', child ? `${child.name}, ${child.age}` : '-']].map(([k, v]) => (
                 <div key={k} className="flex flex-col gap-0.5">
                   <dt className="text-13 text-muted">{k}</dt>
                   <dd className="text-16 font-medium">{v}</dd>
@@ -171,7 +193,7 @@ export function ConfirmScreen({ go, onTab }) {
           </div>
         </div>
       </div>
-      <OriginalModal open={showOriginal} onClose={closeOriginal} previewUrl={draft?.previewUrl} />
+      <OriginalModal open={showOriginal} onClose={closeOriginal} previewUrl={draft?.previewUrl} head={head} />
     </AppShell>
   );
 }

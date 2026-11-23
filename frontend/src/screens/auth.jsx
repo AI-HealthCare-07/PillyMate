@@ -8,7 +8,7 @@ export function LoginScreen({ go }) {
   const actions = {
     mobile: (
       <>
-        <Button className="w-full" onClick={() => go('upload')}>로그인</Button>
+        <Button className="w-full" onClick={() => go('home')}>로그인</Button>
         <Button variant="secondary" className="w-full">처음이에요, 가입할게요</Button>
       </>
     ),
@@ -18,7 +18,7 @@ export function LoginScreen({ go }) {
     <AppShell showTabs={false} showTopBar={false} actions={actions}>
       <form
         className="flex flex-1 flex-col gap-9 px-6 pb-6 pt-12 lg:justify-center lg:px-0"
-        onSubmit={(e) => { e.preventDefault(); go('upload'); }}
+        onSubmit={(e) => { e.preventDefault(); go('home'); }}
       >
         <Logo size={28} />
         <div className="flex flex-col gap-3">
