@@ -1,0 +1,258 @@
+{
+  "schema_version": "0.2",
+  "prescription_id": 15,
+  "generated_at": "2026-11-19T22:56:41+09:00",
+  "status": "ok",
+  "child": {
+    "age_text": "3세 7개월",
+    "age_months": 43,
+    "weight_kg": 16.9,
+    "allergies": []
+  },
+  "diagnosis_label": "기침감기",
+  "disease_group": "cold_bronchitis",
+  "summary": "열이 날 때 먹이는 해열제 1가지와 기침·가래를 줄여 주는 약 2가지를 처방받았어요.",
+  "medications": [
+    {
+      "medication_id": 26,
+      "name": "챔프시럽(아세트아미노펜)",
+      "dosage_form": "시럽",
+      "route": "내복",
+      "dose_text": "1회 7.5mL",
+      "schedule": {
+        "type": "as_needed",
+        "daily_count": null,
+        "max_daily_count": 5,
+        "min_interval_hours": 4,
+        "timing": null,
+        "total_days": 7,
+        "slots": [
+          "필요할 때"
+        ],
+        "usage_original": "열날 때 7.5mL씩, 4~6시간 간격"
+      },
+      "purpose": "열을 내리고 아픈 걸 덜어 주는 해열제예요",
+      "how_to_give": [
+        "열이 나서 아이가 힘들어할 때만 먹이세요.",
+        "다음에 먹일 때는 4시간 이상 지났는지 확인하세요."
+      ],
+      "cautions": [
+        "다른 감기약에도 같은 성분이 들어 있을 수 있어요."
+      ],
+      "common_side_effects": [
+        "드물게 발진"
+      ],
+      "storage": "실온에 두고 아이 손이 닿지 않게 보관하세요.",
+      "pharmacist_check": {
+        "needed": false,
+        "reason": null
+      }
+    },
+    {
+      "medication_id": 27,
+      "name": "건일레보드로프로피진시럽",
+      "dosage_form": "시럽",
+      "route": "내복",
+      "dose_text": "1회 3mL",
+      "schedule": {
+        "type": "fixed",
+        "daily_count": 3,
+        "max_daily_count": null,
+        "min_interval_hours": null,
+        "timing": null,
+        "total_days": 7,
+        "slots": [
+          "아침",
+          "점심",
+          "저녁"
+        ],
+        "usage_original": "1일 3회, 6시간 이상 간격"
+      },
+      "purpose": "기침을 줄여 주는 약이에요",
+      "how_to_give": [
+        "정해진 시간에 먹이고, 먹이는 사이를 6시간 이상 두세요."
+      ],
+      "cautions": [
+        "졸려할 수 있어요."
+      ],
+      "common_side_effects": [
+        "졸음",
+        "속 불편함"
+      ],
+      "storage": null,
+      "pharmacist_check": {
+        "needed": false,
+        "reason": null
+      }
+    },
+    {
+      "medication_id": 28,
+      "name": "뮤코브이시럽(암브록솔염산염)",
+      "dosage_form": "시럽",
+      "route": "내복",
+      "dose_text": "1회 2.5mL",
+      "schedule": {
+        "type": "fixed",
+        "daily_count": 3,
+        "max_daily_count": null,
+        "min_interval_hours": null,
+        "timing": null,
+        "total_days": 7,
+        "slots": [
+          "아침",
+          "점심",
+          "저녁"
+        ],
+        "usage_original": "1일 3회"
+      },
+      "purpose": "가래를 묽게 해서 잘 나오게 하는 약이에요",
+      "how_to_give": [
+        "식사와 상관없이 정해진 횟수대로 먹이세요."
+      ],
+      "cautions": [],
+      "common_side_effects": [
+        "속 불편함"
+      ],
+      "storage": null,
+      "pharmacist_check": {
+        "needed": false,
+        "reason": null
+      }
+    }
+  ],
+  "home_care": {
+    "template_id": "DATA-REF-006/cold_bronchitis@0.1",
+    "sections": [
+      {
+        "key": "recovery_course",
+        "title": "보통 이렇게 나아요",
+        "items": [
+          {
+            "template_item_id": "cold.course.peak",
+            "text": "감기 증상은 처음 1~3일에 가장 심하고, 보통 7~10일 정도 이어져요.",
+            "personal_note": null
+          }
+        ]
+      },
+      {
+        "key": "hydration",
+        "title": "물 마시기",
+        "items": [
+          {
+            "template_item_id": "cold.water.often",
+            "text": "물을 평소보다 자주 조금씩 주세요. 수분이 부족하면 가래가 끈끈해져 잘 안 나와요.",
+            "personal_note": "가래약을 먹는 동안 특히 물을 자주 챙겨 주세요."
+          }
+        ]
+      },
+      {
+        "key": "rest_sleep",
+        "title": "쉬기·잠",
+        "items": [
+          {
+            "template_item_id": "cold.rest",
+            "text": "충분히 쉬게 해 주세요. 휴식은 감기 회복의 기본이에요.",
+            "personal_note": null
+          }
+        ]
+      },
+      {
+        "key": "home_environment",
+        "title": "집 안 환경",
+        "items": [
+          {
+            "template_item_id": "cold.humidity",
+            "text": "실내가 건조하지 않게 습도를 조절해 주세요.",
+            "personal_note": "밤에 기침할 때 방이 건조한지 살펴보세요."
+          }
+        ]
+      }
+    ]
+  },
+  "with_this_medicine": [
+    {
+      "template_item_id": "apap.interval",
+      "text": "아세트아미노펜 해열제는 4~6시간 간격, 하루 5회를 넘기지 마세요."
+    },
+    {
+      "template_item_id": "apap.dup",
+      "text": "감기약·좌약에도 아세트아미노펜이 들어 있을 수 있어요. 성분이 겹치지 않는지 약사에게 확인하세요."
+    },
+    {
+      "template_item_id": "form.liquid.measure",
+      "text": "밥숟가락 대신 약에 딸린 계량컵·계량스푼이나 경구용 주사기로 재세요. 쓴 뒤에는 씻어서 말려 두세요."
+    },
+    {
+      "template_item_id": "form.liquid.separate",
+      "text": "시럽이 두 가지 이상이면 따로따로 재서 먹이세요."
+    },
+    {
+      "template_item_id": "form.liquid.month",
+      "text": "뚜껑을 열었거나 나눠 담은 시럽은 한 달 넘게 두고 먹이지 마세요."
+    },
+    {
+      "template_item_id": "cough.water",
+      "text": "가래약은 물을 충분히 마셔야 효과를 보기 쉬워요."
+    },
+    {
+      "template_item_id": "common.missed",
+      "text": "먹이는 걸 잊었으면 생각난 바로 먹이세요. 다음 먹일 시간이 가까우면 한 번 건너뛰고 다음 시간에 한 번만 먹이세요."
+    },
+    {
+      "template_item_id": "common.storage",
+      "text": "아이 손이 닿지 않는 곳에 두세요."
+    }
+  ],
+  "warning_signs": {
+    "go_to_er": [
+      "생후 3개월 미만 아기가 38℃ 이상이면 컨디션과 상관없이 바로 응급실에 가세요.",
+      "잘 깨지 않거나 축 늘어질 때",
+      "숨 쉴 때 끙끙거리거나 숨이 매우 빠를 때",
+      "입술이나 손톱이 푸르스름할 때",
+      "눌러도 사라지지 않는 점 모양 발진이 보일 때",
+      "경련이 5분 넘게 이어질 때"
+    ],
+    "see_doctor": [
+      "열이 5일 넘게 이어질 때",
+      "생후 3~6개월 아기가 39℃ 이상일 때",
+      "기저귀가 6시간 넘게 젖지 않을 때"
+    ]
+  },
+  "age_notes": [
+    "해열제 양은 나이보다 몸무게 기준이 더 정확해요. 몸무게가 바뀌면 약사에게 다시 확인하세요."
+  ],
+  "today_checklist": [
+    "기침약·가래약을 아침·점심·저녁에 먹였나요?",
+    "열이 날 때 해열제를 먹인 시각을 기록했나요?",
+    "물을 평소보다 자주 마셨나요?",
+    "숨쉬기 힘들어하는 모습은 없었나요?"
+  ],
+  "disclaimer": "이 안내는 의료진의 진단과 처방을 대신하지 않습니다. 약의 용량이나 복용법은 처방전과 약사 안내를 따르고, 아이 상태가 걱정되면 바로 진료를 받으세요.",
+  "sources": [
+    {
+      "id": "KDCA_COLD",
+      "title": "질병관리청 국가건강정보포털 「감기」",
+      "url": null
+    },
+    {
+      "id": "KDCA_FEVER",
+      "title": "질병관리청 국가건강정보포털 「소아 발열 대처법」",
+      "url": "https://www.ibabynews.com/news/articleView.html?idxno=156329"
+    },
+    {
+      "id": "MFDS_KIDS",
+      "title": "식약청 「어린이 약물 투약 방법」",
+      "url": "https://nedrug.mfds.go.kr/cntnts/140"
+    },
+    {
+      "id": "MFDS_SYRUP",
+      "title": "식약청 어린이 시럽제 복용·보관 안내",
+      "url": "https://www.inews24.com/view/559752"
+    },
+    {
+      "id": "MFDS_FEVER_2025",
+      "title": "식약처·식품의약품안전평가원 소아 해열제 안내(2025.12)",
+      "url": "https://m.dailypharm.com/user/news/334299"
+    }
+  ]
+}

@@ -1,0 +1,114 @@
+{
+  "template_id": "DATA-REF-006/conjunctivitis@0.1",
+  "disease_group": "conjunctivitis",
+  "match_user_input": [
+    "결막염",
+    "눈병",
+    "눈곱"
+  ],
+  "review_status": "초안 - 의료진 검수 전",
+  "usage_rule": "LLM은 items 중에서 고르고 personal_note만 붙인다. 문장을 새로 만들지 않는다.",
+  "sections": [
+    {
+      "key": "recovery_course",
+      "title": "보통 이렇게 나아요",
+      "items": [
+        {
+          "id": "conj.course.contagious",
+          "text": "유행성 눈병은 증상이 시작된 뒤 2주 정도 옮기 쉬워요. 이 기간에는 특히 조심해 주세요.",
+          "source": "KDCA_EYE",
+          "needs_review": true,
+          "source_check": "verified"
+        }
+      ]
+    },
+    {
+      "key": "hygiene",
+      "title": "위생·전파 막기",
+      "items": [
+        {
+          "id": "conj.handwash",
+          "text": "눈을 만졌다면 꼭 손을 깨끗이 씻게 해 주세요.",
+          "source": "KDCA_EYE",
+          "needs_review": false,
+          "source_check": "revised"
+        },
+        {
+          "id": "conj.no_rub",
+          "text": "손으로 눈을 비비거나 만지지 않게 해 주세요.",
+          "source": "KDCA_EYE",
+          "needs_review": false,
+          "source_check": "verified"
+        },
+        {
+          "id": "conj.towel",
+          "text": "수건, 세면도구, 침구는 따로 쓰게 해 주세요.",
+          "source": "KDCA_EYE",
+          "needs_review": false,
+          "source_check": "revised"
+        },
+        {
+          "id": "conj.eyedrop_own",
+          "text": "안약도 다른 사람과 같이 쓰지 마세요.",
+          "source": "TODO_SOURCE",
+          "needs_review": false,
+          "source_check": "removed",
+          "disabled": true
+        }
+      ]
+    },
+    {
+      "key": "home_environment",
+      "title": "집 안 환경",
+      "items": [
+        {
+          "id": "conj.no_patch",
+          "text": "안대는 하지 않는 게 좋아요.",
+          "source": "KDCA_EYE",
+          "needs_review": false,
+          "source_check": "revised"
+        }
+      ]
+    },
+    {
+      "key": "daycare_outing",
+      "title": "등원·외출",
+      "items": [
+        {
+          "id": "conj.daycare",
+          "text": "증상이 시작된 뒤 약 2주 동안은 사람이 많이 모이는 곳을 피해 주세요. 어린이집·학교에 다시 가는 시기는 진료 때 확인하세요.",
+          "source": "KDCA_EYE",
+          "needs_review": true,
+          "source_check": "revised"
+        }
+      ]
+    }
+  ],
+  "extra_warning_signs": {
+    "see_doctor": []
+  },
+  "sources": {
+    "KDCA_EYE": {
+      "title": "질병관리청 국가건강정보포털 「유행각결막염」",
+      "url": "https://health.kdca.go.kr/healthinfo/biz/health/gnrlzHealthInfo/gnrlzHealthInfo/gnrlzHealthInfoView.do?cntnts_sn=5270"
+    },
+    "TODO_SOURCE": {
+      "title": "출처 확보 필요 - 출처를 찾기 전에는 가이드에 넣지 않음",
+      "url": null
+    }
+  },
+  "notes": "결막염(H10)에는 알레르기 결막염도 들어가지만, 이 템플릿은 감염성 눈병 기준. 보호자가 '알레르기'라고 입력한 경우의 문장은 추후 추가.",
+  "_removed_unverified": [
+    {
+      "id": "conj.vision",
+      "text": "눈이 많이 붓거나 피가 비치고, 아파하거나 잘 안 보인다고 할 때",
+      "source": "TODO_SOURCE",
+      "needs_review": false,
+      "source_check": "removed"
+    }
+  ],
+  "source_review": {
+    "date": "2026-11-24",
+    "rule": "공식 원문(질병관리청·식약처 등)만 출처로 씀. 원문과 대조 결과는 각 문장의 source_check에 표시. removed는 출처를 찾을 때까지 가이드에 나오지 않음."
+  }
+}

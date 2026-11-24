@@ -1,0 +1,141 @@
+{
+  "template_id": "DATA-REF-006/otitis_sinusitis@0.1",
+  "disease_group": "otitis_sinusitis",
+  "match_user_input": [
+    "중이염",
+    "귀에 물이 참",
+    "부비동염",
+    "축농증"
+  ],
+  "review_status": "초안 - 의료진 검수 전",
+  "usage_rule": "LLM은 items 중에서 고르고 personal_note만 붙인다. 문장을 새로 만들지 않는다.",
+  "sections": [
+    {
+      "key": "recovery_course",
+      "title": "보통 이렇게 나아요",
+      "items": [
+        {
+          "id": "om.course.followup",
+          "text": "열과 귀 통증이 나아져도 귀 안에 물이 한동안 남을 수 있어요. 다시 오라고 한 날짜에는 꼭 진료를 받으세요.",
+          "source": "KDCA_OM",
+          "needs_review": false,
+          "source_check": "verified"
+        },
+        {
+          "id": "om.course.abx",
+          "text": "항생제는 증상이 나아 보여도 처방받은 기간 동안 끝까지 먹여야 해요.",
+          "source": "KDCA_ABX_FAQ",
+          "needs_review": false,
+          "source_check": "verified"
+        }
+      ]
+    },
+    {
+      "key": "eating",
+      "title": "먹기",
+      "items": [
+        {
+          "id": "om.bottle.position",
+          "text": "젖병으로 먹일 때는 아기 머리를 배보다 높게 하고, 눕혀서 먹이지 마세요.",
+          "source": "KDCA_OM",
+          "needs_review": false,
+          "max_months": 35,
+          "source_check": "verified"
+        }
+      ]
+    },
+    {
+      "key": "rest_sleep",
+      "title": "쉬기·잠",
+      "items": [
+        {
+          "id": "om.bottle.sleep",
+          "text": "젖병을 문 채로 잠들지 않게 해 주세요.",
+          "source": "TODO_SOURCE",
+          "needs_review": false,
+          "max_months": 35,
+          "source_check": "removed",
+          "disabled": true
+        }
+      ]
+    },
+    {
+      "key": "home_environment",
+      "title": "집 안 환경",
+      "items": [
+        {
+          "id": "om.smoke",
+          "text": "집 안과 차 안에서 담배 연기에 노출되지 않게 해 주세요.",
+          "source": "KDCA_OM",
+          "needs_review": false,
+          "source_check": "verified"
+        }
+      ]
+    },
+    {
+      "key": "hygiene",
+      "title": "위생·전파 막기",
+      "items": [
+        {
+          "id": "om.handwash",
+          "text": "중이염은 감기 뒤에 잘 생겨요. 외출 뒤 손 씻기로 감기를 줄이는 것이 도움이 돼요.",
+          "source": "KDCA_OM",
+          "needs_review": false,
+          "source_check": "verified"
+        },
+        {
+          "id": "om.vaccine",
+          "text": "폐렴구균 예방접종이 중이염을 줄이는 데 도움이 될 수 있어요. 접종 일정을 확인해 보세요.",
+          "source": "KDCA_OM",
+          "needs_review": false,
+          "source_check": "verified"
+        }
+      ]
+    },
+    {
+      "key": "daycare_outing",
+      "title": "등원·외출",
+      "items": [
+        {
+          "id": "om.daycare",
+          "text": "(등원 기준 문장 - 출처 확보 후 작성)",
+          "source": "TODO_SOURCE",
+          "needs_review": true,
+          "disabled": true,
+          "source_check": "removed"
+        }
+      ]
+    }
+  ],
+  "extra_warning_signs": {
+    "see_doctor": [
+      {
+        "id": "om.ear_discharge",
+        "text": "귀에서 고름이나 분비물이 흘러나올 때",
+        "source": "KDCA_OM",
+        "needs_review": false,
+        "disabled": false,
+        "source_check": "revised"
+      }
+    ]
+  },
+  "sources": {
+    "KDCA_ABX_FAQ": {
+      "title": "질병관리청 「항생제에 흔히 묻는 질문」",
+      "url": "https://kdca.go.kr/gallery.es?act=view&bid=0002&list_no=144960&mid=a20108070000"
+    },
+    "KDCA_OM": {
+      "title": "질병관리청 국가건강정보포털 「중이염」",
+      "url": "https://health.kdca.go.kr/healthinfo/biz/health/gnrlzHealthInfo/gnrlzHealthInfo/gnrlzHealthInfoView.do?cntnts_sn=3568"
+    },
+    "TODO_SOURCE": {
+      "title": "출처 확보 필요 - 출처를 찾기 전에는 가이드에 넣지 않음",
+      "url": null
+    }
+  },
+  "notes": "부비동염(J01)은 코 관리 문장이 필요하지만 소아 대상 공신력 있는 출처를 아직 못 찾음. 식염수 코 세척은 국가건강정보포털 감기 항목에서 '효과가 없거나 근거 불명확'으로 안내되어 넣지 않음.",
+  "source_review": {
+    "date": "2026-11-24",
+    "rule": "공식 원문(질병관리청·식약처 등)만 출처로 씀. 원문과 대조 결과는 각 문장의 source_check에 표시. removed는 출처를 찾을 때까지 가이드에 나오지 않음."
+  }
+}
