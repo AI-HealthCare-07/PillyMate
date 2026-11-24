@@ -22,6 +22,36 @@ export function LoginScreen({ go }) {
   const [gender, setGender] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [parentConsent, setParentConsent] = useState(false);
+
+  // 생년월일 기준 만 나이 계산
+  function calculateAge(value) {
+    if (!value) return null;
+
+    const today = new Date();
+    const birthday = new Date(value + 'T00:00:00');
+
+    if (Number.isNaN(birthday.getTime()) || birthday > today) {
+      return null;
+    }
+
+    let age = today.getFullYear() - birthday.getFullYear();
+
+    if (
+      today.getMonth() < birthday.getMonth() ||
+      (
+        today.getMonth() === birthday.getMonth() &&
+        today.getDate() < birthday.getDate()
+      )
+    ) {
+      age -= 1;
+    }
+
+    return age;
+  }
+
+  const age = calculateAge(birthDate);
+  const isMinor = age !== null && age < 18;
 
   // 3. 입력값 검증
   function validate() {
@@ -71,8 +101,16 @@ export function LoginScreen({ go }) {
 
       const birthday = new Date(birthDate + 'T00:00:00');
 
+      if (age === null) {
+        return '올바른 생년월일을 입력해 주세요.';
+      }
+
       if (birthday >= limit) {
         return '가입 가능한 연령인지 확인해 주세요.';
+      }
+
+      if (isMinor && !parentConsent) {
+        return '부모 또는 법정대리인의 동의가 필요합니다.';
       }
 
       if (!phonePattern.test(phoneNumber.trim())) {
@@ -86,13 +124,14 @@ export function LoginScreen({ go }) {
   // 4. 로그인 / 회원가입 화면 전환
   function changeMode() {
     setIsSignup(!isSignup);
+    setParentConsent(false);
     setError('');
     setMessage('');
     setPassword('');
   }
 
   // 5. 로그인 및 회원가입 요청
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
     if (loading) return;
@@ -125,67 +164,68 @@ export function LoginScreen({ go }) {
           password: password,
         };
 
-    fetch(`${API_URL}/${endpoint}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify(requestData),
-    })
-      .then(function (response) {
-        return response.json()
-          .catch(function () {
-            throw new Error('서버 응답을 확인할 수 없습니다.');
-          })
-          .then(function (data) {
-            if (!response.ok) {
-              const detail = data.detail;
-
-              const errorMessage =
-                typeof detail === 'string'
-                  ? detail
-                  : Array.isArray(detail)
-                    ? detail.map(item => item.msg).join(' / ')
-                    : '요청 처리에 실패했습니다.';
-
-              throw new Error(errorMessage);
-            }
-
-            return data;
-          });
-      })
-      .then(function (data) {
-        if (isSignup) {
-          // 회원가입 성공
-          setIsSignup(false);
-          setPassword('');
-          setMessage('회원가입이 완료되었습니다. 로그인해 주세요.');
-        } else {
-          // 로그인 성공
-          if (!data.access_token) {
-            throw new Error('로그인 토큰을 받지 못했습니다.');
-          }
-
-          sessionStorage.setItem(
-            'access_token',
-            data.access_token
-          );
-
-          // 기존 자녀 관리 화면 이동
-          go('children');
-        }
-      })
-      .catch(function (err) {
-        setError(
-          err instanceof TypeError
-            ? '서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.'
-            : err.message
-        );
-      })
-      .finally(function () {
-        setLoading(false);
+    try {
+      // API 요청 후 응답 기다리기
+      const response = await fetch(`${API_URL}/${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(requestData),
       });
+
+      // 응답 데이터 읽기
+      let data;
+
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error('서버 응답을 확인할 수 없습니다.');
+      }
+
+      // 서버 오류 확인
+      if (!response.ok) {
+        const detail = data.detail;
+
+        const errorMessage =
+          typeof detail === 'string'
+            ? detail
+            : Array.isArray(detail)
+              ? detail.map(item => item.msg).join(' / ')
+              : '요청 처리에 실패했습니다.';
+
+        throw new Error(errorMessage);
+      }
+
+      // 회원가입 또는 로그인 성공 처리
+      if (isSignup) {
+        setIsSignup(false);
+        setPassword('');
+        setParentConsent(false);
+        setMessage('회원가입이 완료되었습니다. 로그인해 주세요.');
+      } else {
+        if (!data.access_token) {
+          throw new Error('로그인 토큰을 받지 못했습니다.');
+        }
+
+        sessionStorage.setItem(
+          'access_token',
+          data.access_token
+        );
+
+        go('children');
+      }
+
+    } catch (err) {
+      setError(
+        err instanceof TypeError
+          ? '서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.'
+          : err.message
+      );
+    } finally {
+      setLoading(false);
+    }
   }
 
   // 6. 모바일 / 데스크톱 버튼
@@ -196,7 +236,10 @@ export function LoginScreen({ go }) {
           type="submit"
           form="auth-form"
           className="w-full"
-          disabled={loading}
+          disabled={
+            loading ||
+            (isSignup && isMinor && !parentConsent)
+          }
         >
           {loading
             ? '처리 중...'
@@ -343,7 +386,10 @@ export function LoginScreen({ go }) {
                 type="date"
                 value={birthDate}
                 disabled={loading}
-                onChange={e => setBirthDate(e.target.value)}
+                onChange={e => {
+                  setBirthDate(e.target.value);
+                  setParentConsent(false);
+                }}
               />
 
               <Field
@@ -355,6 +401,34 @@ export function LoginScreen({ go }) {
                 disabled={loading}
                 onChange={e => setPhoneNumber(e.target.value)}
               />
+
+              {isMinor && (
+                <div className="rounded-lg border border-line p-4">
+                  <p className="text-15 font-semibold">
+                    부모 및 법정대리인 동의
+                  </p>
+
+                  <p className="mt-2 text-14 text-muted">
+                    만 18세 미만 가입자는 부모 또는
+                    법정대리인의 동의가 필요합니다.
+                  </p>
+
+                  <label className="mt-3 flex items-start gap-2">
+                    <input
+                      type="checkbox"
+                      checked={parentConsent}
+                      disabled={loading}
+                      onChange={e =>
+                        setParentConsent(e.target.checked)
+                      }
+                    />
+                    <span className="text-14">
+                      [필수] 부모 또는 법정대리인으로서
+                      회원가입에 동의합니다.
+                    </span>
+                  </label>
+                </div>
+              )}
             </>
           )}
 
