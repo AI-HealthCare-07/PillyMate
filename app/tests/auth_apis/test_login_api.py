@@ -51,7 +51,7 @@ class TestLoginAPI(TestCase):
         remaining = parsedate_to_datetime(expires_attr) - datetime.now(UTC)
         assert timedelta(days=13) < remaining <= timedelta(days=14, minutes=1)
 
-    async def test_signup_without_email_returns_422(self):
+    async def test_signup_without_email_returns_400(self):
         signup_data = {
             "password": "Password123!",
             "name": "이메일없음",
@@ -61,7 +61,8 @@ class TestLoginAPI(TestCase):
         }
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post("/api/v1/auth/signup", json=signup_data)
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.json()["detail"] == "필수 항목을 입력해 주세요: email"
 
     async def test_login_invalid_credentials(self):
         login_data = {"email": "nonexistent@example.com", "password": "WrongPassword123!"}

@@ -17,3 +17,6 @@ wheels/
 
 # frontend
 node_modules/
+
+# 로컬 이미지 저장소 (STORAGE_BACKEND=local)
+.local_storage/
