@@ -31,11 +31,9 @@ class Config(BaseSettings):
     DB_CONNECT_TIMEOUT: int = 5
     DB_CONNECTION_POOL_MAXSIZE: int = 10
 
-    COOKIE_DOMAIN: str = "localhost"
-
     JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
-    REFRESH_TOKEN_EXPIRE_MINUTES: int = 14 * 24 * 60
+    # 명세서 1절: 토큰 유효시간 12시간, 리프레시 토큰 없음
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 12 * 60
     JWT_LEEWAY: int = 5
 
     # CORS: 허용할 프론트 주소를 쉼표로 구분 (예: "http://localhost:5173,https://pillymate.example.com")
@@ -54,8 +52,9 @@ class Config(BaseSettings):
     CLOVA_OCR_SECRET: str = ""
     ANTHROPIC_API_KEY: str = ""
 
-    # 데모 로그인(A1): 배포 환경에서 false로 끄면 404
+    # 데모 로그인(A1): 배포 환경에서 false로 끄면 404. 데모 보호자는 app/scripts/seed_guardians.py로 만든다.
     DEMO_LOGIN_ENABLED: bool = False
+    DEMO_GUARDIAN_EMAIL: str = "demo@pillymate.com"
 
     @property
     def cors_origins(self) -> list[str]:

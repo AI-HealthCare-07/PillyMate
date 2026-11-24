@@ -26,7 +26,7 @@ from typing import TYPE_CHECKING, Annotated, Any
 from fastapi import Depends, HTTPException, status
 
 from app.dependencies.security import CurrentGuardian
-from app.models.users import User
+from app.models.guardians import Guardian
 
 if TYPE_CHECKING:
     from app.models.children import Child  # type: ignore[import-not-found]
@@ -36,7 +36,7 @@ CHILD_NOT_FOUND_MESSAGE = "자녀 정보를 찾을 수 없어요."
 PRESCRIPTION_NOT_FOUND_MESSAGE = "처방전을 찾을 수 없어요."
 
 
-async def get_my_child_or_404(child_id: int, guardian: User) -> Child:
+async def get_my_child_or_404(child_id: int, guardian: Guardian) -> Child:
     """로그인한 보호자의 자녀면 돌려주고, 없거나 남의 자녀면 404."""
     from app.models.children import Child  # BE-2 모델 머지 후 동작
 
@@ -46,7 +46,7 @@ async def get_my_child_or_404(child_id: int, guardian: User) -> Child:
     return child
 
 
-async def get_my_prescription_or_404(prescription_id: int, guardian: User) -> Prescription:
+async def get_my_prescription_or_404(prescription_id: int, guardian: Guardian) -> Prescription:
     """로그인한 보호자 자녀의 처방전이면 돌려주고, 없거나 남의 처방전이면 404."""
     from app.models.prescriptions import Prescription  # BE-2 모델 머지 후 동작
 
