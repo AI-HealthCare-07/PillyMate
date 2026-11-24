@@ -74,6 +74,24 @@ export function ChildListScreen({ go, onTab }) {
 const ALLERGIES = ['없음', '페니실린', '세팔로스포린', '이부프로펜'];
 
 /** 저장 전 입력 확인 — 문제가 있는 칸만 메시지를 돌려줘요. */
+function calculateAge(birth) {
+  const date = parseBirth(birth);
+  if (!date) return null;
+
+  const today = new Date();
+  let age = today.getFullYear() - date.getFullYear();
+
+  if (
+    today.getMonth() < date.getMonth() ||
+    (today.getMonth() === date.getMonth() &&
+      today.getDate() < date.getDate())
+  ) {
+    age -= 1;
+  }
+
+  return age;
+}
+
 function validate({ name, birth, weight }) {
   const errors = {};
   if (!name.trim()) errors.name = '이름이나 별명을 입력해 주세요.';
@@ -81,6 +99,7 @@ function validate({ name, birth, weight }) {
   if (!birth.trim()) errors.birth = '생년월일을 골라 주세요.';
   else if (!b) errors.birth = '날짜를 다시 골라 주세요.';
   else if (b > new Date()) errors.birth = '오늘 이후 날짜는 쓸 수 없어요.';
+
   const w = Number(String(weight).replace(/[^\d.]/g, ''));
   if (!String(weight).trim()) errors.weight = '체중을 입력해 주세요.';
   else if (!(w > 0) || w > 150) errors.weight = '16.2처럼 숫자로 입력해 주세요.';
@@ -95,6 +114,26 @@ function ChildForm({ back, onTab, title, initial, onSave, onDelete }) {
   const [weight, setWeight] = useState(String(initial.weight).replace(/\s*kg$/i, ''));
   const [note, setNote] = useState(initial.note);
   const [errors, setErrors] = useState({});
+  const isNew = !onDelete;
+  const [consents, setConsents] = useState([false, false, false]);
+  const allAgreed = consents.every(Boolean);
+  const age = calculateAge(birth);
+  const birthDate = parseBirth(birth);
+  const validBirth = birthDate && birthDate <= new Date();
+  const needsConsent = isNew && validBirth &&
+    age !== null && age >= 0 && age < 18;
+
+  const consentItems = [
+    '자녀의 법정대리인 또는 보호자임을 확인합니다.',
+    '자녀의 개인정보 수집 및 이용에 동의합니다.',
+    '자녀의 건강정보 및 민감정보 수집·이용에 동의합니다.',
+  ];
+
+  function toggleConsent(index) {
+    setConsents((prev) =>
+      prev.map((value, i) => i === index ? !value : value)
+    );
+  }
   const [allergy, setAllergy] = useState(initial.allergies.length ? initial.allergies : ['없음']);
   const [chips, setChips] = useState(() => [...ALLERGIES, ...initial.allergies.filter((a) => !ALLERGIES.includes(a))]);
   const [adding, setAdding] = useState(false);
@@ -117,11 +156,22 @@ function ChildForm({ back, onTab, title, initial, onSave, onDelete }) {
   const submit = () => {
     const values = { name, birth, weight, allergies: allergy, note };
     const found = validate(values);
+
+    if (needsConsent && !allAgreed) {
+      found.consent = '보호자 동의 항목을 모두 체크해 주세요.';
+    }
     setErrors(found);
     if (Object.keys(found).length) return;
     onSave(values);
   };
-  const save = <Button className="w-full lg:w-auto lg:min-w-[160px]" onClick={submit}>저장하기</Button>;
+  const save = <Button className="w-full lg:w-auto lg:min-w-[160px]" onClick={submit}
+      disabled={isNew && (
+        !validBirth ||
+        age === null ||
+        age < 0 ||
+        (needsConsent && !allAgreed)
+      )}
+    >저장하기</Button>;
   return (
     <AppShell tab="children" onTab={onTab} showTabs={false} header={<Header title={title} onBack={() => back('children')} />} actions={{ mobile: save }}>
       <Body className="gap-5">
@@ -131,7 +181,10 @@ function ChildForm({ back, onTab, title, initial, onSave, onDelete }) {
             label="생년월일"
             type="date"
             value={birth}
-            onChange={(e) => setBirth(e.target.value)}
+            onChange={(e) => {
+              setBirth(e.target.value);
+              setConsents([false, false, false]);
+            }}
             // 칸 어디를 눌러도 달력이 열리게 해요(기본은 오른쪽 달력 아이콘만 눌러야 열려요).
             onClick={(e) => {
               try {
@@ -140,7 +193,6 @@ function ChildForm({ back, onTab, title, initial, onSave, onDelete }) {
                 // 지원하지 않는 브라우저는 기본 동작(아이콘 눌러 열기)을 그대로 써요.
               }
             }}
-            min="2000-01-01"
             max={todayKey()}
             inputClassName={`cursor-pointer ${birth ? '' : 'text-faint'}`}
             error={errors.birth}
@@ -183,6 +235,43 @@ function ChildForm({ back, onTab, title, initial, onSave, onDelete }) {
           )}
         </fieldset>
         <Field label="특이사항" multiline value={note} onChange={(e) => setNote(e.target.value)} placeholder="예: 시럽을 잘 안 먹어요, 열성 경련이 있었어요" helper="가이드를 만들 때 함께 고려해요." />
+        {needsConsent && (
+          <fieldset className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-4">
+            <legend className="contents">
+              <SectionLabel>보호자 동의 (필수)</SectionLabel>
+            </legend>
+
+            <p className="text-14 text-muted">
+              만 18세 미만 자녀의 정보 등록을 위해 보호자 동의가 필요해요.
+            </p>
+
+
+
+            {consentItems.map((item, index) => (
+              <label
+                key={index}
+                className="flex cursor-pointer items-start gap-3 py-2"
+              >
+                <input
+                  type="checkbox"
+                  checked={consents[index]}
+                  onChange={() => toggleConsent(index)}
+                  className="mt-0.5 h-5 w-5 shrink-0 accent-[#10594f]"
+                />
+                <span className="text-14 text-ink">
+                  {item}
+                </span>
+              </label>
+            ))}
+
+            {errors.consent && !allAgreed && (
+              <p className="text-13 text-danger">
+                {errors.consent}
+              </p>
+            )}
+          </fieldset>
+        )}
+
         {onDelete && (
           <div className="mt-4 flex flex-col gap-2 border-t border-line pt-6">
             <button
