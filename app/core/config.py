@@ -37,8 +37,8 @@ class Config(BaseSettings):
     JWT_LEEWAY: int = 5
 
     # CORS: 허용할 프론트 주소를 쉼표로 구분 (예: "http://localhost:5173,https://pillymate.example.com")
-    # 비워 두면 CORS 미들웨어를 붙이지 않음 (FE·BE가 같은 도메인이고 nginx가 /api/로 나누는 경우)
-    CORS_ORIGINS: str = ""
+    # 기본값은 로컬 FE 개발 서버. 빈 값("")이면 CORS 미들웨어를 붙이지 않음 (FE·BE가 같은 도메인인 경우)
+    CORS_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
 
     # 이미지 저장소: "local"이면 S3 없이 로컬 폴더에 저장 (개발용), "s3"면 AWS S3 사용
     STORAGE_BACKEND: Literal["local", "s3"] = "local"
