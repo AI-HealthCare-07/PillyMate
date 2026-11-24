@@ -12,7 +12,7 @@ wheels/
 .coverage
 *.coverage
 .coverage.*
-
+.claude/
 .DS_Store
 
 # frontend
