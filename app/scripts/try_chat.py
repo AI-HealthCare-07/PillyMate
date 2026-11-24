@@ -54,9 +54,7 @@ def no_llm(system: str, user: str) -> dict:
 
 
 def main() -> None:
-    logging.basicConfig(
-        level=logging.INFO, format="%(levelname)s %(name)s: %(message)s"
-    )
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     question = " ".join(sys.argv[1:]) or "해열제는 언제 다시 먹여요?"
     guide = to_view(generate_guide(CHILD, PRESCRIPTION, MEDICATIONS, call_llm=no_llm))
     result = answer_chat(guide, {"prescription_date": "2026-11-12"}, question)

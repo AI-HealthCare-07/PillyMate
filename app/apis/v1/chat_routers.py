@@ -1,6 +1,7 @@
 """
 주소 POST /api/v1/prescriptions/{id}/chat
 """
+
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Path, status
