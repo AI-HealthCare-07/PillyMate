@@ -8,7 +8,7 @@ import { Avatar, Panel, SectionLabel, SelectChip } from '../components/ui/misc.j
 import { AppShell, Body, Header } from '../components/ui/layout.jsx';
 import { parseBirth, useSelectedChild } from '../state/selectedChild.jsx';
 import { todayKey, useRecords } from '../state/records.jsx';
-import { hasAllConsents, useAddChildConsent, withConsent } from '../components/child/AddChildConsent.jsx';
+import { CHILD_AGE_LIMIT, fullAge, hasAllConsents, toChildCreateRequest, useAddChildConsent } from '../components/child/AddChildConsent.jsx';
 
 /** S-02 아이 목록 — 줄을 누르면 그 아이가 선택되고, 편집 버튼으로 아이 정보를 고쳐요. */
 export function ChildListScreen({ go, onTab }) {
@@ -90,8 +90,11 @@ function validate({ name, birth, weight }) {
   return errors;
 }
 
-/** 아이 추가·편집 공통 폼. 저장하면 onSave(입력값)를 부르고 목록으로 돌아가요. */
-function ChildForm({ back, onTab, title, initial, onSave, onDelete }) {
+/**
+ * 아이 추가·편집 공통 폼. 저장하면 onSave(입력값)를 부르고 목록으로 돌아가요.
+ * extraValidate는 화면별로 더 확인할 규칙이에요(예: 아이 추가의 만 18세 미만). 편집은 쓰지 않아요.
+ */
+function ChildForm({ back, onTab, title, initial, onSave, onDelete, extraValidate }) {
   const [name, setName] = useState(initial.name);
   // 날짜 칸(type=date)은 2022-03-14 형식만 받아서, 저장된 2022.03.14를 바꿔 넣어요.
   const [birth, setBirth] = useState(String(initial.birth).replaceAll('.', '-'));
@@ -120,6 +123,7 @@ function ChildForm({ back, onTab, title, initial, onSave, onDelete }) {
   const submit = () => {
     const values = { name, birth, weight, allergies: allergy, note };
     const found = validate(values);
+    if (!found.birth && extraValidate) Object.assign(found, extraValidate(values));
     setErrors(found);
     if (Object.keys(found).length) return;
     onSave(values);
@@ -213,14 +217,15 @@ export function ChildAddScreen(props) {
   const consent = state?.consent;
   if (!hasAllConsents(consent)) return <Navigate to="/children" replace />;
   const save = (values) => {
-    // 마지막 저장 때도 필수 동의를 한 번 더 확인해요.
-    if (!hasAllConsents(consent)) {
+    // 마지막 저장 때도 필수 동의를 한 번 더 확인해요. API로 보낼 본문(명세 3번)의 consent_agreed가 true여야 해요.
+    const request = toChildCreateRequest(values, consent);
+    if (!hasAllConsents(consent) || request.consent_agreed !== true) {
       props.go('children', undefined, { replace: true });
       return;
     }
-    // TODO(API): 아이 등록 API가 생기면 이 payload(consent_agreed: true 포함)를 보내요. 지금은 기존처럼 목록에만 넣어요.
-    const payload = withConsent(values, consent);
-    addChild(payload);
+    // TODO(API): 자녀 등록 API(BE-2)가 생기면 request를 POST /api/v1/children으로 보내고, 성공했을 때만 목록에 넣어요.
+    // 지금은 서버 저장 없이 기존처럼 화면 목록에만 넣어요(동의 기록도 서버에 남지 않아요).
+    addChild(values);
     // 등록을 마치면 이 화면을 기록에서 바꿔치기해서, 받은 동의도 함께 사라져요.
     props.go('children', undefined, { replace: true });
   };
@@ -229,7 +234,22 @@ export function ChildAddScreen(props) {
     window.history.replaceState({ ...window.history.state, usr: null }, '');
     props.back(fallback);
   };
-  return <ChildForm {...props} back={cancel} title="아이 추가" initial={{ name: '', birth: '', weight: '', allergies: [], note: '' }} onSave={save} />;
+  return (
+    <ChildForm
+      {...props}
+      back={cancel}
+      title="아이 추가"
+      initial={{ name: '', birth: '', weight: '', allergies: [], note: '' }}
+      onSave={save}
+      extraValidate={validateNewChildAge}
+    />
+  );
+}
+
+/** 아이 추가 연령 — 만 18세 미만만 등록해요(API 명세 3번, 문구는 명세 8절 그대로). */
+function validateNewChildAge({ birth }) {
+  const age = fullAge(parseBirth(birth));
+  return age !== null && age >= CHILD_AGE_LIMIT ? { birth: `만 ${CHILD_AGE_LIMIT}세 미만 자녀만 등록할 수 있어요.` } : {};
 }
 
 /** S-02 아이 정보 편집 — 목록의 편집 버튼에서 넘겨준 아이를 고쳐요. */
