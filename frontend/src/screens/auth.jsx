@@ -257,17 +257,17 @@ export function LoginScreen({ go }) {
               : '로그인'}
         </Button>
 
-        <Button
-          type="button"
-          variant="secondary"
-          className="w-full"
-          disabled={loading}
-          onClick={changeMode}
-        >
-          {isSignup
-            ? '이미 계정이 있어요'
-            : '처음이에요, 가입할게요'}
-        </Button>
+        {!isSignup && (
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-full"
+            disabled={loading}
+            onClick={changeMode}
+          >
+            처음이에요, 가입할게요
+          </Button>
+        )}
       </>
     );
   }
@@ -435,6 +435,8 @@ export function LoginScreen({ go }) {
 
         <div className="flex flex-col gap-4">
 
+          <div className="flex items-end gap-2">
+            <div className="min-w-0 flex-1">
           <Field
             label="이메일"
             type="email"
@@ -444,6 +446,22 @@ export function LoginScreen({ go }) {
             disabled={loading}
             onChange={e => setEmail(e.target.value)}
           />
+            </div>
+
+            {isSignup && (
+              <Button
+                type="button"
+                variant="secondary"
+                className="shrink-0"
+                disabled={loading}
+                onClick={() => {
+                  setError('이메일 중복 확인 API 연동 준비 중입니다.');
+                }}
+              >
+                중복 확인
+              </Button>
+            )}
+          </div>
 
           <Field
             label="비밀번호"
