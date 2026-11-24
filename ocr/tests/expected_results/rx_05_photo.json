@@ -1,0 +1,46 @@
+{
+  "prescription_date": "2026-11-08",
+  "hospital_name": "고운결피부과의원",
+  "diagnosis_extracted": "L209",
+  "medications": [
+    {
+      "name": "로코이드크림0.1%(히드로코르티손부티레이트)/20g/개",
+      "insurance_code": "641900821",
+      "dose_per_time": 1.0,
+      "unit": "g",
+      "daily_count": 2,
+      "total_days": 14,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": "환부에 얇게 바르세요",
+      "route": "EXTERNAL",
+      "dosage_form": "CREAM"
+    },
+    {
+      "name": "엘리델크림1%(피메크로리무스)/15g/개",
+      "insurance_code": "655200111",
+      "dose_per_time": 1.0,
+      "unit": "g",
+      "daily_count": 2,
+      "total_days": 14,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": "얼굴,목 환부에 바르세요",
+      "route": "EXTERNAL",
+      "dosage_form": "CREAM"
+    },
+    {
+      "name": "유시락스시럽(히드록시진염산염)(내복)/100(1)mL/병",
+      "insurance_code": "649300661",
+      "dose_per_time": 4.0,
+      "unit": "mL",
+      "daily_count": 2,
+      "total_days": 7,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": "아침, 취침 전",
+      "route": "ORAL",
+      "dosage_form": "SYRUP"
+    }
+  ]
+}

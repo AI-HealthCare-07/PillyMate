@@ -1,0 +1,59 @@
+{
+  "prescription_date": "2026-11-16",
+  "hospital_name": "튼튼소아청소년과의원",
+  "diagnosis_extracted": "J459,J209",
+  "medications": [
+    {
+      "name": "벤토린에보할러(살부타몰황산염)/200회/개",
+      "insurance_code": "664500112",
+      "dose_per_time": 2.0,
+      "unit": null,
+      "daily_count": 4,
+      "total_days": 7,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": "흡입, 숨찰 때 추가 가능",
+      "route": "EXTERNAL",
+      "dosage_form": "ETC"
+    },
+    {
+      "name": "풀미코트레스퓰0.5mg/2mL(부데소니드)/1관",
+      "insurance_code": "663900245",
+      "dose_per_time": 1.0,
+      "unit": null,
+      "daily_count": 2,
+      "total_days": 7,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": "네블라이저로 흡입",
+      "route": "EXTERNAL",
+      "dosage_form": "ETC"
+    },
+    {
+      "name": "오논드라이시럽(프란루카스트수화물)/1g",
+      "insurance_code": "662700538",
+      "dose_per_time": 1.15,
+      "unit": "g",
+      "daily_count": 2,
+      "total_days": 7,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": "아침,저녁 식후 30분",
+      "route": "ORAL",
+      "dosage_form": "DRY_SYRUP"
+    },
+    {
+      "name": "클래리시드건조시럽125mg/5mL(클래리스로마이신)/50(1)mL/병",
+      "insurance_code": "642300719",
+      "dose_per_time": 4.6,
+      "unit": "mL",
+      "daily_count": 2,
+      "total_days": 7,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": "식후 30분",
+      "route": "ORAL",
+      "dosage_form": "DRY_SYRUP"
+    }
+  ]
+}

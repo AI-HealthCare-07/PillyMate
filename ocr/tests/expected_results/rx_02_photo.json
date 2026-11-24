@@ -1,0 +1,46 @@
+{
+  "prescription_date": "2026-11-03",
+  "hospital_name": "맑은숲이비인후과의원",
+  "diagnosis_extracted": "H669,J019",
+  "medications": [
+    {
+      "name": "오구멘틴듀오시럽228mg/5mL(내복)/70(1)mL/병",
+      "insurance_code": "642103581",
+      "dose_per_time": 7.0,
+      "unit": "mL",
+      "daily_count": 2,
+      "total_days": 7,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": "식후 즉시, 냉장보관",
+      "route": "ORAL",
+      "dosage_form": "SYRUP"
+    },
+    {
+      "name": "부루펜시럽(이부프로펜)(내복)/90(1)mL/병",
+      "insurance_code": "650400921",
+      "dose_per_time": 6.6667,
+      "unit": "mL",
+      "daily_count": 3,
+      "total_days": 3,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": "가루약,물약 따로 식후 30분",
+      "route": "ORAL",
+      "dosage_form": "SYRUP"
+    },
+    {
+      "name": "세티리진시럽1mg/mL(내복)/100(1)mL/병",
+      "insurance_code": "648901441",
+      "dose_per_time": 5.0,
+      "unit": "mL",
+      "daily_count": 1,
+      "total_days": 7,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": "취침 전",
+      "route": "ORAL",
+      "dosage_form": "SYRUP"
+    }
+  ]
+}
