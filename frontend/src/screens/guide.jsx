@@ -16,6 +16,59 @@ import { BackLink } from './confirm.jsx';
  * 모바일: 한 단 (제목 → 하루 먹는 때 → 위험 신호 → 복용법 → 생활 습관 → 알림 → 면책)
  * 데스크톱: 본문 672px + 오른쪽 단(위험 신호, 알림, 처방 다시 보기)
  */
+
+// 복약 가이드 생성 및 조회 API
+async function requestGuide(prescriptionId, method = 'POST') {
+  const token = sessionStorage.getItem('access_token');
+
+  if (!token) {
+    throw new Error('로그인이 필요합니다.');
+  }
+
+  if (!prescriptionId) {
+    throw new Error('처방전 ID가 없습니다.');
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 90000);
+
+  try {
+    const response = await fetch(
+      `/api/v1/prescriptions/${encodeURIComponent(prescriptionId)}/guide`,
+      {
+        method,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        signal: controller.signal,
+      }
+    );
+
+    if (response.status === 401) {
+      sessionStorage.removeItem('access_token');
+      throw new Error('로그인이 만료되었습니다.');
+    }
+
+    if (!response.ok) {
+      throw new Error('복약 가이드 요청에 실패했습니다.');
+    }
+
+    const data = await response.json();
+    return data;
+
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw new Error('응답 시간이 초과되었습니다.');
+    }
+
+    throw error;
+
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export function GuideScreen({ go, back, onTab }) {
   const { state } = useLocation();
   const navigate = useNavigate();
