@@ -100,9 +100,17 @@ function validate({ name, birth, weight }) {
   else if (!b) errors.birth = '날짜를 다시 골라 주세요.';
   else if (b > new Date()) errors.birth = '오늘 이후 날짜는 쓸 수 없어요.';
 
-  const w = Number(String(weight).replace(/[^\d.]/g, ''));
-  if (!String(weight).trim()) errors.weight = '체중을 입력해 주세요.';
-  else if (!(w > 0) || w > 150) errors.weight = '16.2처럼 숫자로 입력해 주세요.';
+  const weightText = String(weight).trim();
+
+  if (weightText) {
+    const w = Number(weightText);
+
+    if (!/^\d+(\.\d+)?$/.test(weightText)) {
+      errors.weight = '체중은 숫자로 입력해 주세요.';
+    } else if (!Number.isFinite(w) || w < 0.5 || w > 150) {
+      errors.weight = '체중은 0.5~150kg 사이로 입력해 주세요.';
+    }
+  }
   return errors;
 }
 
@@ -198,7 +206,7 @@ function ChildForm({ back, onTab, title, initial, onSave, onDelete }) {
             error={errors.birth}
           />
           <div className="relative">
-            <Field label="체중" value={weight} onChange={(e) => setWeight(e.target.value)} placeholder="16.2" inputMode="decimal" inputClassName="pr-11" error={errors.weight} />
+            <Field label="체중 (선택)" value={weight} onChange={(e) => setWeight(e.target.value)} placeholder="16.2" inputMode="decimal" inputClassName="pr-11" error={errors.weight} />
             <span className="pointer-events-none absolute right-4 top-[46px] text-15 text-muted" aria-hidden>kg</span>
           </div>
         </div>
