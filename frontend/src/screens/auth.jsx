@@ -22,7 +22,10 @@ export function LoginScreen({ go }) {
   const [gender, setGender] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [parentConsent, setParentConsent] = useState(false);
+  const [showConsent, setShowConsent] = useState(false);
+  const [termsAgreed, setTermsAgreed] = useState(false);
+  const [privacyAgreed, setPrivacyAgreed] = useState(false);
+  const allAgreed = termsAgreed && privacyAgreed;
 
   // 생년월일 기준 만 나이 계산
   function calculateAge(value) {
@@ -51,7 +54,7 @@ export function LoginScreen({ go }) {
   }
 
   const age = calculateAge(birthDate);
-  const isMinor = age !== null && age < 18;
+
 
   // 3. 입력값 검증
   function validate() {
@@ -66,6 +69,10 @@ export function LoginScreen({ go }) {
     }
 
     if (isSignup) {
+      if (!allAgreed) {
+        return '필수 약관에 동의해 주세요.';
+      }
+
       const passwordPattern =
         /^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[^a-zA-Z0-9]).{8,}$/;
 
@@ -92,26 +99,17 @@ export function LoginScreen({ go }) {
         return '생년월일을 입력해 주세요.';
       }
 
-      const today = new Date();
-      const limit = new Date(
-        today.getFullYear() - 14,
-        today.getMonth(),
-        today.getDate()
-      );
 
-      const birthday = new Date(birthDate + 'T00:00:00');
 
       if (age === null) {
         return '올바른 생년월일을 입력해 주세요.';
       }
 
-      if (birthday >= limit) {
+      if (age < 14) {
         return '가입 가능한 연령인지 확인해 주세요.';
       }
 
-      if (isMinor && !parentConsent) {
-        return '부모 또는 법정대리인의 동의가 필요합니다.';
-      }
+
 
       if (!phonePattern.test(phoneNumber.trim())) {
         return '올바른 휴대폰 번호를 입력해 주세요.';
@@ -123,11 +121,24 @@ export function LoginScreen({ go }) {
 
   // 4. 로그인 / 회원가입 화면 전환
   function changeMode() {
-    setIsSignup(!isSignup);
-    setParentConsent(false);
     setError('');
     setMessage('');
     setPassword('');
+    setTermsAgreed(false);
+    setPrivacyAgreed(false);
+
+    if (isSignup) {
+      setIsSignup(false);
+      setShowConsent(false);
+    } else {
+      setShowConsent(true);
+    }
+  }
+
+  function continueSignup() {
+    if (!allAgreed) return;
+    setShowConsent(false);
+    setIsSignup(true);
   }
 
   // 5. 로그인 및 회원가입 요청
@@ -202,7 +213,8 @@ export function LoginScreen({ go }) {
       if (isSignup) {
         setIsSignup(false);
         setPassword('');
-        setParentConsent(false);
+        setTermsAgreed(false);
+        setPrivacyAgreed(false);
         setMessage('회원가입이 완료되었습니다. 로그인해 주세요.');
       } else {
         if (!data.access_token) {
@@ -236,10 +248,7 @@ export function LoginScreen({ go }) {
           type="submit"
           form="auth-form"
           className="w-full"
-          disabled={
-            loading ||
-            (isSignup && isMinor && !parentConsent)
-          }
+          disabled={loading}
         >
           {loading
             ? '처리 중...'
@@ -267,6 +276,120 @@ export function LoginScreen({ go }) {
     mobile: renderButtons(),
     desktop: null,
   };
+
+
+  // 회원가입 전 필수 약관 동의 화면
+  if (showConsent) {
+    return (
+      <AppShell showTabs={false} showTopBar={false}>
+        <div className="flex flex-1 flex-col gap-6 px-6 py-12 lg:px-0">
+          <Logo size={28} />
+
+          <h1 className="text-28 font-bold">
+            서비스 이용 동의
+          </h1>
+
+          <p className="text-15 text-muted">
+            PillyMate를 이용하기 위해 필수 약관에 동의해 주세요.
+          </p>
+
+          <label className="flex items-center gap-3 rounded-lg border border-line bg-surface p-4">
+            <input
+              type="checkbox"
+              className="h-5 w-5 accent-[#10594f]"
+              checked={allAgreed}
+              onChange={e => {
+                setTermsAgreed(e.target.checked);
+                setPrivacyAgreed(e.target.checked);
+              }}
+            />
+            <span className="font-bold">전체 동의하기</span>
+          </label>
+
+          <div className="flex flex-col gap-4 rounded-lg border border-line p-4">
+            <label className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                className="h-5 w-5 accent-[#10594f]"
+                checked={termsAgreed}
+                onChange={e => setTermsAgreed(e.target.checked)}
+              />
+              <span>[필수] 서비스 이용약관 동의</span>
+            </label>
+
+            <details className="text-14 text-muted">
+              <summary className="cursor-pointer">
+                서비스 이용약관 안내
+              </summary>
+              <p className="mt-3">
+                PillyMate는 처방전과 복약 정보를 관리하는
+                서비스입니다. 복약 가이드는 참고용이며
+                의료진의 진료나 처방을 대신하지 않습니다.
+              </p>
+            </details>
+
+            <label className="flex items-start gap-3 border-t border-line pt-4">
+              <input
+                type="checkbox"
+                className="h-5 w-5 accent-[#10594f]"
+                checked={privacyAgreed}
+                onChange={e => setPrivacyAgreed(e.target.checked)}
+              />
+              <span>[필수] 개인정보 수집·이용 동의</span>
+            </label>
+
+            <details className="text-14 text-muted">
+              <summary className="cursor-pointer">
+                개인정보 수집·이용 내용 보기
+              </summary>
+
+              <div className="mt-3 flex flex-col gap-3">
+                <p>
+                  수집 항목: 이메일, 비밀번호, 이름,
+                  성별, 생년월일, 휴대폰 번호
+                </p>
+                <p>
+                  이용 목적: 회원 식별, 연령 확인,
+                  계정 관리
+                </p>
+                <p>
+                  보유 기간: 회원 탈퇴 시까지
+                  (법령상 보존 의무가 있는 경우 제외)
+                </p>
+                <p>
+                  동의를 거부할 수 있으나,
+                  필수 정보 수집에 동의하지 않으면
+                  회원가입이 제한됩니다.
+                </p>
+              </div>
+            </details>
+          </div>
+
+          <Button
+            type="button"
+            className="w-full"
+            disabled={!allAgreed}
+            onClick={continueSignup}
+          >
+            동의하고 계속하기
+          </Button>
+
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-full"
+            onClick={() => {
+              setShowConsent(false);
+              setTermsAgreed(false);
+              setPrivacyAgreed(false);
+            }}
+          >
+            로그인으로 돌아가기
+          </Button>
+        </div>
+      </AppShell>
+    );
+  }
 
   // 7. 화면 표시
   return (
@@ -386,10 +509,7 @@ export function LoginScreen({ go }) {
                 type="date"
                 value={birthDate}
                 disabled={loading}
-                onChange={e => {
-                  setBirthDate(e.target.value);
-                  setParentConsent(false);
-                }}
+                onChange={e => setBirthDate(e.target.value)}
               />
 
               <Field
@@ -402,33 +522,7 @@ export function LoginScreen({ go }) {
                 onChange={e => setPhoneNumber(e.target.value)}
               />
 
-              {isMinor && (
-                <div className="rounded-lg border border-line p-4">
-                  <p className="text-15 font-semibold">
-                    부모 및 법정대리인 동의
-                  </p>
 
-                  <p className="mt-2 text-14 text-muted">
-                    만 18세 미만 가입자는 부모 또는
-                    법정대리인의 동의가 필요합니다.
-                  </p>
-
-                  <label className="mt-3 flex items-start gap-2">
-                    <input
-                      type="checkbox"
-                      checked={parentConsent}
-                      disabled={loading}
-                      onChange={e =>
-                        setParentConsent(e.target.checked)
-                      }
-                    />
-                    <span className="text-14">
-                      [필수] 부모 또는 법정대리인으로서
-                      회원가입에 동의합니다.
-                    </span>
-                  </label>
-                </div>
-              )}
             </>
           )}
 
