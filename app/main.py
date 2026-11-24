@@ -8,8 +8,20 @@ from app.core.db.databases import initialize_tortoise
 from app.core.exception_handlers import register_exception_handlers
 
 app = FastAPI(
-    default_response_class=ORJSONResponse, docs_url="/api/docs", redoc_url="/api/redoc", openapi_url="/api/openapi.json"
+    default_response_class=ORJSONResponse,
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
 )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=config.CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 initialize_tortoise(app)
 register_exception_handlers(app)
 
@@ -23,3 +35,8 @@ if config.cors_origins:
     )
 
 app.include_router(v1_routers)
+
+
+@app.get("/health", tags=["health"])
+def health() -> dict[str, str]:
+    return {"status": "ok"}
