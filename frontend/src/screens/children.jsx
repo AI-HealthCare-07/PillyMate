@@ -8,10 +8,12 @@ import { Avatar, Panel, SectionLabel, SelectChip } from '../components/ui/misc.j
 import { AppShell, Body, Header } from '../components/ui/layout.jsx';
 import { parseBirth, useSelectedChild } from '../state/selectedChild.jsx';
 import { todayKey, useRecords } from '../state/records.jsx';
+import { hasAllConsents, useAddChildConsent, withConsent } from '../components/child/AddChildConsent.jsx';
 
 /** S-02 아이 목록 — 줄을 누르면 그 아이가 선택되고, 편집 버튼으로 아이 정보를 고쳐요. */
 export function ChildListScreen({ go, onTab }) {
   const { childList, childId: selected, selectChild } = useSelectedChild();
+  const addFlow = useAddChildConsent(go);
   return (
     <AppShell tab="children" onTab={onTab} header={<Header title="아이" />}>
       <Body className="gap-5">
@@ -65,7 +67,8 @@ export function ChildListScreen({ go, onTab }) {
             );
           })}
         </Panel>
-        <Button variant="secondary" className="w-full" onClick={() => go('child-add')}>아이 추가하기</Button>
+        <Button variant="secondary" className="w-full" onClick={addFlow.start}>아이 추가하기</Button>
+        {addFlow.modal}
       </Body>
     </AppShell>
   );
@@ -200,14 +203,33 @@ function ChildForm({ back, onTab, title, initial, onSave, onDelete }) {
   );
 }
 
-/** S-02 아이 추가 */
+/**
+ * S-02 아이 추가 — 보호자 동의 팝업에서 세 가지 필수 동의를 마친 뒤에만 열려요.
+ * 동의는 이 화면으로 넘어올 때 받은 값(location.state.consent)을 써요. 주소로 바로 들어오면 아이 목록으로 돌려보내요.
+ */
 export function ChildAddScreen(props) {
+  const { state } = useLocation();
   const { addChild } = useSelectedChild();
+  const consent = state?.consent;
+  if (!hasAllConsents(consent)) return <Navigate to="/children" replace />;
   const save = (values) => {
-    addChild(values);
+    // 마지막 저장 때도 필수 동의를 한 번 더 확인해요.
+    if (!hasAllConsents(consent)) {
+      props.go('children', undefined, { replace: true });
+      return;
+    }
+    // TODO(API): 아이 등록 API가 생기면 이 payload(consent_agreed: true 포함)를 보내요. 지금은 기존처럼 목록에만 넣어요.
+    const payload = withConsent(values, consent);
+    addChild(payload);
+    // 등록을 마치면 이 화면을 기록에서 바꿔치기해서, 받은 동의도 함께 사라져요.
     props.go('children', undefined, { replace: true });
   };
-  return <ChildForm {...props} title="아이 추가" initial={{ name: '', birth: '', weight: '', allergies: [], note: '' }} onSave={save} />;
+  // 등록을 취소하면 이번 동의를 지우고 돌아가요. 앞으로 가기로 다시 들어와도 동의 팝업부터 다시 받아요.
+  const cancel = (fallback) => {
+    window.history.replaceState({ ...window.history.state, usr: null }, '');
+    props.back(fallback);
+  };
+  return <ChildForm {...props} back={cancel} title="아이 추가" initial={{ name: '', birth: '', weight: '', allergies: [], note: '' }} onSave={save} />;
 }
 
 /** S-02 아이 정보 편집 — 목록의 편집 버튼에서 넘겨준 아이를 고쳐요. */

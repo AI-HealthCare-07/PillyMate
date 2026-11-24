@@ -7,6 +7,7 @@ import { dateParts, fromKey, groupBySlot, todayKey, useRecords } from '../state/
 import { useSelectedChild } from '../state/selectedChild.jsx';
 import { draftFromVisit } from './fe2Draft.js';
 import { EFFICACY_PENDING_LABEL, efficacyOf } from '../data/efficacy.js';
+import { useAddChildConsent } from '../components/child/AddChildConsent.jsx';
 
 const H2 = ({ children, action }) => (
   <div className="flex items-center justify-between">
@@ -48,6 +49,7 @@ export function HomeScreen({ go, onTab }) {
   const { childId, child } = useSelectedChild();
   const { activeCourse, dosesOn, guidesOf, toggleSlot, visitsOf } = useRecords();
   const navigate = useNavigate();
+  const addFlow = useAddChildConsent(go);
   const openHealthLog = () => navigate('/history?tab=health');
   const today = todayKey();
   const care = childId ? activeCourse(childId, today) : null;
@@ -71,7 +73,8 @@ export function HomeScreen({ go, onTab }) {
       <AppShell tab="home" onTab={onTab}>
         <Body className="items-center justify-center gap-4 text-center">
           <p className="text-17 font-semibold">먼저 아이를 등록해 주세요</p>
-          <button type="button" onClick={() => go('child-add')} className="rounded-lg bg-brand px-5 py-3.5 text-16 font-semibold text-on-brand">아이 추가하기</button>
+          <button type="button" onClick={addFlow.start} className="rounded-lg bg-brand px-5 py-3.5 text-16 font-semibold text-on-brand">아이 추가하기</button>
+          {addFlow.modal}
         </Body>
       </AppShell>
     );
