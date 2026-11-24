@@ -6,6 +6,8 @@ import { AppShell, Body } from '../components/ui/layout.jsx';
 import { dateParts, fromKey, groupBySlot, todayKey, useRecords } from '../state/records.jsx';
 import { useSelectedChild } from '../state/selectedChild.jsx';
 import { draftFromVisit } from './fe2Draft.js';
+import { EFFICACY_PENDING_LABEL, efficacyOf } from '../data/efficacy.js';
+import { useAddChildConsent } from '../components/child/AddChildConsent.jsx';
 
 const H2 = ({ children, action }) => (
   <div className="flex items-center justify-between">
@@ -21,13 +23,33 @@ const MoreLink = ({ onClick, children }) => (
 );
 
 /**
- * 홈 — 지금 고른 아이 기준으로 오늘 먹을 약, 확인할 처방, 최근 기록을 한눈에 보여요.
+ * 약 이름 아래 약효 분류 배지. 확인된 분류가 없으면 짐작하지 않고 '약효 정보 확인 중'으로 보여 줘요.
+ * inline-flex라서 먹인 약의 취소선이 배지까지 내려오지 않아요.
+ */
+const EfficacyBadge = ({ med, dim }) => {
+  const info = efficacyOf(med);
+  const tone = !info
+    ? 'border-dashed border-line text-faint'
+    : dim
+      ? 'border-line text-faint'
+      : 'border-brand/30 text-brand';
+  return (
+    <span className={`inline-flex max-w-full items-center rounded-pill border bg-surface px-2 py-px text-12 font-semibold ${tone}`}>
+      <span className="sr-only">약효 분류: </span>
+      <span className="break-keep">{info?.label ?? EFFICACY_PENDING_LABEL}</span>
+    </span>
+  );
+};
+
+/**
+ * 홈 —지금 고른 아이 기준으로 오늘 먹을 약, 확인할 처방, 최근 기록을 한눈에 보여요.
  * 먹였어요 체크는 기록 탭의 복약 달력과 같은 데이터를 써요.
  */
 export function HomeScreen({ go, onTab }) {
   const { childId, child } = useSelectedChild();
   const { activeCourse, dosesOn, guidesOf, toggleSlot, visitsOf } = useRecords();
   const navigate = useNavigate();
+  const addFlow = useAddChildConsent(go);
   const openHealthLog = () => navigate('/history?tab=health');
   const today = todayKey();
   const care = childId ? activeCourse(childId, today) : null;
@@ -51,7 +73,8 @@ export function HomeScreen({ go, onTab }) {
       <AppShell tab="home" onTab={onTab}>
         <Body className="items-center justify-center gap-4 text-center">
           <p className="text-17 font-semibold">먼저 아이를 등록해 주세요</p>
-          <button type="button" onClick={() => go('child-add')} className="rounded-lg bg-brand px-5 py-3.5 text-16 font-semibold text-on-brand">아이 추가하기</button>
+          <button type="button" onClick={addFlow.start} className="rounded-lg bg-brand px-5 py-3.5 text-16 font-semibold text-on-brand">아이 추가하기</button>
+          {addFlow.modal}
         </Body>
       </AppShell>
     );
@@ -148,9 +171,12 @@ export function HomeScreen({ go, onTab }) {
                       </span>
                       <ul className={`flex flex-1 flex-col gap-1.5 ${on ? 'text-faint line-through' : ''}`}>
                         {g.doses.map((d) => (
-                          <li key={d.key} className={`flex items-baseline justify-between gap-2 ${d.given && !on ? 'text-faint line-through' : ''}`}>
-                            <span className="text-15 font-medium">{d.name}</span>
-                            <span className={`shrink-0 text-13 ${on || d.given ? '' : 'text-muted'}`}>{d.dose}</span>
+                          <li key={d.key} className={`flex items-start justify-between gap-2 ${d.given && !on ? 'text-faint line-through' : ''}`}>
+                            <span className="flex min-w-0 flex-col items-start gap-1">
+                              <span className="break-keep text-15 font-medium">{d.name}</span>
+                              <EfficacyBadge med={d} dim={on || d.given} />
+                            </span>
+                            <span className={`shrink-0 pt-0.5 text-13 ${on || d.given ? '' : 'text-muted'}`}>{d.dose}</span>
                           </li>
                         ))}
                       </ul>

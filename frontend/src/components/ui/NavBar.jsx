@@ -1,4 +1,4 @@
-import { BookOpen, Check, ChevronDown, FileText, House, LogOut, MessageCircle, Plus, ScanLine, Settings2 } from 'lucide-react';
+import { BookOpen, Check, ChevronDown, FileText, House, LogOut, MessageCircle, ScanLine, Settings2 } from 'lucide-react';
 import { Avatar, Logo } from './misc.jsx';
 import { Popover } from './Popover.jsx';
 import { NotificationMenu } from './Notifications.jsx';
@@ -112,7 +112,6 @@ function ChildMenu({ active, onNavigate }) {
             </ul>
             <div className="my-2 border-t border-line" />
             <MenuItem icon={Settings2} onClick={() => go('children')}>아이 정보 관리</MenuItem>
-            <MenuItem icon={Plus} onClick={() => go('child-add')}>아이 추가하기</MenuItem>
             <MenuItem icon={LogOut} onClick={() => go('login')} muted>로그아웃</MenuItem>
           </>
         );
