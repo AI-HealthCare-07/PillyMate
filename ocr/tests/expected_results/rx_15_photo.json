@@ -1,0 +1,33 @@
+{
+  "prescription_date": "2026-11-11",
+  "hospital_name": "새길정형외과의원",
+  "diagnosis_extracted": "S008,S8000",
+  "medications": [
+    {
+      "name": "부루펜시럽(이부프로펜)(내복)/90(1)mL/병",
+      "insurance_code": "650400921",
+      "dose_per_time": 6.0,
+      "unit": "mL",
+      "daily_count": 3,
+      "total_days": 3,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": "식후 30분",
+      "route": "ORAL",
+      "dosage_form": "SYRUP"
+    },
+    {
+      "name": "후시딘연고(퓨시드산나트륨)/10g/개",
+      "insurance_code": "640800176",
+      "dose_per_time": 1.0,
+      "unit": "g",
+      "daily_count": 3,
+      "total_days": 7,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": "상처 부위에 얇게 바르세요",
+      "route": "EXTERNAL",
+      "dosage_form": "OINTMENT"
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "prescription_date": "2026-11-05",
+  "hospital_name": "해맑은소아청소년과의원",
+  "diagnosis_extracted": "J039,J209",
+  "medications": [
+    {
+      "name": "옴니세프세립(세프디니르)/1g",
+      "insurance_code": "641203350",
+      "dose_per_time": 0.5333,
+      "unit": "g",
+      "daily_count": 3,
+      "total_days": 7,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": "가루약,물약 따로 식후 30분",
+      "route": "ORAL",
+      "dosage_form": "POWDER"
+    },
+    {
+      "name": "코대원에스시럽(내복)/100(1)mL/병",
+      "insurance_code": "657400661",
+      "dose_per_time": 5.0,
+      "unit": "mL",
+      "daily_count": 3,
+      "total_days": 5,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": "가루약,물약 따로 식후 30분",
+      "route": "ORAL",
+      "dosage_form": "SYRUP"
+    },
+    {
+      "name": "소론도정5밀리그램(프레드니솔론)/1정",
+      "insurance_code": "653800127",
+      "dose_per_time": 0.5,
+      "unit": "정",
+      "daily_count": 2,
+      "total_days": 3,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": "가루약,물약 따로 식후 30분",
+      "route": "ORAL",
+      "dosage_form": "TABLET"
+    },
+    {
+      "name": "비오플250산(사카로마이세스보울라디)/1포",
+      "insurance_code": "644702121",
+      "dose_per_time": 0.5,
+      "unit": "포",
+      "daily_count": 3,
+      "total_days": 7,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": "가루약,물약 따로 식후 30분",
+      "route": "ORAL",
+      "dosage_form": "POWDER"
+    },
+    {
+      "name": "세토펜현탁액(아세트아미노펜)/100(1)mL/병",
+      "insurance_code": "649806731",
+      "dose_per_time": 5.0,
+      "unit": "mL",
+      "daily_count": null,
+      "total_days": 3,
+      "max_daily_count": null,
+      "as_needed": true,
+      "usage": "필요시 (5)mL씩복용(사용)하세요",
+      "route": "ORAL",
+      "dosage_form": "SYRUP"
+    }
+  ]
+}
