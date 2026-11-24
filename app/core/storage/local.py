@@ -22,6 +22,9 @@ class LocalImageStorage:
         path.write_bytes(data)
         return key
 
+    def get_image(self, key: str) -> bytes:
+        return self._path(key).read_bytes()
+
     def get_presigned_url(self, key: str, expires_in: int | None = None) -> str:
         # 실제 서명은 없고, 로컬 파일 위치를 알려 주는 가짜 주소다.
         return self._path(key).as_uri()

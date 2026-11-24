@@ -25,10 +25,13 @@ class TestLocalImageStorage:
         key = storage.upload_image(child_id=7, data=b"img", content_type="image/jpeg")
         stored = tmp_path / key
         assert stored.read_bytes() == b"img"
+        assert storage.get_image(key) == b"img"
         assert storage.get_presigned_url(key).startswith("file://")
         storage.delete_image(key)
         assert not stored.exists()
         storage.delete_image(key)  # 이미 없어도 오류 없음
+        with pytest.raises(FileNotFoundError):
+            storage.get_image(key)
 
     def test_rejects_path_outside_base_dir(self, tmp_path: Path) -> None:
         storage = LocalImageStorage(base_dir=str(tmp_path))
@@ -45,6 +48,10 @@ class TestS3ImageStorage:
         key = storage.upload_image(child_id=1, data=b"img", content_type="image/png")
         client.put_object.assert_called_once()
         assert client.put_object.call_args.kwargs["Key"] == key
+
+        client.get_object.return_value = {"Body": MagicMock(read=MagicMock(return_value=b"img"))}
+        assert storage.get_image(key) == b"img"
+        client.get_object.assert_called_once_with(Bucket="pilly-bucket", Key=key)
 
         assert storage.get_presigned_url(key) == "https://signed"
         assert client.generate_presigned_url.call_args.kwargs["ExpiresIn"] == 600

@@ -23,6 +23,10 @@ class ImageStorage(Protocol):
         """이미지를 저장하고 저장 키를 돌려준다."""
         ...
 
+    def get_image(self, key: str) -> bytes:
+        """저장된 이미지를 바이트로 읽는다. 없으면 FileNotFoundError."""
+        ...
+
     def get_presigned_url(self, key: str, expires_in: int | None = None) -> str:
         """잠깐만 쓸 수 있는 조회 주소를 돌려준다. expires_in을 주지 않으면 설정값(기본 600초)."""
         ...

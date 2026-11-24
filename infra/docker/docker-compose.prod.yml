@@ -51,6 +51,8 @@ services:
     volumes:
       - static_volume:/app/templates
       - media_volume:/app/media
+      - chroma_data:/app/chroma_db  # RAG 벡터 DB: 재배포해도 다시 임베딩하지 않도록 유지
+      - hf_cache:/root/.cache/huggingface  # 리랭커 등 Hugging Face 모델 캐시 (수 GB, 재다운로드 방지)
     restart: always
     ports:
       - "8000:8000"
@@ -117,6 +119,10 @@ volumes:
     name: certbot-conf
   certbot-www:
     name: certbot-www
+  chroma_data:
+    name: chroma_data
+  hf_cache:
+    name: hf_cache
 
 networks:
   ws:

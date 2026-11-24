@@ -51,6 +51,10 @@ class Config(BaseSettings):
     CLOVA_OCR_URL: str = ""
     CLOVA_OCR_SECRET: str = ""
     ANTHROPIC_API_KEY: str = ""
+    OPENAI_API_KEY: str = ""  # RAG 임베딩(text-embedding-3-small) 전용, 채팅·답변 생성에 쓰지 않음
+
+    # RAG 벡터 DB(Chroma) 저장 폴더. 배포 시 Docker 볼륨(chroma_data)에 연결돼 재시작해도 유지된다.
+    CHROMA_DB_DIR: str = os.path.join(Path(__file__).resolve().parent.parent.parent, "chroma_db")
 
     # 데모 로그인(A1): 배포 환경에서 false로 끄면 404. 데모 보호자는 app/scripts/seed_guardians.py로 만든다.
     DEMO_LOGIN_ENABLED: bool = False

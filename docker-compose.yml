@@ -59,6 +59,8 @@ services:
     volumes:
       - ./app:/app/app  # 로컬의 app 디렉토리를 컨테이너의 /app/app에 마운트(수정사항 즉시 반영)
       - static_volume:/app/templates
+      - chroma_data:/app/chroma_db  # RAG 벡터 DB 유지
+      - hf_cache:/root/.cache/huggingface  # Hugging Face 모델 캐시
     restart: always
     ports:
       - "8000:8000"
@@ -108,6 +110,8 @@ services:
 volumes:
   mysql_data:
   static_volume:
+  chroma_data:
+  hf_cache:
 
 networks:
   ws:

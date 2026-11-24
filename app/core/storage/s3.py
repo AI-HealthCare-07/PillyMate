@@ -31,6 +31,14 @@ class S3ImageStorage:
         )
         return key
 
+    def get_image(self, key: str) -> bytes:
+        try:
+            response = self.client.get_object(Bucket=self.bucket, Key=key)
+        except self.client.exceptions.NoSuchKey as err:
+            raise FileNotFoundError(key) from err
+        data: bytes = response["Body"].read()
+        return data
+
     def get_presigned_url(self, key: str, expires_in: int | None = None) -> str:
         url: str = self.client.generate_presigned_url(
             "get_object",

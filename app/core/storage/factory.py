@@ -24,6 +24,10 @@ def upload_image(child_id: int, data: bytes, content_type: str) -> str:
     return get_image_storage().upload_image(child_id=child_id, data=data, content_type=content_type)
 
 
+def get_image(key: str) -> bytes:
+    return get_image_storage().get_image(key)
+
+
 def get_presigned_url(key: str, expires_in: int | None = None) -> str:
     return get_image_storage().get_presigned_url(key, expires_in=expires_in)
 
