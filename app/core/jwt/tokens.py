@@ -5,7 +5,7 @@ from uuid import uuid4
 from app.core import config
 from app.core.jwt.exceptions import ExpiredTokenError, TokenBackendError, TokenBackendExpiredError, TokenError
 from app.core.jwt.state import token_backend
-from app.models.users import User
+from app.models.guardians import Guardian
 
 if TYPE_CHECKING:
     from app.core.jwt.backends import TokenBackend
@@ -75,31 +75,12 @@ class Token:
         self.payload["jti"] = uuid4().hex
 
     @classmethod
-    def for_user(cls, user: User) -> Self:
+    def for_guardian(cls, guardian: Guardian) -> Self:
         token = cls()
-        token["user_id"] = user.id
+        token["guardian_id"] = guardian.id
         return token
 
 
 class AccessToken(Token):
     token_type = "access"
     lifetime = timedelta(minutes=config.ACCESS_TOKEN_EXPIRE_MINUTES)
-
-
-class RefreshToken(Token):
-    token_type = "refresh"
-    lifetime = timedelta(minutes=config.REFRESH_TOKEN_EXPIRE_MINUTES)
-    no_copy_claims = ("type", "exp", "jti")
-
-    @property
-    def access_token(self) -> AccessToken:
-        access = AccessToken()
-        access.set_exp(from_time=self.current_time)
-
-        no_copy = self.no_copy_claims
-        for claim, value in self.payload.items():
-            if claim in no_copy:
-                continue
-            access[claim] = value
-
-        return access

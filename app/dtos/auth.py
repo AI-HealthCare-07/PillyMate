@@ -1,31 +1,42 @@
 from datetime import date
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import AfterValidator, BaseModel, EmailStr, Field
 
-from app.core.validators import validate_birthday, validate_password, validate_phone_number
-from app.models.users import Gender
+
+def _lower(value: str) -> str:
+    return value.strip().lower()
 
 
 class SignUpRequest(BaseModel):
-    email: Annotated[
-        EmailStr,
-        Field(max_length=40),
-    ]
-    password: Annotated[str, Field(min_length=8), AfterValidator(validate_password)]
-    name: Annotated[str, Field(max_length=20)]
-    gender: Gender
-    birth_date: Annotated[date, AfterValidator(validate_birthday)]
-    phone_number: Annotated[str, AfterValidator(validate_phone_number)]
+    email: Annotated[EmailStr, AfterValidator(_lower)]
+    # 길이(8~64자)는 명세 문구로 응답하기 위해 서비스에서 확인한다.
+    password: str
+    name: Annotated[str, Field(min_length=1, max_length=50)]
+    birth_date: date
+
+
+class SignUpResponse(BaseModel):
+    guardian_id: int
+    email: str
+    name: str
+    birth_date: date
 
 
 class LoginRequest(BaseModel):
-    email: EmailStr
-    password: Annotated[str, Field(min_length=8)]
+    # 로그인에서는 형식이 틀린 이메일도 422가 아니라 401로 응답한다 (어느 쪽이 틀렸는지 알려 주지 않음).
+    email: Annotated[str, AfterValidator(_lower)]
+    password: str
+
+
+class GuardianSummary(BaseModel):
+    guardian_id: int
+    name: str
+    child_count: int
 
 
 class LoginResponse(BaseModel):
     access_token: str
-
-
-class TokenRefreshResponse(LoginResponse): ...
+    token_type: Literal["bearer"] = "bearer"
+    expires_in: int
+    guardian: GuardianSummary

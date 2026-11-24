@@ -14,20 +14,20 @@ PillyMate/
 │   ├── main.py               # 앱 생성, Tortoise 초기화, v1 라우터 등록
 │   ├── apis/v1/              # 라우터 (HTTP 계층)
 │   │   ├── __init__.py       #   └ v1_routers(prefix="/api/v1")에 각 라우터 include
-│   │   ├── auth_routers.py   #   └ /auth/signup, /auth/login, /auth/token/refresh
-│   │   └── user_routers.py   #   └ /users/me (GET, PATCH)
-│   ├── services/             # 비즈니스 로직 (AuthService, JwtService, UserManageService)
-│   ├── repositories/         # DB 접근 계층 (UserRepository)
-│   ├── models/               # Tortoise ORM 모델 (User, Gender)
+│   │   ├── auth_routers.py   #   └ /auth/signup, /auth/login, /auth/demo-login
+│   │   └── me_routers.py     #   └ /me (GET)
+│   ├── services/             # 비즈니스 로직 (AuthService, JwtService)
+│   ├── repositories/         # DB 접근 계층 (GuardianRepository)
+│   ├── models/               # Tortoise ORM 모델 (Guardian, ERD v1.0)
 │   ├── dtos/                 # Pydantic 요청/응답 스키마
-│   ├── dependencies/         # FastAPI Depends용 함수 (get_request_user)
+│   ├── dependencies/         # FastAPI Depends용 함수 (CurrentGuardian, MyChild, MyPrescription)
 │   ├── core/
 │   │   ├── __init__.py       # 전역 config, default_logger 싱글턴
 │   │   ├── config.py         # pydantic-settings 기반 Config, Env(local/dev/prod)
 │   │   ├── logger.py
 │   │   ├── db/               # TORTOISE_ORM 설정 + aerich 마이그레이션
-│   │   ├── jwt/              # 토큰 백엔드(PyJWT), Access/Refresh 토큰 클래스
-│   │   ├── utils/            # 비밀번호 해시(bcrypt), 전화번호 정규화
+│   │   ├── jwt/              # 토큰 백엔드(PyJWT), Access 토큰 클래스
+│   │   ├── utils/            # 비밀번호 해시(bcrypt)
 │   │   └── validators/       # Pydantic AfterValidator용 검증 함수
 │   ├── tests/                # pytest + tortoise TestCase (MySQL 필요)
 │   └── Dockerfile
@@ -68,18 +68,18 @@ PillyMate/
 | 계층 | 위치 | 역할 | 예시 |
 | --- | --- | --- | --- |
 | Router | `app/apis/v1/` | HTTP 입출력, 의존성 주입, 쿠키·상태코드 처리 | `auth_routers.login` |
-| DTO | `app/dtos/` | 요청 검증/응답 직렬화 (Pydantic) | `SignUpRequest`, `UserInfoResponse` |
+| DTO | `app/dtos/` | 요청 검증/응답 직렬화 (Pydantic) | `SignUpRequest`, `MeResponse` |
 | Service | `app/services/` | 비즈니스 규칙, 트랜잭션 | `AuthService.signup` |
-| Repository | `app/repositories/` | ORM 쿼리 캡슐화 | `UserRepository.get_user_by_email` |
-| Model | `app/models/` | 테이블 정의 | `User` |
+| Repository | `app/repositories/` | ORM 쿼리 캡슐화 | `GuardianRepository.get_by_email` |
+| Model | `app/models/` | 테이블 정의 | `Guardian` |
 
 - 서비스는 `Depends(AuthService)` 형태로 **요청마다 새로 인스턴스화**되고, 내부에서 Repository를 직접 생성합니다.
-- 인증이 필요한 API는 `Depends(get_request_user)`로 `User` 객체를 주입받습니다 (Authorization: Bearer 헤더).
+- 인증이 필요한 API는 `guardian: CurrentGuardian`으로 로그인한 `Guardian`을 주입받습니다 (Authorization: Bearer 헤더). 토큰 문제는 모두 401 "로그인이 필요해요."
+- 내 자녀·내 처방전 확인은 `MyChild`, `MyPrescription`, `get_my_child_or_404()`를 씁니다 (남의 데이터는 404).
 
 ### 2.3 인증 방식
-- 로그인 시 **Access Token은 응답 바디**, **Refresh Token은 HttpOnly 쿠키**로 내려줍니다.
-- `/auth/token/refresh`는 쿠키의 refresh_token으로 새 Access Token을 발급합니다.
-- JWT는 `app/core/jwt/`에 직접 구현되어 있습니다 (HS256, `SECRET_KEY` 서명, `jti`/`exp`/`type`/`user_id` 클레임).
+- 로그인·데모 로그인은 **Access Token만 응답 바디**로 내려줍니다 (유효시간 12시간, 리프레시 토큰 없음, 로그아웃은 FE가 토큰 삭제). API 명세서 v1.0 1절 기준.
+- JWT는 `app/core/jwt/`에 직접 구현되어 있습니다 (HS256, `SECRET_KEY` 서명, `jti`/`exp`/`type`/`guardian_id` 클레임).
 
 ### 2.4 설정 관리
 - `app/core/__init__.py`에서 **import 시점에 `Config()`를 생성**하여 `config` 싱글턴으로 사용합니다.
@@ -143,7 +143,7 @@ PillyMate 1차 MVP(로그인 → 처방전 업로드 → OCR → 가이드 생�
   - 호스트에서 `uv run uvicorn ...`으로 실행 → `DB_HOST=localhost`
   - Docker 컨테이너(fastapi) 안에서 실행 → `DB_HOST=mysql` (서비스명). `example.local.env`의 `localhost`를 그대로 쓰면 컨테이너에서 DB 연결이 실패합니다.
 - **`SECRET_KEY` 필수 설정**: example env의 값은 템플릿 값이니 `python -c "import secrets; print(secrets.token_urlsafe(48))"`로 생성한 값으로 교체하세요. 미설정 시 프로세스마다 랜덤 키가 생성됩니다. 운영 Dockerfile은 `--workers 3`이라 **워커마다 키가 달라져 토큰 검증이 무작위로 실패**하고, 재시작 시 모든 토큰이 무효화됩니다.
-- **`ENV` 변수**: example env 파일에 `ENV=local` / `ENV=prod`가 들어 있습니다. 운영에서 `ENV=prod`가 빠지면 refresh 쿠키에 `secure` 플래그가 붙지 않습니다.
+- **`ENV` 변수**: example env 파일에 `ENV=local` / `ENV=prod`가 들어 있습니다. 운영에서는 `ENV=prod`, `STORAGE_BACKEND=s3`, `DEMO_LOGIN_ENABLED`(시연 여부에 맞게)를 꼭 확인하세요.
 - example env의 `DOCKER_USER=ozcodingschool`, 비밀번호·SECRET_KEY는 템플릿 값입니다. **팀 값으로 교체하고, 실제 값은 절대 커밋하지 마세요** (`.gitignore`의 `.*.env`, `.env` 규칙 유지).
 
 - **로컬 MySQL 포트 충돌**: Homebrew 등으로 Mac에 MySQL이 설치·실행 중이면 `127.0.0.1:3306`을 먼저 점유해 Docker MySQL 대신 로컬 MySQL로 접속됩니다(`Access denied for user ...@'localhost'`). `brew services stop mysql@8.4` 등으로 끄거나 `DB_EXPOSE_PORT`/`DB_PORT`를 3307 등으로 바꾸세요.
@@ -157,7 +157,7 @@ PillyMate 1차 MVP(로그인 → 처방전 업로드 → OCR → 가이드 생�
 
 ### 4.3 DB / 마이그레이션
 - 테이블 자동 생성이 없으므로 **최초 실행 시 `uv run aerich upgrade`** 가 필요합니다.
-- ⏳ `users.email`, `users.phone_number`에 **UNIQUE 제약이 없습니다** (마이그레이션이 필요해 아직 미적용). 중복 검사는 서비스에서 `exists()`로만 하므로 동시 요청 시 중복 가입이 가능합니다. 신규 모델에서 고유해야 하는 컬럼은 `unique=True`를 지정하세요.
+- 테이블·컬럼 이름은 `PillyMate_ERD_v1.0`을 따릅니다. `guardian.email`은 UNIQUE이며 소문자로 저장합니다. PK 컬럼 이름이 `guardian_id`처럼 테이블별로 다르면 `fields.BigIntField(primary_key=True, source_field="guardian_id")`처럼 코드에서는 `id`, DB에서는 ERD 이름을 씁니다.
 - 한글 저장을 위해 MySQL은 `utf8mb4`로 설정되어 있습니다. 컨테이너 설정을 바꿀 때 이 옵션을 유지하세요.
 - 시간대는 `Asia/Seoul`로 통일되어 있습니다(`config.TIMEZONE`, Tortoise `timezone`). 시간 생성 시 `datetime.now(config.TIMEZONE)`을 사용하세요.
 
