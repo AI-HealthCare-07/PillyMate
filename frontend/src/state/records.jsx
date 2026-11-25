@@ -210,7 +210,10 @@ export function RecordsProvider({ children }) {
       removeVisit: (id) => setState((prev) => ({ ...prev, visits: prev.visits.filter((v) => v.id !== id) })),
       /** 아이를 삭제할 때 — 그 아이의 복약 체크·건강기록·복약 일정을 모두 지워요. */
       forgetChild: (childId) =>
+        // ...prev로 알림 설정(alarmOff·alarmSince·alarmTimes)처럼 여기서 안 건드리는 값도 그대로 남겨요.
+        // 빠뜨리면 알림 메뉴가 없는 값을 읽다가 앱 전체가 빈 화면이 돼요.
         setState((prev) => ({
+          ...prev,
           doses: Object.fromEntries(Object.entries(prev.doses).filter(([key]) => !key.startsWith(`${childId}|`))),
           visits: prev.visits.filter((v) => v.childId !== childId),
           courses: prev.courses.filter((c) => c.childId !== childId),
