@@ -22,6 +22,8 @@ class TestMeAPI(TestCase):
         assert body["email"] == "me@example.com"
         assert body["name"] == "김보호"
         assert body["birth_date"] == "1990-05-14"
+        assert body["gender"] == "FEMALE"
+        assert body["phone_number"] == "01012345678"
         assert re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+09:00", body["created_at"])
 
     async def test_get_me_without_token_returns_401(self) -> None:

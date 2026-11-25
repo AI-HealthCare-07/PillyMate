@@ -6,4 +6,5 @@ from .guardian_validators import (
     international_age,
     is_adult_guardian,
     is_valid_password_length,
+    normalize_phone_number,
 )

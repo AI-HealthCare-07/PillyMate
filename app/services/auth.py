@@ -38,6 +38,8 @@ class AuthService:
                 password_hash=hash_password(data.password),
                 name=data.name,
                 birth_date=data.birth_date,
+                gender=data.gender,
+                phone_number=data.phone_number,
             )
         except IntegrityError as err:  # 동시에 같은 이메일로 가입한 경우 (UNIQUE 제약)
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=EMAIL_TAKEN_MESSAGE) from err
