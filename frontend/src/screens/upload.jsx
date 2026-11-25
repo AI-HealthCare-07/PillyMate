@@ -1,16 +1,19 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertTriangle, Camera, Check, Circle, ImageIcon, RefreshCw } from 'lucide-react';
 import { Button, SmallButton } from '../components/ui/Button.jsx';
 import { Field } from '../components/ui/Field.jsx';
 import { Avatar, Panel, SectionLabel } from '../components/ui/misc.jsx';
+import { AlertDialog } from '../components/ui/AlertDialog.jsx';
 import { AppShell, Body, Header } from '../components/ui/layout.jsx';
 import { RxPaper } from '../components/rx/RxPaper.jsx';
 import { useSelectedChild } from '../state/selectedChild.jsx';
-import { prescription as sampleRx } from '../data/sample.js';
 import { getPrescriptionDraft, setPrescriptionDraft } from './fe2Draft.js';
-
-const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
-const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+import {
+  ACCEPT_ATTRIBUTE,
+  draftFieldsFromRegistration,
+  imageFileProblem,
+  registerPrescription,
+} from '../api/prescriptionRegistration.js';
 
 /** S-03 처방 올리기 — 파일 선택/검증/미리보기는 실제 동작합니다. */
 export function UploadScreen({ go, back, onTab }) {
@@ -29,16 +32,9 @@ export function UploadScreen({ go, back, onTab }) {
     const selected = event.target.files?.[0];
     event.target.value = '';
     if (!selected) return;
-    if (!ACCEPTED_TYPES.includes(selected.type)) {
-      setError('JPG, PNG, WEBP 사진만 올릴 수 있어요.');
-      return;
-    }
-    if (selected.size > MAX_IMAGE_BYTES) {
-      setError('사진은 10MB 이하로 선택해 주세요.');
-      return;
-    }
-    if (!selected.size) {
-      setError('비어 있는 파일은 올릴 수 없어요.');
+    const problem = imageFileProblem(selected);
+    if (problem) {
+      setError(problem);
       return;
     }
     const url = URL.createObjectURL(selected);
@@ -71,7 +67,7 @@ export function UploadScreen({ go, back, onTab }) {
               <Avatar name={childInfo.name} size={40} />
               <div className="flex flex-1 flex-col gap-0.5">
                 <p className="text-16 font-semibold">{childInfo.name}의 약</p>
-                <p className="text-13 text-muted">{childInfo.age}, {childInfo.weight}</p>
+                <p className="text-13 text-muted">{[childInfo.age, childInfo.weight].filter(Boolean).join(', ')}</p>
                 {childInfo.allergy && (
                   <p className="flex items-center gap-1 text-13 font-medium text-danger">
                     <AlertTriangle size={14} strokeWidth={2} aria-hidden />{childInfo.allergy}
@@ -97,7 +93,7 @@ export function UploadScreen({ go, back, onTab }) {
             <div className="flex flex-1 flex-col gap-2.5">
               <div className="flex flex-col gap-0.5">
                 <p className="text-16 font-semibold">{file ? file.name : '처방전 사진을 선택해 주세요'}</p>
-                <p className="text-13 text-muted">{file ? `${(file.size / 1024 / 1024).toFixed(2)}MB` : 'JPG, PNG, WEBP · 최대 10MB'}</p>
+                <p className="text-13 text-muted">{file ? `${(file.size / 1024 / 1024).toFixed(2)}MB` : 'JPG, PNG · 최대 10MB'}</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <SmallButton icon={Camera} onClick={() => cameraInput.current?.click()}>사진 찍기</SmallButton>
@@ -105,8 +101,8 @@ export function UploadScreen({ go, back, onTab }) {
               </div>
             </div>
           </Panel>
-          <input ref={cameraInput} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" className="hidden" onChange={chooseFile} aria-label="카메라로 처방전 촬영" />
-          <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={chooseFile} aria-label="처방전 이미지 선택" />
+          <input ref={cameraInput} type="file" accept={ACCEPT_ATTRIBUTE} capture="environment" className="hidden" onChange={chooseFile} aria-label="카메라로 처방전 촬영" />
+          <input ref={fileInput} type="file" accept={ACCEPT_ATTRIBUTE} className="hidden" onChange={chooseFile} aria-label="처방전 이미지 선택" />
           {error && <p role="alert" className="text-13 text-danger">{error}</p>}
         </div>
         <Field label="병명 (아는 경우)" placeholder="예: 중이염" value={disease} onChange={(e) => setDisease(e.target.value)} />
@@ -117,41 +113,120 @@ export function UploadScreen({ go, back, onTab }) {
   );
 }
 
+
 const STEPS = [
   { label: '사진 올리기', state: 'done' },
   { label: '글자 읽기', state: 'active' },
-  { label: '이름, 주민번호 가리기', state: 'next' },
+  { label: '약 정보 정리하기', state: 'next' },
 ];
 
-/** S-03 읽는 중 — API 연결 전 명시적 데모 동작 */
+const RETAKE_TIPS = ['밝은 곳에서 그림자 없이 찍어 주세요.', '처방전 전체가 화면에 들어오게 해 주세요.', '글자가 또렷하게 보일 때 찍어 주세요.'];
+
+/**
+ * 다시 찍기 알럿 — 신뢰도가 낮거나(60% 미만) OCR이 실패하면 처방이 저장되지 않아요.
+ * 버튼을 누르기 전에는 닫히지 않고 뒤 화면도 누를 수 없어요 (Esc·바깥 누르기 무시).
+ * 새 사진을 고르면 다시 읽고, '처방 올리기로 돌아가기'를 누르면 처음 화면으로 가요.
+ */
+function RetakeAlert({ open, message, onPick, onGiveUp }) {
+  const [error, setError] = useState('');
+  const cameraInput = useRef(null);
+  const fileInput = useRef(null);
+  const choose = (event) => {
+    const selected = event.target.files?.[0];
+    event.target.value = '';
+    if (!selected) return;
+    const problem = imageFileProblem(selected);
+    if (problem) {
+      setError(problem);
+      return;
+    }
+    setError('');
+    onPick(selected);
+  };
+  return (
+    <>
+      <AlertDialog open={open} title="사진을 다시 찍어 주세요" description={message}>
+        <ul className="flex list-disc flex-col gap-1 pl-5 text-14 text-muted">
+          {RETAKE_TIPS.map((tip) => <li key={tip}>{tip}</li>)}
+        </ul>
+        {error && <p role="alert" className="text-13 text-danger">{error}</p>}
+        <div className="flex flex-col gap-2">
+          <Button className="w-full" onClick={() => cameraInput.current?.click()}>
+            <Camera size={18} className="mr-1.5" aria-hidden />사진 다시 찍기
+          </Button>
+          <Button variant="secondary" className="w-full" onClick={() => fileInput.current?.click()}>
+            <ImageIcon size={18} className="mr-1.5" aria-hidden />앨범에서 고르기
+          </Button>
+          <button type="button" onClick={onGiveUp} className="self-center rounded-md px-3 py-2 text-14 font-medium text-muted hover:text-ink">
+            처방 올리기로 돌아가기
+          </button>
+        </div>
+      </AlertDialog>
+      {/* 숨긴 input은 다이얼로그 밖에 둬요. 안에 있으면 Tab 가두기가 보이지 않는 칸에서 끊겨요. */}
+      <input ref={cameraInput} type="file" accept={ACCEPT_ATTRIBUTE} capture="environment" className="hidden" tabIndex={-1} onChange={choose} aria-label="카메라로 처방전 다시 촬영" />
+      <input ref={fileInput} type="file" accept={ACCEPT_ATTRIBUTE} className="hidden" tabIndex={-1} onChange={choose} aria-label="처방전 이미지 다시 선택" />
+    </>
+  );
+}
+
+/** S-03 읽는 중 — POST /prescriptions로 사진을 올리고 OCR 결과를 받아요. */
 export function ReadingScreen({ go, back, onTab }) {
-  const draft = getPrescriptionDraft();
+  const [attempt, setAttempt] = useState(0);
+  const [retakeMessage, setRetakeMessage] = useState('');
+  const [failure, setFailure] = useState('');
+  // 개발 모드(StrictMode)에서 효과가 두 번 돌아도 처방 등록 요청은 한 번만 보내요 (두 번 보내면 처방이 두 개 저장돼요).
+  const mounted = useRef(true);
+  const startedAttempt = useRef(-1);
+
   useEffect(() => {
-    if (!draft?.file) { go('upload', undefined, { replace: true }); return undefined; }
-    // TODO(API): BE-2 처방 이미지 업로드 + OCR 동기 API를 호출하고
-    // 성공 응답의 약 목록/처방 ID를 setPrescriptionDraft에 저장한 뒤 confirm으로 이동.
-    // 실패 시 이 화면에서 오류/재시도를 표시하고 자동으로 넘어가지 않도록 변경.
-    // 현재는 화면 흐름 점검용 데모이며 실제 OCR은 수행하지 않습니다.
-    const timer = setTimeout(() => {
-      // 데모 OCR 결과: 처방전 머리(병원, 처방일, 병명)는 예시 값이에요.
-      setPrescriptionDraft({
-        ...draft,
-        status: 'mock-ocr',
-        ocr: { hospital: sampleRx.hospital, date: sampleRx.isoDate, disease: sampleRx.disease },
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
+
+  useEffect(() => {
+    const current = getPrescriptionDraft();
+    if (!current?.file) { go('upload', undefined, { replace: true }); return undefined; }
+    if (startedAttempt.current === attempt) return undefined;
+    startedAttempt.current = attempt;
+    registerPrescription({ childId: current.childId, file: current.file, disease: current.disease, note: current.note })
+      .then((data) => {
+        if (!mounted.current) return;
+        setPrescriptionDraft({ ...getPrescriptionDraft(), ...draftFieldsFromRegistration(data) });
+        go('confirm', undefined, { replace: true });
+      })
+      .catch((error) => {
+        if (!mounted.current) return;
+        if (error.retake) setRetakeMessage(error.message);
+        else setFailure(error.message);
       });
-      go('confirm', undefined, { replace: true });
-    }, 2500);
-    return () => clearTimeout(timer);
-  }, [go]);
+    return undefined;
+  }, [go, attempt]);
+
+  const retakeWith = useCallback((file) => {
+    const current = getPrescriptionDraft();
+    setPrescriptionDraft({ ...current, file, previewUrl: URL.createObjectURL(file), status: 'selected' });
+    setRetakeMessage('');
+    setAttempt((n) => n + 1);
+  }, []);
+  const giveUp = useCallback(() => back('upload'), [back]);
+
   const cancel = <Button variant="secondary" className="w-full lg:w-auto lg:min-w-[160px]" onClick={() => back('upload')}>취소</Button>;
   return (
     <AppShell tab="upload" onTab={onTab} showTabs={false} header={<Header title="처방 읽는 중" onBack={() => back('upload')} />} actions={{ mobile: cancel }}>
       <div className="flex flex-1 flex-col items-center gap-7 p-6 lg:px-0" aria-live="polite">
-        <RxPaper width={200} marks={[[140, 186, 30], [232, 206, 30]]} scanning />
-        <div className="flex flex-col gap-2 text-center">
-          <h2 className="text-22 font-bold">처방전을 읽고 있어요</h2>
-          <p className="text-15 text-muted">현재는 화면 확인용 데모입니다. 실제 OCR은 API 연결 후 동작합니다.</p>
-        </div>
+        <RxPaper width={200} marks={[[140, 186, 30], [232, 206, 30]]} scanning={!failure} />
+        {failure ? (
+          <div className="flex flex-col items-center gap-4 text-center">
+            <h2 className="text-22 font-bold">처방전을 올리지 못했어요</h2>
+            <p role="alert" className="text-15 text-danger">{failure}</p>
+            <Button variant="secondary" onClick={() => back('upload')}>처방 올리기로 돌아가기</Button>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2 text-center">
+            <h2 className="text-22 font-bold">처방전을 읽고 있어요</h2>
+            <p className="text-15 text-muted">최대 30초쯤 걸려요. 화면을 닫지 말아 주세요.</p>
+          </div>
+        )}
         <Panel as="ol" className="w-full" aria-label="진행 단계">
           {STEPS.map((s, j) => (
             <li key={s.label} className={`flex items-center gap-3 px-4 py-3.5 ${j ? 'border-t border-line' : ''}`}>
@@ -166,6 +241,7 @@ export function ReadingScreen({ go, back, onTab }) {
           ))}
         </Panel>
       </div>
+      <RetakeAlert open={Boolean(retakeMessage)} message={retakeMessage} onPick={retakeWith} onGiveUp={giveUp} />
     </AppShell>
   );
 }

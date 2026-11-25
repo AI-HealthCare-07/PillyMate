@@ -150,7 +150,7 @@ export function ConfirmScreen({ go, back, onTab }) {
           읽은 내용이 처방전과<br className="lg:hidden" /> 같은지 확인해 주세요
         </h2>
 
-        <p role="status" className="text-13 text-muted">현재 약 목록은 예시 데이터입니다. 업로드한 사진의 실제 OCR 결과가 아닙니다.</p>
+        {!draft?.prescriptionId && <p role="status" className="text-13 text-muted">현재 약 목록은 예시 데이터입니다. 업로드한 사진의 실제 OCR 결과가 아닙니다.</p>}
         <p className="text-14 text-muted">확인을 누르면 병원, 처방일, 병명, 약이 {child?.name ?? '아이'}의 건강기록에 자동으로 남고, 복약 달력에 먹일 약이 채워져요.</p>
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:gap-10">
           {/* 데스크톱 원본 */}

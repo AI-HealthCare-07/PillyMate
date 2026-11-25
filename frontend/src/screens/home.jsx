@@ -93,7 +93,7 @@ export function HomeScreen({ go, onTab }) {
         <section className="flex flex-col gap-1.5">
           <h1 className="text-24 font-bold">{child.name}의 하루</h1>
           <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-14 text-muted">
-            <span>{child.age} · {child.weight}{child.allergy ? '' : ' · 알레르기 없음'}</span>
+            <span>{[child.age, child.weight, child.allergy ? '' : '알레르기 없음'].filter(Boolean).join(' · ')}</span>
             {child.allergy && (
               <span className="inline-flex items-center gap-1 rounded-pill bg-danger-soft px-2 py-0.5 text-13 font-semibold text-danger">
                 <AlertTriangle size={13} strokeWidth={2.25} aria-hidden />{child.allergy}

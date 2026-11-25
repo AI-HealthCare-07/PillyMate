@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AlertTriangle, Check, Pencil, Trash2 } from 'lucide-react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { Button } from '../components/ui/Button.jsx';
@@ -12,13 +12,36 @@ import { CHILD_AGE_LIMIT, fullAge, hasAllConsents, toChildCreateRequest, useAddC
 
 /** S-02 아이 목록 — 줄을 누르면 그 아이가 선택되고, 편집 버튼으로 아이 정보를 고쳐요. */
 export function ChildListScreen({ go, onTab }) {
-  const { childList, childId: selected, selectChild } = useSelectedChild();
+  const { childList, childId: selected, selectChild, status, loadError, refreshChildren } = useSelectedChild();
   const addFlow = useAddChildConsent(go);
+  // 로그인하면 이 화면으로 와요. 그때 로그인한 보호자의 자녀 목록을 서버에서 다시 받아요.
+  useEffect(() => {
+    refreshChildren();
+  }, [refreshChildren]);
   return (
     <AppShell tab="children" onTab={onTab} header={<Header title="아이" />}>
       <Body className="gap-5">
         <p className="text-15 text-muted">고른 아이의 기록만 보여 드리고, 처방을 올릴 때도 그 아이 정보로 가이드를 만들어요. 체중과 알레르기는 최신으로 유지해 주세요.</p>
-        {!childList.length && (
+        {status === 'loading' && !childList.length && (
+          <Panel className="px-4 py-6 text-center text-15 text-muted">아이 목록을 불러오고 있어요.</Panel>
+        )}
+        {status === 'error' && (
+          <Panel role="alert" className="flex flex-col items-center gap-3 px-4 py-6 text-center text-15">
+            <p className="text-danger">{loadError}</p>
+            {loadError === '로그인이 필요해요.' ? (
+              <Button variant="secondary" onClick={() => go('login')}>로그인하러 가기</Button>
+            ) : (
+              <Button variant="secondary" onClick={refreshChildren}>다시 불러오기</Button>
+            )}
+          </Panel>
+        )}
+        {status === 'idle' && (
+          <Panel className="flex flex-col items-center gap-3 px-4 py-6 text-center text-15 text-muted">
+            <p>로그인하면 등록한 아이를 볼 수 있어요.</p>
+            <Button variant="secondary" onClick={() => go('login')}>로그인하러 가기</Button>
+          </Panel>
+        )}
+        {status === 'ready' && !childList.length && (
           <Panel className="px-4 py-6 text-center text-15 text-muted">등록된 아이가 없어요. 아이를 추가해 주세요.</Panel>
         )}
         <Panel as="ul" aria-label="아이 목록" className={childList.length ? '' : 'hidden'}>
@@ -101,6 +124,8 @@ function ChildForm({ back, onTab, title, initial, onSave, onDelete, extraValidat
   const [weight, setWeight] = useState(String(initial.weight).replace(/\s*kg$/i, ''));
   const [note, setNote] = useState(initial.note);
   const [errors, setErrors] = useState({});
+  const [saveError, setSaveError] = useState('');
+  const [saving, setSaving] = useState(false);
   const [allergy, setAllergy] = useState(initial.allergies.length ? initial.allergies : ['없음']);
   const [chips, setChips] = useState(() => [...ALLERGIES, ...initial.allergies.filter((a) => !ALLERGIES.includes(a))]);
   const [adding, setAdding] = useState(false);
@@ -119,16 +144,28 @@ function ChildForm({ back, onTab, title, initial, onSave, onDelete, extraValidat
   };
   const toggle = (a) =>
     setAllergy((prev) => (a === '없음' ? ['없음'] : prev.includes(a) ? prev.filter((x) => x !== a) : [...prev.filter((x) => x !== '없음'), a]));
-  // TODO(API): 아이 추가/수정 API 연결 후 저장 결과를 아이 목록에 반영.
-  const submit = () => {
+  // onSave는 서버 저장(아이 추가)처럼 비동기일 수 있어요. 실패하면 서버 문구를 폼 아래에 보여 줘요.
+  const submit = async () => {
+    if (saving) return;
     const values = { name, birth, weight, allergies: allergy, note };
     const found = validate(values);
     if (!found.birth && extraValidate) Object.assign(found, extraValidate(values));
     setErrors(found);
     if (Object.keys(found).length) return;
-    onSave(values);
+    setSaving(true);
+    setSaveError('');
+    try {
+      await onSave(values);
+    } catch (error) {
+      setSaveError(error.message || '저장하지 못했어요. 잠시 후 다시 시도해 주세요.');
+      setSaving(false);
+    }
   };
-  const save = <Button className="w-full lg:w-auto lg:min-w-[160px]" onClick={submit}>저장하기</Button>;
+  const save = (
+    <Button className="w-full lg:w-auto lg:min-w-[160px]" onClick={submit} disabled={saving}>
+      {saving ? '저장하는 중' : '저장하기'}
+    </Button>
+  );
   return (
     <AppShell tab="children" onTab={onTab} showTabs={false} header={<Header title={title} onBack={() => back('children')} />} actions={{ mobile: save }}>
       <Body className="gap-5">
@@ -189,6 +226,7 @@ function ChildForm({ back, onTab, title, initial, onSave, onDelete, extraValidat
             </div>
           )}
         </fieldset>
+        {saveError && <p role="alert" className="text-14 text-danger">{saveError}</p>}
         <Field label="특이사항" multiline value={note} onChange={(e) => setNote(e.target.value)} placeholder="예: 시럽을 잘 안 먹어요, 열성 경련이 있었어요" helper="가이드를 만들 때 함께 고려해요." />
         {onDelete && (
           <div className="mt-4 flex flex-col gap-2 border-t border-line pt-6">
@@ -216,16 +254,15 @@ export function ChildAddScreen(props) {
   const { addChild } = useSelectedChild();
   const consent = state?.consent;
   if (!hasAllConsents(consent)) return <Navigate to="/children" replace />;
-  const save = (values) => {
+  const save = async (values) => {
     // 마지막 저장 때도 필수 동의를 한 번 더 확인해요. API로 보낼 본문(명세 3번)의 consent_agreed가 true여야 해요.
     const request = toChildCreateRequest(values, consent);
     if (!hasAllConsents(consent) || request.consent_agreed !== true) {
       props.go('children', undefined, { replace: true });
       return;
     }
-    // TODO(API): 자녀 등록 API(BE-2)가 생기면 request를 POST /api/v1/children으로 보내고, 성공했을 때만 목록에 넣어요.
-    // 지금은 서버 저장 없이 기존처럼 화면 목록에만 넣어요(동의 기록도 서버에 남지 않아요).
-    addChild(values);
+    // POST /api/v1/children — 성공했을 때만 목록에 넣어요. 실패하면 폼이 서버 문구를 보여 줘요. 동의 시각은 서버가 남겨요.
+    await addChild(request);
     // 등록을 마치면 이 화면을 기록에서 바꿔치기해서, 받은 동의도 함께 사라져요.
     props.go('children', undefined, { replace: true });
   };

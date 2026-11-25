@@ -84,7 +84,7 @@ export function fullAge(birthDate, today = new Date()) {
  * 자녀 등록 요청 본문 — API 명세 3번 `POST /children`과 같은 필드만 만들어요.
  * - consent_agreed: 필수 동의 3가지를 모두 했을 때만 true (서버는 불리언 하나만 받아요)
  * - 동의 시각은 서버가 저장해요(child.consent_agreed_at). 화면의 시각·버전·항목별 동의는 보내지 않아요.
- * TODO(API): 자녀 등록 API(BE-2)가 생기면 이 값을 그대로 보내요. 지금은 서버 저장 없이 화면 목록에만 넣어요.
+ * 이 값을 그대로 POST /api/v1/children 본문으로 보내요 (state/selectedChild.jsx의 addChild).
  */
 export function toChildCreateRequest({ name, birth, weight, allergies, note }, consent) {
   const weightKg = Number(String(weight ?? '').replace(/[^\d.]/g, ''));
