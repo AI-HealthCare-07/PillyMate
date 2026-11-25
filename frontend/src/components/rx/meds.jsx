@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { Button, IconButton } from '../ui/Button.jsx';
 import { Field } from '../ui/Field.jsx';
-import { LowValue } from './Highlight.jsx';
+import { Highlight, LowValue } from './Highlight.jsx';
 import { medFields } from '../../data/sample.js';
+import { isAsNeeded } from '../../state/records.jsx';
 
 /** 새로 추가하는 약의 빈 값 */
 export const emptyMed = () => ({
@@ -13,9 +14,13 @@ export const emptyMed = () => ({
   ...Object.fromEntries(medFields.map(([k]) => [k, { value: '' }])),
 });
 
-function Value({ v }) {
-  // 읽지 못한 칸은 비워 두고, 보호자가 연필 버튼으로 채우도록 알려요.
-  if (!v.value) return <span className="text-14 font-medium text-faint">입력 필요</span>;
+/** 이 칸을 채워야 하는지 — 필요할 때 먹는 약은 정해진 기간이 없어서 비어 있어도 돼요. */
+const isMissing = (med, k) => !String(med[k]?.value ?? '').trim() && !(k === 'days' && isAsNeeded(med));
+
+function Value({ v, missing }) {
+  // 읽지 못한 칸은 노란 형광펜으로 '입력 필요'를 보여 줘서, 보호자가 연필 버튼으로 채우도록 알려요.
+  if (missing) return <Highlight className="text-14">입력 필요</Highlight>;
+  if (!v.value) return <span className="text-14 font-medium text-faint">정해진 기간 없음</span>;
   if (v.low) return <LowValue value={v.value} stacked size="text-16" />;
   return <span className="text-16 font-medium">{v.value}</span>;
 }
@@ -32,7 +37,7 @@ function MedView({ med, onEdit, editRef }) {
         {medFields.map(([k, label]) => (
           <div key={k} className="flex min-w-0 flex-col gap-0.5">
             <dt className="text-13 text-muted">{label}</dt>
-            <dd><Value v={med[k]} /></dd>
+            <dd><Value v={med[k]} missing={isMissing(med, k)} /></dd>
           </div>
         ))}
       </dl>
@@ -138,7 +143,8 @@ export function MedCard({ med, onChange, onRemove, onEditingChange }) {
     close();
   };
 
-  const low = medFields.some(([k]) => med[k].low);
+  // 흐릿하게 읽혔거나 채워야 할 칸이 있으면 카드 왼쪽에 노란 띠를 둘러요.
+  const low = medFields.some(([k]) => med[k].low || isMissing(med, k));
   return (
     <li
       ref={cardRef}

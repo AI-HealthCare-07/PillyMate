@@ -40,15 +40,18 @@ export const hhmm = ([h, m]) => `${String(h).padStart(2, '0')}:${String(m).padSt
 
 /**
  * 그날 먹일 약을 먹는 때(아침/점심/저녁/자기 전)별로 묶어요. 한 번에 체크할 때 써요.
+ * 같은 날 처방이 여러 개여도 같은 때의 약은 한 칸으로 모으고, 아침 → 점심 → 저녁 → 자기 전 순서로 보여요.
  * 결과: [{ slot, doses, given(먹인 수), done(모두 먹였는지) }]
  */
 export function groupBySlot(doses) {
-  const slots = [];
+  const bySlot = new Map();
   for (const d of doses) {
-    const last = slots[slots.length - 1];
-    if (last?.slot === d.slot) last.doses.push(d);
-    else slots.push({ slot: d.slot, doses: [d] });
+    if (!bySlot.has(d.slot)) bySlot.set(d.slot, { slot: d.slot, doses: [] });
+    bySlot.get(d.slot).doses.push(d);
   }
+  // 정해진 순서에 없는 때는 맨 뒤로 보내요.
+  const order = (slot) => (SLOT_ORDER.includes(slot) ? SLOT_ORDER.indexOf(slot) : SLOT_ORDER.length);
+  const slots = [...bySlot.values()].sort((a, b) => order(a.slot) - order(b.slot));
   return slots.map((g) => {
     const given = g.doses.filter((d) => d.given).length;
     return { ...g, given, done: given === g.doses.length };
@@ -59,7 +62,8 @@ export function groupBySlot(doses) {
 const SLOTS_BY_COUNT = { 1: ['아침'], 2: ['아침', '저녁'], 3: ['아침', '점심', '저녁'], 4: ['아침', '점심', '저녁', '자기 전'] };
 const SLOT_ORDER = ['아침', '점심', '저녁', '자기 전'];
 const firstNumber = (text) => Number(String(text ?? '').match(/\d+/)?.[0] ?? 0);
-const isAsNeeded = (m) => /열|필요|아플|통증/.test(`${m.perDay?.value ?? ''} ${m.days?.value ?? ''}`);
+/** 열날 때·필요할 때 먹는 약인지 — 정해진 때와 기간이 없어요. */
+export const isAsNeeded = (m) => /열|필요|아플|통증/.test(`${m.perDay?.value ?? ''} ${m.days?.value ?? ''}`);
 
 /**
  * 확인한 약 목록(OCR 결과)으로 복약 일정을 만들어요.
