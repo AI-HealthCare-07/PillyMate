@@ -25,7 +25,7 @@ const DOC_WORDS = {
 
 export function BackLink({ children, onClick }) {
   return (
-    <button type="button" onClick={onClick} className="hidden items-center gap-1 self-start py-2 pr-2 text-14 font-medium text-muted hover:text-ink lg:inline-flex">
+    <button type="button" onClick={onClick} className="-ml-1 hidden min-h-11 items-center gap-1 self-start rounded-md pl-1 pr-2 text-14 font-medium text-muted hover:text-ink lg:inline-flex">
       <ChevronLeft size={18} aria-hidden />
       {children}
     </button>
@@ -41,8 +41,8 @@ export function BackLink({ children, onClick }) {
 function OriginalModal({ open, onClose, previewUrl, head, words }) {
   return (
     <Modal open={open} onClose={onClose} title={`${words.name} 원본`} description={`${head.hospital}, ${head.date}`}>
-      <div className="flex flex-col gap-3 bg-sunk p-4">
-        {previewUrl ? <img src={previewUrl} alt={`업로드한 ${words.name} 원본`} className="max-h-[70vh] w-full object-contain" /> : <RxPaper fluid marks={MARKS} />}
+      <div className="flex flex-col gap-3 bg-paper p-4">
+        {previewUrl ? <img src={previewUrl} alt={`업로드한 ${words.name} 원본`} className="max-h-[70vh] w-full rounded-md object-contain" /> : <RxPaper fluid marks={MARKS} />}
         {!previewUrl && <p className="flex items-center gap-2 text-13 text-muted">
           <Highlight className="text-13">노란 표시</Highlight>
           흐릿하게 읽힌 곳이에요.
@@ -169,24 +169,36 @@ export function ConfirmScreen({ go, back, onTab }) {
   return (
     <AppShell tab="upload" onTab={onTab} showTabs={false} width="wide" actions={actions}
       header={<Header title="처방 내용 확인" onBack={() => back('upload')} className="lg:hidden" />}>
-      <div className="flex flex-col gap-5 px-5 pb-7 pt-1 lg:gap-5 lg:px-0 lg:pb-16 lg:pt-8">
-        <BackLink onClick={() => back('upload')}>돌아가기</BackLink>
-        <h2 className="text-22 font-bold lg:text-28">
-          읽은 내용이 {words.withAnd}<br className="lg:hidden" /> 같은지 확인해 주세요
-        </h2>
-
-        {!draft?.prescriptionId && <p role="status" className="text-13 text-muted">현재 약 목록은 예시 데이터입니다. 업로드한 사진의 실제 OCR 결과가 아닙니다.</p>}
-        <p className="text-14 text-muted">확인을 누르면 병원, {words.dateLabel}, 병명, 약이 {child?.name ?? '아이'}의 건강기록에 자동으로 남고, 복약 달력에 먹일 약이 채워져요.</p>
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:gap-10">
+      <div className="flex flex-col gap-6 px-5 pb-8 pt-1 lg:gap-8 lg:px-0 lg:pb-16 lg:pt-6">
+        <div className="flex flex-col gap-3 lg:max-w-reading">
+          <BackLink onClick={() => back('upload')}>돌아가기</BackLink>
+          <h2 className="text-22 font-bold lg:text-28">
+            읽은 내용이 {words.withAnd}<br className="lg:hidden" /> 같은지 확인해 주세요
+          </h2>
+          {!draft?.prescriptionId && <p role="status" className="text-13 text-faint">현재 약 목록은 예시 데이터입니다. 업로드한 사진의 실제 OCR 결과가 아닙니다.</p>}
+          <p className="text-15 text-muted">확인을 누르면 병원, {words.dateLabel}, 병명, 약이 {child?.name ?? '아이'}의 건강기록에 자동으로 남고, 복약 달력에 먹일 약이 채워져요.</p>
+        </div>
+        <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] lg:items-start lg:gap-10 xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)] xl:gap-12">
           {/* 데스크톱 원본 */}
-          <div className="hidden w-[420px] shrink-0 flex-col gap-3 lg:sticky lg:top-[100px] lg:flex">
-            {draft?.previewUrl ? <img src={draft.previewUrl} alt={`업로드한 ${words.name} 원본`} className="max-h-[580px] w-full rounded-xl border border-line object-contain" /> : <RxPaper width={420} marks={MARKS} />}
-            <div className="flex gap-2">
+          <div className="hidden flex-col overflow-hidden rounded-xl border border-line bg-surface lg:sticky lg:top-[88px] lg:flex">
+            <div className="flex justify-center bg-paper p-5">
+              {draft?.previewUrl ? <img src={draft.previewUrl} alt={`업로드한 ${words.name} 원본`} className="max-h-[520px] w-full rounded-md object-contain" /> : <RxPaper width={420} marks={MARKS} className="h-auto w-full max-w-[340px]" />}
+            </div>
+            {/* 데스크톱 메타 */}
+            <dl className="flex flex-col divide-y divide-line border-t border-line px-5">
+              {[['병원', head.hospital], [words.dateLabel, head.date], ['아이', child ? `${child.name}, ${child.age}` : '-']].map(([k, v]) => (
+                <div key={k} className="flex items-baseline justify-between gap-4 py-3">
+                  <dt className="shrink-0 text-14 text-muted">{k}</dt>
+                  <dd className="min-w-0 text-right text-15 font-medium">{v}</dd>
+                </div>
+              ))}
+            </dl>
+            <div className="flex border-t border-line px-5 py-3">
               <SmallButton icon={Eye} onClick={openOriginal}>크게 보기</SmallButton>
             </div>
           </div>
 
-          <div className="flex min-w-0 flex-1 flex-col gap-5">
+          <div className="flex min-w-0 flex-col gap-5">
             {lowCount > 0 && <LowConfidenceBanner count={lowCount} />}
             {noTimingCount > 0 && (
               <p role="note" className="rounded-lg bg-sunk px-3.5 py-3 text-14">
@@ -208,31 +220,21 @@ export function ConfirmScreen({ go, back, onTab }) {
             )}
 
             {/* 모바일 원본 요약 */}
-            <Panel className="flex items-center gap-3 p-3 lg:hidden">
-              {draft?.previewUrl ? <img src={draft.previewUrl} alt={`${words.name} 미리보기`} className="h-[76px] w-[54px] rounded border border-line object-cover" /> : <RxPaper width={54} marks={MARKS} />}
-              <div className="flex flex-1 flex-col gap-0.5">
+            <Panel className="flex items-center gap-3 py-3 pl-3 pr-3 lg:hidden">
+              {draft?.previewUrl ? <img src={draft.previewUrl} alt={`${words.name} 미리보기`} className="h-[76px] w-[54px] shrink-0 rounded-sm border border-line object-cover" /> : <RxPaper width={54} marks={MARKS} />}
+              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <p className="text-15 font-semibold">{head.hospital}</p>
                 <p className="text-13 text-muted">{when ? `${head.shortDate} ${words.dateSuffix}` : head.shortDate}, 사진 1장</p>
               </div>
-              <SmallButton icon={Eye} onClick={openOriginal}>원본</SmallButton>
+              <SmallButton icon={Eye} onClick={openOriginal} className="shrink-0">원본</SmallButton>
             </Panel>
 
-            {/* 데스크톱 메타 */}
-            <dl className="hidden gap-10 lg:flex">
-              {[['병원', head.hospital], [words.dateLabel, head.date], ['아이', child ? `${child.name}, ${child.age}` : '-']].map(([k, v]) => (
-                <div key={k} className="flex flex-col gap-0.5">
-                  <dt className="text-13 text-muted">{k}</dt>
-                  <dd className="text-16 font-medium">{v}</dd>
-                </div>
-              ))}
-            </dl>
-
-            <h3 className="text-18 font-bold">약 {saved.length}개</h3>
+            <h3 className="mt-1 text-18 font-bold lg:mt-0 lg:text-20">약 {saved.length}개</h3>
             <MedList meds={meds} onChange={updateMed} onAdd={addMed} onRemove={removeMed} onEditingChange={onEditingChange} />
 
-            <div className="hidden justify-end gap-3 lg:flex">
-              <Button variant="secondary" className="w-[140px]" onClick={retake}>다시 찍기</Button>
-              <Button className="w-[260px]" onClick={make}>확인했어요, 가이드 만들기</Button>
+            <div className="hidden justify-end gap-3 border-t border-line pt-6 lg:flex">
+              <Button variant="secondary" className="min-w-[140px]" onClick={retake}>다시 찍기</Button>
+              <Button className="min-w-[260px]" onClick={make}>확인했어요, 가이드 만들기</Button>
             </div>
           </div>
         </div>

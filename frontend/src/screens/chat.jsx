@@ -6,11 +6,11 @@ import { chat as sample } from '../data/sample.js';
 /** 챗봇 프로필 — 로고의 알약 모양 */
 function BotAvatar() {
   return (
-    <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-soft" aria-hidden>
+    <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-lav" aria-hidden>
       <svg width={18} height={18} viewBox="0 0 28 28">
         <g transform="rotate(-38 14 14)">
-          <path d="M14 9H9a5 5 0 0 0 0 10h5z" fill="#0E5A4F" />
-          <path d="M14 9h5a5 5 0 0 1 0 10h-5z" fill="#FFDD5C" />
+          <path d="M14 9H9a5 5 0 0 0 0 10h5z" className="fill-brand" />
+          <path d="M14 9h5a5 5 0 0 1 0 10h-5z" className="fill-mark stroke-brand" strokeWidth={1.2} />
         </g>
       </svg>
     </span>
@@ -22,25 +22,25 @@ function Bubble({ from, children }) {
   if (from === 'me') {
     return (
       <li className="flex justify-end">
-        <p className="max-w-[80%] whitespace-pre-line rounded-xl rounded-br-[4px] bg-brand px-3.5 py-2.5 text-15 text-on-brand">{children}</p>
+        <p className="max-w-[80%] whitespace-pre-line break-words rounded-xl rounded-br-[4px] bg-brand px-4 py-2.5 text-15 text-on-brand lg:max-w-[70%] lg:text-16">{children}</p>
       </li>
     );
   }
   return (
-    <li className="flex items-end gap-2">
+    <li className="flex items-start gap-2">
       <BotAvatar />
-      <p className="max-w-[80%] whitespace-pre-line rounded-xl rounded-bl-[4px] border border-line bg-surface px-3.5 py-2.5 text-15">{children}</p>
+      <p className="min-w-0 max-w-[85%] whitespace-pre-line break-words rounded-xl rounded-tl-[4px] border border-line bg-surface px-4 py-3 text-15 lg:max-w-[80%] lg:text-16">{children}</p>
     </li>
   );
 }
 
 function Typing() {
   return (
-    <li className="flex items-end gap-2" aria-label="답변을 쓰고 있어요">
+    <li className="flex items-start gap-2" aria-label="답변을 쓰고 있어요">
       <BotAvatar />
-      <span className="flex gap-1 rounded-xl rounded-bl-[4px] border border-line bg-surface px-4 py-3.5" aria-hidden>
+      <span className="flex gap-1 rounded-xl rounded-tl-[4px] border border-line bg-surface px-4 py-3.5" aria-hidden>
         {[0, 150, 300].map((d) => (
-          <span key={d} className="size-1.5 animate-bounce rounded-full bg-faint" style={{ animationDelay: `${d}ms` }} />
+          <span key={d} className="size-1.5 animate-bounce rounded-full bg-lav-plum" style={{ animationDelay: `${d}ms` }} />
         ))}
       </span>
     </li>
@@ -60,7 +60,7 @@ function Composer({ onSend, disabled }) {
   };
   const empty = !text.trim();
   return (
-    <form onSubmit={submit} className="flex w-full items-center gap-2 rounded-pill border border-line bg-surface py-1.5 pl-4 pr-1.5 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/20">
+    <form onSubmit={submit} className="flex w-full items-center gap-2 rounded-pill border border-edge/50 bg-surface py-1 pl-5 pr-1 focus-within:border-brand focus-within:ring-2 focus-within:ring-brand-soft">
       <label htmlFor={inputId} className="sr-only">챗봇에게 물어보기</label>
       <input
         id={inputId}
@@ -68,13 +68,13 @@ function Composer({ onSend, disabled }) {
         onChange={(e) => setText(e.target.value)}
         placeholder="약에 대해 물어보세요"
         autoComplete="off"
-        className="h-10 min-w-0 flex-1 bg-transparent text-16 placeholder:text-faint focus:outline-none"
+        className="h-11 min-w-0 flex-1 bg-transparent text-16 placeholder:text-faint focus:outline-none"
       />
       <button
         type="submit"
         aria-label="보내기"
         disabled={empty || disabled}
-        className={`flex size-10 shrink-0 items-center justify-center rounded-full ${empty || disabled ? 'bg-sunk text-faint' : 'bg-brand text-on-brand hover:bg-[#0B4A41]'}`}
+        className={`flex size-11 shrink-0 items-center justify-center rounded-full transition-colors ${empty || disabled ? 'bg-sunk text-faint' : 'bg-brand text-on-brand hover:bg-brand-hover'}`}
       >
         <ArrowUp size={20} strokeWidth={2.25} aria-hidden />
       </button>
@@ -107,13 +107,13 @@ export function ChatScreen({ onTab }) {
   const composer = <Composer onSend={send} disabled={waiting} />;
 
   return (
-    <AppShell tab="chat" onTab={onTab} header={<Header title="챗봇" />} actions={{ mobile: composer }}>
-      <Body className="gap-4 pt-1">
-        <p className="rounded-lg bg-sunk px-3.5 py-3 text-13 text-muted">
+    <AppShell tab="chat" onTab={onTab} width="reading" header={<Header title="챗봇" />} actions={{ mobile: composer }}>
+      <Body className="gap-5 pt-1 lg:gap-6">
+        <p className="border-b border-line pb-4 text-13 text-muted">
           {sample.childName}의 {sample.context} 처방을 바탕으로 답해요. 답변은 참고용이고, 진단이나 처방을 대신하지 않아요.
         </p>
 
-        <ol className="flex flex-col gap-3" aria-label="대화" aria-live="polite">
+        <ol className="flex flex-col gap-4" aria-label="대화" aria-live="polite">
           {messages.map((m) => <Bubble key={m.id} from={m.from}>{m.text}</Bubble>)}
           {waiting && <Typing />}
         </ol>
@@ -125,7 +125,7 @@ export function ChatScreen({ onTab }) {
                 key={q}
                 type="button"
                 onClick={() => send(q)}
-                className="rounded-pill border border-brand/30 bg-surface px-3.5 py-2 text-14 font-medium text-brand hover:bg-brand-soft"
+                className="min-h-11 rounded-pill border border-line bg-surface px-4 py-2 text-left text-14 font-medium text-ink hover:border-edge/50 hover:bg-paper"
               >
                 {q}
               </button>

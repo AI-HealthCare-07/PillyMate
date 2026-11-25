@@ -23,7 +23,7 @@ export function LowValue({ value, stacked = false, size = 'text-16' }) {
 /** 안내 배너 — 패딩 12/14, 모서리 12, 연노랑 바탕 */
 export function LowConfidenceBanner({ count }) {
   return (
-    <div className="flex items-center gap-2.5 rounded-lg bg-mark-soft px-3.5 py-3" role="note">
+    <div className="flex items-start gap-3 rounded-lg border border-mark bg-mark-soft px-4 py-3 sm:items-center" role="note">
       <Highlight className="shrink-0 text-14">노란 표시</Highlight>
       <p className="text-14 text-mark-ink">{count}곳은 글자가 흐릿하게 읽혔어요. 처방전과 같은지 봐 주세요.</p>
     </div>

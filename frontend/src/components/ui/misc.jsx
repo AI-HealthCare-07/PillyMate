@@ -3,7 +3,7 @@ import { Check, Plus, ChevronDown } from 'lucide-react';
 export function Avatar({ name, size = 28 }) {
   return (
     <span
-      className="inline-flex shrink-0 items-center justify-center rounded-full bg-brand-soft font-semibold text-brand"
+      className="inline-flex shrink-0 items-center justify-center rounded-full bg-mark-soft font-bold text-terra-ink"
       style={{ width: size, height: size, fontSize: Math.round(size * 0.42) }}
       aria-hidden
     >
@@ -29,7 +29,7 @@ export function SelectChip({ selected, add, children, ...props }) {
     <button
       type="button"
       aria-pressed={add ? undefined : selected}
-      className={`inline-flex items-center gap-1.5 rounded-pill border px-3.5 py-[11px] text-14 ${selected ? 'border-brand bg-brand-soft font-semibold text-brand' : 'border-line bg-surface font-medium text-ink hover:bg-paper'}`}
+      className={`inline-flex min-h-11 items-center gap-1.5 rounded-pill border px-3.5 py-2 text-14 ${selected ? 'border-brand bg-brand-soft font-semibold text-brand' : 'border-line bg-surface font-medium text-ink hover:bg-paper'}`}
       {...props}
     >
       {selected && <Check size={16} strokeWidth={2.25} aria-hidden />}
@@ -45,7 +45,7 @@ export function FilterChip({ selected, children, ...props }) {
     <button
       type="button"
       aria-pressed={selected}
-      className={`rounded-pill px-4 py-2.5 text-14 font-semibold ${selected ? 'bg-ink text-on-brand' : 'border border-line bg-surface text-ink hover:bg-paper'}`}
+      className={`min-h-11 rounded-pill px-4 py-2 text-14 font-semibold ${selected ? 'bg-brand text-on-brand' : 'border border-line bg-surface text-ink hover:bg-paper'}`}
       {...props}
     >
       {children}
@@ -66,7 +66,7 @@ export function Segmented({ options, value, onChange, label }) {
             role="radio"
             aria-checked={on}
             onClick={() => onChange?.(o.value)}
-            className={`flex-1 rounded-sm py-[11px] text-15 ${on ? 'bg-surface font-semibold text-ink' : 'font-medium text-muted'}`}
+            className={`min-h-11 flex-1 rounded-sm py-2 text-15 ${on ? 'bg-surface font-semibold text-ink shadow-card' : 'font-medium text-muted hover:text-ink'}`}
           >
             {o.label}
           </button>
@@ -76,9 +76,18 @@ export function Segmented({ options, value, onChange, label }) {
   );
 }
 
+/** 상태 배지 — muted(기본) · faint · warn(확인 필요) · ok(완료) · danger(의료 경고) */
+const TAG_TONES = {
+  muted: 'bg-sunk text-muted',
+  faint: 'bg-paper text-faint',
+  warn: 'bg-mark-soft text-mark-ink',
+  ok: 'bg-brand-soft text-ok',
+  danger: 'bg-danger-soft text-danger',
+};
+
 export function Tag({ children, tone = 'muted' }) {
   return (
-    <span className={`inline-flex shrink-0 items-center rounded-[14px] bg-sunk px-2.5 py-1.5 text-13 font-semibold tracking-normal ${tone === 'faint' ? 'text-faint' : 'text-muted'}`}>
+    <span className={`inline-flex shrink-0 items-center rounded-pill px-2.5 py-1 text-13 font-semibold tracking-normal ${TAG_TONES[tone] ?? TAG_TONES.muted}`}>
       {children}
     </span>
   );
@@ -86,8 +95,8 @@ export function Tag({ children, tone = 'muted' }) {
 
 const PANEL_TONES = {
   default: 'rounded-xl border border-line bg-surface',
-  // 화면의 핵심 카드 — 테두리 대신 그림자로 띄우고 모서리를 더 둥글게
-  raised: 'rounded-[20px] bg-surface shadow-card',
+  // 화면의 핵심 카드 — 그림자 없이 모서리만 조금 더 둥글게
+  raised: 'rounded-2xl border border-line bg-surface',
 };
 
 /** 흰 바탕 + 테두리 + 모서리 14 목록 패널. 행 사이는 위쪽 1px 선. tone="raised"는 화면의 핵심 카드용 */
@@ -108,8 +117,8 @@ export function Logo({ size = 28 }) {
     <span className="inline-flex items-center gap-2">
       <svg width={size} height={size} viewBox="0 0 28 28" aria-hidden>
         <g transform="rotate(-38 14 14)">
-          <path d="M14 9H9a5 5 0 0 0 0 10h5z" fill="#0E5A4F" />
-          <path d="M14 9h5a5 5 0 0 1 0 10h-5z" fill="#FFDD5C" />
+          <path d="M14 9H9a5 5 0 0 0 0 10h5z" className="fill-brand" />
+          <path d="M14 9h5a5 5 0 0 1 0 10h-5z" className="fill-mark stroke-brand" strokeWidth={1.2} />
         </g>
       </svg>
       <span className="font-bold tracking-[-0.02em] text-brand" style={{ fontSize: size * 0.7 }}>PillyMate</span>
@@ -126,7 +135,7 @@ export function Switch({ checked, onChange, disabled, className = '', ...props }
       aria-checked={checked}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-[30px] w-[52px] shrink-0 items-center rounded-pill transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${checked ? 'bg-brand' : 'bg-line'} ${className}`}
+      className={`relative inline-flex h-[30px] w-[52px] shrink-0 items-center rounded-pill transition-colors before:absolute before:-inset-[7px] before:content-[''] disabled:cursor-not-allowed disabled:opacity-40 ${checked ? 'bg-brand' : 'bg-edge/60'} ${className}`}
       {...props}
     >
       <span className={`inline-block size-6 rounded-full bg-surface shadow transition-transform duration-200 ${checked ? 'translate-x-[25px]' : 'translate-x-[3px]'}`} />

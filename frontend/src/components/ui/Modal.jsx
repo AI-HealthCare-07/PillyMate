@@ -15,17 +15,17 @@ export function Modal({ open, onClose, title, description, children, className =
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-ink/60" onClick={onClose} aria-hidden />
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
+      <div className="absolute inset-0 bg-ink/50" onClick={onClose} aria-hidden />
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={`${id}-title`}
         aria-describedby={description ? `${id}-desc` : undefined}
-        className={`relative flex max-h-full w-full max-w-[560px] flex-col overflow-hidden rounded-xl bg-surface shadow-paper ${className}`}
+        className={`relative flex max-h-[92dvh] w-full max-w-[560px] flex-col overflow-hidden rounded-t-2xl bg-surface pb-[env(safe-area-inset-bottom)] shadow-raised sm:max-h-full sm:rounded-2xl sm:pb-0 ${className}`}
       >
-        <div className="flex items-center gap-2 border-b border-line py-2 pl-5 pr-2">
+        <div className="flex items-center gap-2 border-b border-line py-2.5 pl-5 pr-2">
           <div className="flex min-w-0 flex-1 flex-col">
             <h2 id={`${id}-title`} className="truncate text-18 font-bold">{title}</h2>
             {description && <p id={`${id}-desc`} className="truncate text-13 text-muted">{description}</p>}
