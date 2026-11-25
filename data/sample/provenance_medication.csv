@@ -1,0 +1,185 @@
+﻿medication_id,prescription_id,ingredient,basis,calculation
+1,1,acetaminophen,MFDS 106 (성인 300~1000mg tid~qid),성인 300~1000mg 범위 내 500mg
+2,1,ambroxol,MFDS 180 (성인 30mg tid),성인 30mg tid
+3,1,levodropropizine,MFDS 200 (60mg tid),60mg tid
+4,2,tobramycin,MFDS 161 (경증~중등도 4시간마다 1~2방울),경증~중등도 4시간마다 1~2방울
+5,3,tobramycin,MFDS 161 (경증~중등도 4시간마다 1~2방울),경증~중등도 4시간마다 1~2방울
+6,4,ambroxol,MFDS 180 / LBL 3mg/mL,5세 이상 15mg tid ÷ 3mg/mL
+7,5,tobramycin,MFDS 161 (경증~중등도 4시간마다 1~2방울),경증~중등도 4시간마다 1~2방울
+8,6,racecadotril,"LBL 2026.10 허가변경: 체중별 포 수, 1일 3회",체중 13~27kg 30mg 1포
+9,6,saccharomyces boulardii,"LBL (3세 미만 1포 bid, 3~12세 1포 tid, 12세 이상 1~2포 bid)",3~12세 1포 tid
+10,6,ibuprofen,"LBL 20mg/mL, 연령별 1회 권장량",5세 연령별 1회 권장량 5~7.5mL 중간값
+11,7,amoxicillin/clavulanate,"MFDS 130 (7:1, 중이염 45mg/kg/day bid), 아목시실린 40mg/mL",45mg/kg/day × 31.4kg ÷ 2회 ÷ 40mg/mL
+12,7,ibuprofen,"LBL 20mg/mL, 연령별 1회 권장량",10세 연령별 1회 권장량 7.5~10mL 중간값
+13,7,saccharomyces boulardii,"LBL (3세 미만 1포 bid, 3~12세 1포 tid, 12세 이상 1~2포 bid)",3~12세 1포 tid
+14,8,desonide,"MFDS 9 (bid~tid 얇게, 1세 이하 금기)","아토피 bid, 4주 초과 연용 금지"
+15,9,hydrocortisone,MFDS 12 (qd~tid 환부 도포),qd~tid 범위 내 bid
+16,9,cetirizine,MFDS 186 / LBL 1mg/mL,2~12세 체중 35.4kg → 10mg/day ÷ 1mg/mL
+17,10,amoxicillin/clavulanate,"MFDS 130 (12세 이상/40kg 이상 정제, 호흡기 감염 500/125mg)",12세 이상/40kg 이상 정제 500/125mg tid
+18,10,ibuprofen,MFDS 115 (12세 이상 200~400mg),12세 이상 200~400mg 범위 내 200mg
+19,11,tobramycin,MFDS 161 (경증~중등도 4시간마다 1~2방울),경증~중등도 4시간마다 1~2방울
+20,12,acetaminophen,MFDS 106 / LBL 32mg/mL,체중 39.2kg → 정보집 표 1회 480mg ÷ 32mg/mL
+21,12,ambroxol,MFDS 180 / LBL 3mg/mL,5세 이상 15mg tid ÷ 3mg/mL
+22,13,racecadotril,"LBL 2026.10 허가변경: 체중별 포 수, 1일 3회",체중 13~27kg 30mg 1포
+23,13,saccharomyces boulardii,"LBL (3세 미만 1포 bid, 3~12세 1포 tid, 12세 이상 1~2포 bid)",3~12세 1포 tid
+24,14,racecadotril,"LBL 2026.10 허가변경: 체중별 포 수, 1일 3회",체중 27kg 초과 30mg 2포
+25,14,saccharomyces boulardii,"LBL (3세 미만 1포 bid, 3~12세 1포 tid, 12세 이상 1~2포 bid)",3~12세 1포 tid
+26,15,acetaminophen,MFDS 106 / LBL 32mg/mL,체중 16.9kg → 정보집 표 1회 240mg ÷ 32mg/mL
+27,15,levodropropizine,"MFDS 200 / 함량 6mg/mL(동일성분 기준, 확인 필요)",체중 16.9kg → 18mg tid ÷ 6mg/mL
+28,15,ambroxol,MFDS 180 / LBL 3mg/mL,2~4세 7.5mg tid ÷ 3mg/mL
+29,16,amoxicillin/clavulanate,"MFDS 130 (7:1, 중이염 45mg/kg/day bid), 아목시실린 40mg/mL",45mg/kg/day × 5.7kg ÷ 2회 ÷ 40mg/mL
+30,16,saccharomyces boulardii,"LBL (3세 미만 1포 bid, 3~12세 1포 tid, 12세 이상 1~2포 bid)",3세 미만 1포 bid
+31,17,hydrocortisone,MFDS 12 (qd~tid 환부 도포),qd~tid 범위 내 bid
+32,18,racecadotril,"LBL 2026.10 허가변경: 체중별 포 수, 1일 3회",체중 13~27kg 30mg 1포
+33,18,saccharomyces boulardii,"LBL (3세 미만 1포 bid, 3~12세 1포 tid, 12세 이상 1~2포 bid)",3~12세 1포 tid
+34,19,amoxicillin/clavulanate,"MFDS 130 (7:1, 중이염 45mg/kg/day bid), 아목시실린 40mg/mL",45mg/kg/day × 14.9kg ÷ 2회 ÷ 40mg/mL
+35,19,acetaminophen,MFDS 106 / LBL 32mg/mL,체중 14.9kg → 정보집 표 1회 160mg ÷ 32mg/mL
+36,20,desonide,"MFDS 9 (bid~tid 얇게, 1세 이하 금기)","아토피 bid, 4주 초과 연용 금지"
+37,20,pimecrolimus,"DUR 2세 미만 금기 / 1일 2회 도포(허가사항, 확인 필요)",
+38,20,cetirizine,MFDS 186 (12세 이상 10mg qd),12세 이상 10mg qd
+39,21,acetaminophen,MFDS 106 / LBL 32mg/mL,체중 39.4kg → 정보집 표 1회 480mg ÷ 32mg/mL
+40,21,ambroxol,MFDS 180 / LBL 3mg/mL,5세 이상 15mg tid ÷ 3mg/mL
+41,22,tobramycin,MFDS 161 (경증~중등도 4시간마다 1~2방울),경증~중등도 4시간마다 1~2방울
+42,23,desonide,"MFDS 9 (bid~tid 얇게, 1세 이하 금기)","아토피 bid, 4주 초과 연용 금지"
+43,24,racecadotril,"LBL 2026.10 허가변경: 체중별 포 수, 1일 3회",체중 13~27kg 30mg 1포
+44,24,saccharomyces boulardii,"LBL (3세 미만 1포 bid, 3~12세 1포 tid, 12세 이상 1~2포 bid)",3~12세 1포 tid
+45,25,amoxicillin/clavulanate,"MFDS 130 (7:1, 중이염 45mg/kg/day bid), 아목시실린 40mg/mL",45mg/kg/day × 6.9kg ÷ 2회 ÷ 40mg/mL
+46,26,racecadotril,"LBL 2026.10 허가변경: 체중별 포 수, 1일 3회",체중 27kg 초과 30mg 2포
+47,27,tobramycin,MFDS 161 (경증~중등도 4시간마다 1~2방울),경증~중등도 4시간마다 1~2방울
+48,28,ambroxol,MFDS 180 / LBL 3mg/mL,5세 이상 15mg tid ÷ 3mg/mL
+49,29,tobramycin,MFDS 161 (경증~중등도 4시간마다 1~2방울),경증~중등도 4시간마다 1~2방울
+50,30,ibuprofen,"LBL 20mg/mL, 연령별 1회 권장량",13세 연령별 1회 권장량 10~12.5mL 중간값
+51,30,levodropropizine,MFDS 200 (60mg tid),60mg tid
+52,31,acetaminophen,MFDS 106 (성인 300~1000mg tid~qid),성인 300~1000mg 범위 내 500mg
+53,31,ambroxol,MFDS 180 (성인 30mg tid),성인 30mg tid
+54,31,levodropropizine,MFDS 200 (60mg tid),60mg tid
+55,31,cetirizine,MFDS 186 (12세 이상 10mg qd),12세 이상 10mg qd
+56,32,amoxicillin/clavulanate,"MFDS 130 (7:1, 중이염 45mg/kg/day bid), 아목시실린 40mg/mL",45mg/kg/day × 17.3kg ÷ 2회 ÷ 40mg/mL
+57,32,acetaminophen,MFDS 106 / LBL 32mg/mL,체중 17.3kg → 정보집 표 1회 240mg ÷ 32mg/mL
+58,33,tobramycin,MFDS 161 (경증~중등도 4시간마다 1~2방울),경증~중등도 4시간마다 1~2방울
+59,34,tobramycin,MFDS 161 (경증~중등도 4시간마다 1~2방울),경증~중등도 4시간마다 1~2방울
+60,35,racecadotril,"LBL 2026.10 허가변경: 체중별 포 수, 1일 3회",체중 27kg 초과 30mg 2포
+61,36,racecadotril,"LBL 2026.10 허가변경: 체중별 포 수, 1일 3회",체중 27kg 초과 30mg 2포
+62,36,saccharomyces boulardii,"LBL (3세 미만 1포 bid, 3~12세 1포 tid, 12세 이상 1~2포 bid)",12세 이상 1~2포 bid 중 1포
+63,37,tobramycin,MFDS 161 (경증~중등도 4시간마다 1~2방울),경증~중등도 4시간마다 1~2방울
+64,38,tobramycin,MFDS 161 (경증~중등도 4시간마다 1~2방울),경증~중등도 4시간마다 1~2방울
+65,39,tobramycin,MFDS 161 (경증~중등도 4시간마다 1~2방울),경증~중등도 4시간마다 1~2방울
+66,40,ibuprofen,"LBL 20mg/mL, 연령별 1회 권장량",7세 연령별 1회 권장량 7.5~10mL 중간값
+67,40,ambroxol,MFDS 180 / LBL 3mg/mL,5세 이상 15mg tid ÷ 3mg/mL
+68,40,levodropropizine,"MFDS 200 / 함량 6mg/mL(동일성분 기준, 확인 필요)",체중 20.4kg → 30mg tid ÷ 6mg/mL
+69,41,amoxicillin/clavulanate,"MFDS 130 (7:1, 중이염 45mg/kg/day bid), 아목시실린 40mg/mL",45mg/kg/day × 23.7kg ÷ 2회 ÷ 40mg/mL
+70,41,saccharomyces boulardii,"LBL (3세 미만 1포 bid, 3~12세 1포 tid, 12세 이상 1~2포 bid)",3~12세 1포 tid
+71,42,racecadotril,"LBL 2026.10 허가변경: 체중별 포 수, 1일 3회",체중 13~27kg 30mg 1포
+72,42,saccharomyces boulardii,"LBL (3세 미만 1포 bid, 3~12세 1포 tid, 12세 이상 1~2포 bid)",3~12세 1포 tid
+73,43,acetaminophen,MFDS 106 / LBL 32mg/mL,체중 10.2kg → 정보집 표 1회 120mg ÷ 32mg/mL
+74,44,hydrocortisone,MFDS 12 (qd~tid 환부 도포),qd~tid 범위 내 bid
+75,45,amoxicillin/clavulanate,"MFDS 130 (7:1, 중이염 45mg/kg/day bid), 아목시실린 40mg/mL",45mg/kg/day × 21.4kg ÷ 2회 ÷ 40mg/mL
+76,45,acetaminophen,MFDS 106 / LBL 32mg/mL,체중 21.4kg → 정보집 표 1회 240mg ÷ 32mg/mL
+77,46,racecadotril,"LBL 2026.10 허가변경: 체중별 포 수, 1일 3회",체중 13~27kg 30mg 1포
+78,46,ibuprofen,"LBL 20mg/mL, 연령별 1회 권장량",3세 연령별 1회 권장량 5~7.5mL 중간값
+79,47,desonide,"MFDS 9 (bid~tid 얇게, 1세 이하 금기)","아토피 bid, 4주 초과 연용 금지"
+80,47,cetirizine,MFDS 186 (12세 이상 10mg qd),12세 이상 10mg qd
+81,48,desonide,"MFDS 9 (bid~tid 얇게, 1세 이하 금기)","아토피 bid, 4주 초과 연용 금지"
+82,49,racecadotril,"LBL 2026.10 허가변경: 체중별 포 수, 1일 3회",체중 13~27kg 30mg 1포
+83,49,saccharomyces boulardii,"LBL (3세 미만 1포 bid, 3~12세 1포 tid, 12세 이상 1~2포 bid)",3세 미만 1포 bid
+84,49,acetaminophen,MFDS 106 / LBL 32mg/mL,체중 14.6kg → 정보집 표 1회 160mg ÷ 32mg/mL
+85,50,amoxicillin/clavulanate,"MFDS 130 (12세 이상/40kg 이상 정제, 호흡기 감염 500/125mg)",12세 이상/40kg 이상 정제 500/125mg tid
+86,50,cetirizine,MFDS 186 (12세 이상 10mg qd),12세 이상 10mg qd
+87,50,saccharomyces boulardii,"LBL (3세 미만 1포 bid, 3~12세 1포 tid, 12세 이상 1~2포 bid)",12세 이상 1~2포 bid 중 1포
+88,51,clarithromycin,MFDS 142 (12세 이하 시럽 7.5mg/kg q12hr),7.5mg/kg × 15.5kg ÷ 25mg/mL
+89,51,acetaminophen,MFDS 106 / LBL 32mg/mL,체중 15.5kg → 정보집 표 1회 160mg ÷ 32mg/mL
+90,51,cetirizine,MFDS 186 / LBL 1mg/mL,2~12세 체중 15.5kg → 5mg/day ÷ 1mg/mL
+91,52,ibuprofen,"LBL 20mg/mL, 연령별 1회 권장량",4세 연령별 1회 권장량 5~7.5mL 중간값
+92,52,ambroxol,MFDS 180 / LBL 3mg/mL,2~4세 7.5mg tid ÷ 3mg/mL
+93,52,levodropropizine,"MFDS 200 / 함량 6mg/mL(동일성분 기준, 확인 필요)",체중 16.2kg → 18mg tid ÷ 6mg/mL
+94,53,hydrocortisone,MFDS 12 (qd~tid 환부 도포),qd~tid 범위 내 bid
+95,53,cetirizine,MFDS 186 / LBL 1mg/mL,2~12세 체중 17.6kg → 5mg/day ÷ 1mg/mL
+96,54,acetaminophen,MFDS 106 (성인 300~1000mg tid~qid),성인 300~1000mg 범위 내 500mg
+97,54,levodropropizine,MFDS 200 (60mg tid),60mg tid
+98,54,ambroxol,MFDS 180 (성인 30mg tid),성인 30mg tid
+99,55,desonide,"MFDS 9 (bid~tid 얇게, 1세 이하 금기)","아토피 bid, 4주 초과 연용 금지"
+100,56,racecadotril,"LBL 2026.10 허가변경: 체중별 포 수, 1일 3회",체중 13~27kg 30mg 1포
+101,56,saccharomyces boulardii,"LBL (3세 미만 1포 bid, 3~12세 1포 tid, 12세 이상 1~2포 bid)",3~12세 1포 tid
+102,57,desonide,"MFDS 9 (bid~tid 얇게, 1세 이하 금기)","아토피 bid, 4주 초과 연용 금지"
+103,58,acetaminophen,MFDS 106 / LBL 32mg/mL,체중 32.4kg → 정보집 표 1회 400mg ÷ 32mg/mL
+104,58,ambroxol,MFDS 180 / LBL 3mg/mL,5세 이상 15mg tid ÷ 3mg/mL
+105,59,racecadotril,"LBL 2026.10 허가변경: 체중별 포 수, 1일 3회",체중 9~13kg 미만 10mg 2포
+106,59,saccharomyces boulardii,"LBL (3세 미만 1포 bid, 3~12세 1포 tid, 12세 이상 1~2포 bid)",3세 미만 1포 bid
+107,60,racecadotril,"LBL 2026.10 허가변경: 체중별 포 수, 1일 3회",체중 27kg 초과 30mg 2포
+108,60,saccharomyces boulardii,"LBL (3세 미만 1포 bid, 3~12세 1포 tid, 12세 이상 1~2포 bid)",12세 이상 1~2포 bid 중 1포
+109,60,acetaminophen,MFDS 106 (성인 300~1000mg tid~qid),성인 300~1000mg 범위 내 500mg
+110,61,cefaclor,MFDS 134 (성인 250mg q8hr),250mg q8hr
+111,62,tobramycin,MFDS 161 (경증~중등도 4시간마다 1~2방울),경증~중등도 4시간마다 1~2방울
+112,63,acetaminophen,MFDS 106 (성인 300~1000mg tid~qid),성인 300~1000mg 범위 내 500mg
+113,63,levodropropizine,MFDS 200 (60mg tid),60mg tid
+114,63,ambroxol,MFDS 180 (성인 30mg tid),성인 30mg tid
+115,64,ibuprofen,"LBL 20mg/mL, 연령별 1회 권장량",4세 연령별 1회 권장량 5~7.5mL 중간값
+116,64,levodropropizine,"MFDS 200 / 함량 6mg/mL(동일성분 기준, 확인 필요)",체중 20.0kg → 30mg tid ÷ 6mg/mL
+117,64,ambroxol,MFDS 180 / LBL 3mg/mL,2~4세 7.5mg tid ÷ 3mg/mL
+118,65,tobramycin,MFDS 161 (경증~중등도 4시간마다 1~2방울),경증~중등도 4시간마다 1~2방울
+119,66,racecadotril,"LBL 2026.10 허가변경: 체중별 포 수, 1일 3회",체중 27kg 초과 30mg 2포
+120,66,saccharomyces boulardii,"LBL (3세 미만 1포 bid, 3~12세 1포 tid, 12세 이상 1~2포 bid)",12세 이상 1~2포 bid 중 1포
+121,66,acetaminophen,MFDS 106 (성인 300~1000mg tid~qid),성인 300~1000mg 범위 내 500mg
+122,67,cefaclor,"MFDS 134 (중이염 40mg/kg/day tid, 1일 최대 1g)",40mg/kg/day × 15.4kg (최대 1g) ÷ 3회 ÷ 25mg/mL
+123,67,ibuprofen,"LBL 20mg/mL, 연령별 1회 권장량",3세 연령별 1회 권장량 5~7.5mL 중간값
+124,67,saccharomyces boulardii,"LBL (3세 미만 1포 bid, 3~12세 1포 tid, 12세 이상 1~2포 bid)",3~12세 1포 tid
+125,68,acetaminophen,MFDS 106 (성인 300~1000mg tid~qid),성인 300~1000mg 범위 내 500mg
+126,68,ambroxol,MFDS 180 (성인 30mg tid),성인 30mg tid
+127,69,tobramycin,MFDS 161 (경증~중등도 4시간마다 1~2방울),경증~중등도 4시간마다 1~2방울
+128,70,acetaminophen,MFDS 106 / LBL 32mg/mL,체중 22.3kg → 정보집 표 1회 240mg ÷ 32mg/mL
+129,70,ambroxol,MFDS 180 / LBL 3mg/mL,5세 이상 15mg tid ÷ 3mg/mL
+130,70,levodropropizine,"MFDS 200 / 함량 6mg/mL(동일성분 기준, 확인 필요)",체중 22.3kg → 30mg tid ÷ 6mg/mL
+131,71,hydrocortisone,MFDS 12 (qd~tid 환부 도포),qd~tid 범위 내 bid
+132,72,ambroxol,MFDS 180 / LBL 3mg/mL,5세 이상 15mg tid ÷ 3mg/mL
+133,73,racecadotril,"LBL 2026.10 허가변경: 체중별 포 수, 1일 3회",체중 27kg 초과 30mg 2포
+134,73,ibuprofen,"LBL 20mg/mL, 연령별 1회 권장량",11세 연령별 1회 권장량 10~12.5mL 중간값
+135,74,cefaclor,"MFDS 134 (중이염 40mg/kg/day tid, 1일 최대 1g)",40mg/kg/day × 18.4kg (최대 1g) ÷ 3회 ÷ 25mg/mL
+136,74,acetaminophen,MFDS 106 / LBL 32mg/mL,체중 18.4kg → 정보집 표 1회 240mg ÷ 32mg/mL
+137,74,saccharomyces boulardii,"LBL (3세 미만 1포 bid, 3~12세 1포 tid, 12세 이상 1~2포 bid)",3~12세 1포 tid
+138,75,racecadotril,"LBL 2026.10 허가변경: 체중별 포 수, 1일 3회",체중 27kg 초과 30mg 2포
+139,75,saccharomyces boulardii,"LBL (3세 미만 1포 bid, 3~12세 1포 tid, 12세 이상 1~2포 bid)",3~12세 1포 tid
+140,75,ibuprofen,"LBL 20mg/mL, 연령별 1회 권장량",11세 연령별 1회 권장량 10~12.5mL 중간값
+141,76,hydrocortisone,MFDS 12 (qd~tid 환부 도포),qd~tid 범위 내 bid
+142,76,cetirizine,MFDS 186 / LBL 1mg/mL,2~12세 체중 13.8kg → 5mg/day ÷ 1mg/mL
+143,77,tobramycin,MFDS 161 (경증~중등도 4시간마다 1~2방울),경증~중등도 4시간마다 1~2방울
+144,78,clarithromycin,MFDS 142 (12세 이하 시럽 7.5mg/kg q12hr),7.5mg/kg × 16.3kg ÷ 25mg/mL
+145,78,acetaminophen,MFDS 106 / LBL 32mg/mL,체중 16.3kg → 정보집 표 1회 240mg ÷ 32mg/mL
+146,79,hydrocortisone,MFDS 12 (qd~tid 환부 도포),qd~tid 범위 내 bid
+147,79,pimecrolimus,"DUR 2세 미만 금기 / 1일 2회 도포(허가사항, 확인 필요)",
+148,80,tobramycin,MFDS 161 (경증~중등도 4시간마다 1~2방울),경증~중등도 4시간마다 1~2방울
+149,81,tobramycin,MFDS 161 (경증~중등도 4시간마다 1~2방울),경증~중등도 4시간마다 1~2방울
+150,82,tobramycin,MFDS 161 (경증~중등도 4시간마다 1~2방울),경증~중등도 4시간마다 1~2방울
+151,83,hydrocortisone,MFDS 12 (qd~tid 환부 도포),qd~tid 범위 내 bid
+152,83,cetirizine,MFDS 186 (12세 이상 10mg qd),12세 이상 10mg qd
+153,84,desonide,"MFDS 9 (bid~tid 얇게, 1세 이하 금기)","아토피 bid, 4주 초과 연용 금지"
+154,85,cefaclor,"MFDS 134 (중이염 40mg/kg/day tid, 1일 최대 1g)",40mg/kg/day × 16.4kg (최대 1g) ÷ 3회 ÷ 25mg/mL
+155,85,cetirizine,MFDS 186 / LBL 1mg/mL,2~12세 체중 16.4kg → 5mg/day ÷ 1mg/mL
+156,85,saccharomyces boulardii,"LBL (3세 미만 1포 bid, 3~12세 1포 tid, 12세 이상 1~2포 bid)",3~12세 1포 tid
+157,86,hydrocortisone,MFDS 12 (qd~tid 환부 도포),qd~tid 범위 내 bid
+158,87,amoxicillin/clavulanate,"MFDS 130 (12세 이상/40kg 이상 정제, 호흡기 감염 500/125mg)",12세 이상/40kg 이상 정제 500/125mg tid
+159,88,cefaclor,"MFDS 134 (중이염 40mg/kg/day tid, 1일 최대 1g)",40mg/kg/day × 25.3kg (최대 1g) ÷ 3회 ÷ 25mg/mL
+160,88,acetaminophen,MFDS 106 / LBL 32mg/mL,체중 25.3kg → 정보집 표 1회 320mg ÷ 32mg/mL
+161,88,cetirizine,MFDS 186 / LBL 1mg/mL,2~12세 체중 25.3kg → 5mg/day ÷ 1mg/mL
+162,89,amoxicillin/clavulanate,"MFDS 130 (12세 이상/40kg 이상 정제, 호흡기 감염 500/125mg)",12세 이상/40kg 이상 정제 500/125mg tid
+163,89,acetaminophen,MFDS 106 (성인 300~1000mg tid~qid),성인 300~1000mg 범위 내 500mg
+164,89,cetirizine,MFDS 186 (12세 이상 10mg qd),12세 이상 10mg qd
+165,90,acetaminophen,MFDS 106 / LBL 32mg/mL,체중 7.1kg → 정보집 표 1회 80mg ÷ 32mg/mL
+166,91,racecadotril,"LBL 2026.10 허가변경: 체중별 포 수, 1일 3회",체중 27kg 초과 30mg 2포
+167,92,amoxicillin/clavulanate,"MFDS 130 (12세 이상/40kg 이상 정제, 호흡기 감염 500/125mg)",12세 이상/40kg 이상 정제 500/125mg tid
+168,92,saccharomyces boulardii,"LBL (3세 미만 1포 bid, 3~12세 1포 tid, 12세 이상 1~2포 bid)",12세 이상 1~2포 bid 중 1포
+169,93,racecadotril,"LBL 2026.10 허가변경: 체중별 포 수, 1일 3회",체중 13~27kg 30mg 1포
+170,93,saccharomyces boulardii,"LBL (3세 미만 1포 bid, 3~12세 1포 tid, 12세 이상 1~2포 bid)",3~12세 1포 tid
+171,93,acetaminophen,MFDS 106 / LBL 32mg/mL,체중 25.2kg → 정보집 표 1회 320mg ÷ 32mg/mL
+172,94,hydrocortisone,MFDS 12 (qd~tid 환부 도포),qd~tid 범위 내 bid
+173,95,racecadotril,"LBL 2026.10 허가변경: 체중별 포 수, 1일 3회",체중 13~27kg 30mg 1포
+174,95,saccharomyces boulardii,"LBL (3세 미만 1포 bid, 3~12세 1포 tid, 12세 이상 1~2포 bid)",3~12세 1포 tid
+175,96,desonide,"MFDS 9 (bid~tid 얇게, 1세 이하 금기)","아토피 bid, 4주 초과 연용 금지"
+176,96,cetirizine,MFDS 186 / LBL 1mg/mL,2~12세 체중 13.0kg → 5mg/day ÷ 1mg/mL
+177,97,tobramycin,MFDS 161 (경증~중등도 4시간마다 1~2방울),경증~중등도 4시간마다 1~2방울
+178,98,cefaclor,"MFDS 134 (중이염 40mg/kg/day tid, 1일 최대 1g)",40mg/kg/day × 28.7kg (최대 1g) ÷ 3회 ÷ 25mg/mL
+179,98,ibuprofen,"LBL 20mg/mL, 연령별 1회 권장량",8세 연령별 1회 권장량 7.5~10mL 중간값
+180,98,cetirizine,MFDS 186 / LBL 1mg/mL,2~12세 체중 28.7kg → 5mg/day ÷ 1mg/mL
+181,99,acetaminophen,MFDS 106 / LBL 32mg/mL,체중 24.8kg → 정보집 표 1회 320mg ÷ 32mg/mL
+182,99,ambroxol,MFDS 180 / LBL 3mg/mL,5세 이상 15mg tid ÷ 3mg/mL
+183,99,levodropropizine,"MFDS 200 / 함량 6mg/mL(동일성분 기준, 확인 필요)",체중 24.8kg → 30mg tid ÷ 6mg/mL
+184,100,hydrocortisone,MFDS 12 (qd~tid 환부 도포),qd~tid 범위 내 bid

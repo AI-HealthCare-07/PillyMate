@@ -1,0 +1,134 @@
+{
+  "template_id": "DATA-REF-006/enteritis@0.1",
+  "disease_group": "enteritis",
+  "match_user_input": [
+    "장염",
+    "위장염",
+    "노로바이러스",
+    "설사",
+    "토해요"
+  ],
+  "review_status": "초안 - 의료진 검수 전",
+  "usage_rule": "LLM은 items 중에서 고르고 personal_note만 붙인다. 문장을 새로 만들지 않는다.",
+  "sections": [
+    {
+      "key": "recovery_course",
+      "title": "보통 이렇게 나아요",
+      "items": [
+        {
+          "id": "ent.course.goal",
+          "text": "장염 치료의 핵심은 탈수를 막고 바로잡는 거예요.",
+          "source": "KDCA_GE",
+          "needs_review": false,
+          "source_check": "revised"
+        }
+      ]
+    },
+    {
+      "key": "hydration",
+      "title": "물 마시기",
+      "items": [
+        {
+          "id": "ent.ors",
+          "text": "처방받은 경구수액이 있으면 먹여서 잃은 수분을 채워 주세요.",
+          "source": "KDCA_GE",
+          "needs_review": false,
+          "source_check": "revised"
+        },
+        {
+          "id": "ent.no_sports_drink",
+          "text": "이온음료나 과일주스는 당이 많고 전해질이 적어서 탈수를 고치는 데는 맞지 않아요.",
+          "source": "KDCA_STOOL",
+          "needs_review": false,
+          "source_check": "verified"
+        },
+        {
+          "id": "ent.breastfeed",
+          "text": "모유를 먹는 아기는 수유를 계속하세요.",
+          "source": "KDCA_GE",
+          "needs_review": false,
+          "max_months": 23,
+          "source_check": "verified"
+        }
+      ]
+    },
+    {
+      "key": "eating",
+      "title": "먹기",
+      "items": [
+        {
+          "id": "ent.no_fasting",
+          "text": "굶긴다고 빨리 낫지 않아요. 탈수가 나아지면 평소 먹던 대로 조금씩 먹여 주세요.",
+          "source": "KDCA_STOOL",
+          "needs_review": false,
+          "source_check": "verified"
+        },
+        {
+          "id": "ent.avoid",
+          "text": "기름지거나 매우 자극적인 음식은 피해 주세요.",
+          "source": "KDCA_GE",
+          "needs_review": false,
+          "source_check": "revised"
+        }
+      ]
+    },
+    {
+      "key": "hygiene",
+      "title": "위생·전파 막기",
+      "items": [
+        {
+          "id": "ent.handwash",
+          "text": "화장실에 다녀온 뒤와 기저귀를 간 뒤에는 흐르는 물에 비누로 30초 이상 손을 씻으세요.",
+          "source": "KDCA_GE",
+          "needs_review": false,
+          "source_check": "revised"
+        }
+      ]
+    },
+    {
+      "key": "daycare_outing",
+      "title": "등원·외출",
+      "items": [
+        {
+          "id": "ent.daycare",
+          "text": "(등원 기준 문장 - 출처 확보 후 작성)",
+          "source": "TODO_SOURCE",
+          "needs_review": true,
+          "disabled": true,
+          "source_check": "removed"
+        }
+      ]
+    }
+  ],
+  "extra_warning_signs": {
+    "go_to_er": [],
+    "see_doctor": [
+      {
+        "id": "ent.severe_dehyd",
+        "text": "잘 먹지 못하고 처지거나, 소변 양이 줄거나, 피나 점액이 섞인 변을 보면 진료를 받으세요.",
+        "source": "KDCA_STOOL",
+        "needs_review": false,
+        "source_check": "revised"
+      }
+    ]
+  },
+  "sources": {
+    "KDCA_GE": {
+      "title": "질병관리청 국가건강정보포털 「급성 바이러스 위장관염」",
+      "url": "https://health.kdca.go.kr/healthinfo/biz/health/gnrlzHealthInfo/gnrlzHealthInfo/gnrlzHealthInfoView.do?cntnts_sn=6756"
+    },
+    "KDCA_STOOL": {
+      "title": "질병관리청 국가건강정보포털 「대변 이상」",
+      "url": "https://health.kdca.go.kr/healthinfo/biz/health/gnrlzHealthInfo/gnrlzHealthInfo/gnrlzHealthInfoView.do?cntnts_sn=5722"
+    },
+    "TODO_SOURCE": {
+      "title": "출처 확보 필요 - 출처를 찾기 전에는 가이드에 넣지 않음",
+      "url": null
+    }
+  },
+  "notes": "스멕타이트는 2026.07.06부터 만 19세 미만 처방 금지라 이 템플릿에 넣지 않음.",
+  "source_review": {
+    "date": "2026-11-24",
+    "rule": "공식 원문(질병관리청·식약처 등)만 출처로 씀. 원문과 대조 결과는 각 문장의 source_check에 표시. removed는 출처를 찾을 때까지 가이드에 나오지 않음."
+  }
+}

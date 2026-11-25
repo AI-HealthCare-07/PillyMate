@@ -1,5 +1,6 @@
 import io
 import json
+from email.message import Message
 from urllib.error import HTTPError, URLError
 
 import pytest
@@ -55,7 +56,7 @@ def test_sends_image_with_secret_header_and_timeout(monkeypatch):
 @pytest.mark.parametrize(
     ("error", "message_part"),
     [
-        (HTTPError("https://clova.example.test", 401, "Unauthorized", {}, io.BytesIO()), "HTTP 401"),
+        (HTTPError("https://clova.example.test", 401, "Unauthorized", Message(), io.BytesIO()), "HTTP 401"),
         (TimeoutError(), "초 안에 응답하지 않았어요"),
         (URLError(TimeoutError()), "초 안에 응답하지 않았어요"),
         (URLError("dns failure"), "연결하지 못했어요"),

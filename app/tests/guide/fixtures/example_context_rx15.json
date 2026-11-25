@@ -1,0 +1,87 @@
+{
+  "child": {
+    "age": "3세 7개월",
+    "weight_kg": 16.9,
+    "allergies": []
+  },
+  "diagnosis_label_from_guardian": "기침감기",
+  "symptom_notes": null,
+  "medications": [
+    {
+      "medication_id": 26,
+      "name": "챔프시럽(아세트아미노펜)",
+      "dosage_form": "시럽",
+      "dose": "7.5mL",
+      "daily_count": null,
+      "as_needed": true,
+      "max_daily_count": 5,
+      "min_interval_hours": 4,
+      "total_days": 7,
+      "usage": "열날 때 7.5mL씩, 4~6시간 간격",
+      "reference": "아세트아미노펜: 해열·진통. 12세 이하 체중 기준 1회량, 4~6시간 간격, 1일 5회 초과 금지 (식약처 정보집 106)"
+    },
+    {
+      "medication_id": 27,
+      "name": "건일레보드로프로피진시럽",
+      "dosage_form": "시럽",
+      "dose": "3mL",
+      "daily_count": 3,
+      "as_needed": false,
+      "max_daily_count": null,
+      "min_interval_hours": null,
+      "total_days": 7,
+      "usage": "1일 3회, 6시간 이상 간격",
+      "reference": "레보드로프로피진: 급·만성 기관지염의 기침. 최소 6시간 간격. 졸음이 드물게 나타남 (정보집 200)"
+    },
+    {
+      "medication_id": 28,
+      "name": "뮤코브이시럽(암브록솔염산염)",
+      "dosage_form": "시럽",
+      "dose": "2.5mL",
+      "daily_count": 3,
+      "as_needed": false,
+      "max_daily_count": null,
+      "min_interval_hours": null,
+      "total_days": 7,
+      "usage": "1일 3회",
+      "reference": "암브록솔: 가래를 묽게 하는 거담제. 2세 미만 금기, 2~4세 1회 7.5mg 1일 3회. 식사와 관계없이 복용 (정보집 180)"
+    }
+  ],
+  "home_care_candidates": [
+    {
+      "template_item_id": "cold.course.peak",
+      "section": "recovery_course",
+      "text": "감기 증상은 처음 1~3일에 가장 심하고, 보통 7~10일 정도 이어져요."
+    },
+    {
+      "template_item_id": "cold.water.often",
+      "section": "hydration",
+      "text": "물을 평소보다 자주 조금씩 주세요. 수분이 부족하면 가래가 끈끈해져 잘 안 나와요."
+    },
+    {
+      "template_item_id": "cold.water.fever",
+      "section": "hydration",
+      "text": "열이 날 때는 땀으로 물이 빠지니 더 자주 챙겨 주세요."
+    },
+    {
+      "template_item_id": "cold.rest",
+      "section": "rest_sleep",
+      "text": "충분히 쉬게 해 주세요. 휴식은 감기 회복의 기본이에요."
+    },
+    {
+      "template_item_id": "cold.clothes",
+      "section": "rest_sleep",
+      "text": "열이 날 때 두꺼운 옷이나 이불로 꽁꽁 싸매지 마세요. 체온이 더 오를 수 있어요."
+    },
+    {
+      "template_item_id": "cold.humidity",
+      "section": "home_environment",
+      "text": "실내가 건조하지 않게 습도를 조절해 주세요."
+    },
+    {
+      "template_item_id": "cold.no_alcohol_rub",
+      "section": "home_environment",
+      "text": "열을 내리려고 알코올로 몸을 닦지 마세요."
+    }
+  ]
+}
