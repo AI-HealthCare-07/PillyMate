@@ -22,6 +22,8 @@ class Prescription(models.Model):
     마이그레이션에서 직접 추가하는 것 (Tortoise가 표현하지 못함):
     - CHECK chk_prescription_source_type, chk_prescription_status, chk_prescription_diagnosis
     - INDEX idx_prescription_child_created (child_id, created_at DESC)
+
+    OCR 원문·마스킹 원문은 저장하지 않는다 (11/24 멘토링 4절). 정리된 항목만 이 표와 medication에 남는다.
     """
 
     id = fields.BigIntField(primary_key=True, source_field="prescription_id")
@@ -43,7 +45,6 @@ class Prescription(models.Model):
     )
     symptom_notes = fields.TextField(null=True)
     image_storage_key = fields.CharField(max_length=512, null=True, description="S3 키. 가이드 생성 후 NULL")
-    raw_text_masked = fields.TextField(null=True, description="마스킹된 OCR 원문. API 응답·로그 노출 금지")
     created_at = fields.DatetimeField(auto_now_add=True)
     updated_at = fields.DatetimeField(auto_now=True)
 

@@ -54,7 +54,6 @@ erDiagram
         varchar(200) diagnosis_user_input "CHECK(확정/가이드완료 시 NOT NULL & 비공백)"
         text symptom_notes "NULL"
         varchar(512) image_storage_key "S3 키(가이드 생성 후 NULL)"
-        text raw_text_masked "마스킹 OCR 원문(API 미노출)"
         datetime created_at "NOT NULL"
         datetime updated_at "NOT NULL"
     }
@@ -149,7 +148,6 @@ erDiagram
 | `diagnosis_user_input` | `VARCHAR(200)` | `CHECK` | Y | 보호자 입력 병명 (`CONFIRMED`, `GUIDE_DONE` 시 필수·비공백) |
 | `symptom_notes` | `TEXT` | - | Y | 증상·특이사항 |
 | `image_storage_key` | `VARCHAR(512)` | - | Y | S3 저장 키 (가이드 생성 완료 시 삭제 후 `NULL`) |
-| `raw_text_masked` | `TEXT` | - | Y | 개인정보 마스킹된 OCR 원문 (API 응답·로그 노출 금지). 환자 이름·주민등록번호·전화번호·나이가 `[이름]`, `[주민번호]`, `[전화번호]`, `[나이]`로 바뀌어 저장됨 |
 | `created_at` | `DATETIME` | - | N | 생성 일시 (7일 경과 시 `image_url: null` 판단 기준) |
 | `updated_at` | `DATETIME` | - | N | 수정 일시 |
 
@@ -262,7 +260,7 @@ ALTER TABLE medication_alarm
    - `run_ocr()`의 약품 dict는 `MEDICATION` 컬럼과 키 이름이 같아서 그대로 넣을 수 있고, 같은 dict를 `ocr_value_snapshot`에 저장합니다.
    - `name`이 `null`인 약품은 `name NOT NULL` 때문에 그대로 저장할 수 없습니다. 저장에서 빼거나 보호자 입력으로 넘깁니다 (샘플 30장에서는 0건).
    - `medications`가 `[]`이어도 오류가 아닙니다. 처방전만 `OCR_DONE`으로 저장하고 보호자가 직접 추가합니다.
-   - `raw_text_masked`는 DB에만 저장하고 응답·로그로 내보내지 않습니다.
+   - OCR 원문·마스킹 원문은 저장하지 않습니다 (11/25, 11/24 멘토링 4절). 정리된 항목만 `prescription`·`medication`에 남깁니다.
 
 ---
 
@@ -277,7 +275,7 @@ ALTER TABLE medication_alarm
 | `PRESCRIPTION.diagnosis_extracted` | `VARCHAR(20)` | `VARCHAR(50)` | 질병분류기호 여러 개를 쉼표로 이어서 줌. 4개 이상이면 20자를 넘을 수 있음 |
 | 설명 보강 | - | 2.3·2.4절, 4절 4~5항 | 약봉투에서 항상 `NULL`인 값, 마스킹 표기, 단위 `NULL` 규칙, 앱 검증 항목 |
 
-**샘플 30장 실측 최댓값 (컬럼 크기 확인용):** `name` 38자, `usage` 21자, `hospital_name` 12자, `insurance_code` 9자, `diagnosis_extracted` 10자, `raw_text_masked` 1,250자. 모두 현재 컬럼 크기 안에 들어갑니다.
+**샘플 30장 실측 최댓값 (컬럼 크기 확인용):** `name` 38자, `usage` 21자, `hospital_name` 12자, `insurance_code` 9자, `diagnosis_extracted` 10자. 모두 현재 컬럼 크기 안에 들어갑니다.
 
 ---
 
