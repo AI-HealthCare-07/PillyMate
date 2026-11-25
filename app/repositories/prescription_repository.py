@@ -2,7 +2,9 @@
 
 from typing import Any
 
-from app.models.prescriptions import Guide, Medication, Prescription
+from app.models.guides import Guide
+from app.models.medications import Medication
+from app.models.prescriptions import Prescription
 
 
 class PrescriptionRepository:

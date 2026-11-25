@@ -1,0 +1,46 @@
+{
+  "prescription_date": "2026-11-17",
+  "hospital_name": "밝은눈안과의원",
+  "diagnosis_extracted": "H109",
+  "medications": [
+    {
+      "name": "크라비트점안액0.5%",
+      "insurance_code": "645800191",
+      "dose_per_time": 1.0,
+      "unit": "방울",
+      "daily_count": 4,
+      "total_days": 7,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": "양안 1방울씩 점안",
+      "route": "EXTERNAL",
+      "dosage_form": "EYE_DROP"
+    },
+    {
+      "name": "플루메토론0.1%점안액",
+      "insurance_code": "646300451",
+      "dose_per_time": 1.0,
+      "unit": "방울",
+      "daily_count": 3,
+      "total_days": 5,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": "흔들어서 양안 점안",
+      "route": "EXTERNAL",
+      "dosage_form": "EYE_DROP"
+    },
+    {
+      "name": "세티리진시럽1mg",
+      "insurance_code": "648901441",
+      "dose_per_time": 10.0,
+      "unit": "mL",
+      "daily_count": 1,
+      "total_days": 7,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": "취침 전",
+      "route": "ORAL",
+      "dosage_form": "SYRUP"
+    }
+  ]
+}

@@ -23,13 +23,17 @@ export function draftFromVisit(visit) {
     visit.meds.map((m, i) => ({
       id: `${visit.id}m${i}`, name: m.name, dose: { value: '' }, perDay: { value: '' }, days: { value: m.days ?? '' }, timing: { value: '' },
     }));
+  // 서버에서 불러온 '확인 전' 처방은 병명이 비어 있을 수 있어요(visit.disease). 그땐 제목(처방전 기록)을 병명으로 쓰지 않아요.
+  const disease = visit.disease ?? visit.title;
   setPrescriptionDraft({
     childId: visit.childId,
-    disease: visit.title,
+    disease,
     note: visit.note ?? '',
     status: 'pending-visit',
     visitId: visit.id,
-    ocr: { hospital: visit.hospital, date: visit.date, disease: visit.title },
+    prescriptionId: visit.prescriptionId ?? null,
+    sourceType: visit.sourceType,
+    ocr: { hospital: visit.hospital, date: visit.prescriptionDate === undefined ? visit.date : visit.prescriptionDate, disease },
     ocrMeds: ocrMeds.map((m) => ({ ...m })),
     guideReady: false,
   });

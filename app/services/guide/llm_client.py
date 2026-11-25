@@ -10,9 +10,10 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, cast
 
 import anthropic
+from anthropic.types import MessageParam, ToolChoiceToolParam, ToolParam
 
 from app.dtos.guide import LLMGuideOutput
 
@@ -49,14 +50,16 @@ def call_tool(
     max_tokens: int = MAX_TOKENS,
 ) -> dict[str, Any]:
     """Haiku를 1번 불러 tool 입력(dict)을 받는다. 가이드·챗봇이 함께 쓴다. 실패하면 LLMCallError."""
+    tool: ToolParam = {"name": tool_name, "description": description, "input_schema": input_schema}
+    tool_choice: ToolChoiceToolParam = {"type": "tool", "name": tool_name}
     try:
         res = _get_client().messages.create(
             model=MODEL,
             max_tokens=max_tokens,
             system=system,
-            messages=messages,  # type: ignore[arg-type]
-            tools=[{"name": tool_name, "description": description, "input_schema": input_schema}],
-            tool_choice={"type": "tool", "name": tool_name},
+            messages=cast(list[MessageParam], messages),
+            tools=[tool],
+            tool_choice=tool_choice,
         )
     except anthropic.APIError as e:  # 타임아웃·연결 오류·4xx/5xx 모두 포함
         raise LLMCallError(f"LLM 호출 실패: {type(e).__name__}") from e

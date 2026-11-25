@@ -1,0 +1,46 @@
+{
+  "prescription_date": "2026-11-18",
+  "hospital_name": "아이숲소아청소년과의원",
+  "diagnosis_extracted": "B084",
+  "medications": [
+    {
+      "name": "세토펜현탁액",
+      "insurance_code": "649806731",
+      "dose_per_time": 4.0,
+      "unit": "mL",
+      "daily_count": null,
+      "total_days": 3,
+      "max_daily_count": null,
+      "as_needed": true,
+      "usage": "필요시 (4)mL씩복용(사용)하세요",
+      "route": "ORAL",
+      "dosage_form": "SYRUP"
+    },
+    {
+      "name": "맥시부펜시럽",
+      "insurance_code": "643500802",
+      "dose_per_time": 3.3333,
+      "unit": "mL",
+      "daily_count": null,
+      "total_days": 3,
+      "max_daily_count": null,
+      "as_needed": true,
+      "usage": "필요시 (3.3)mL씩복용(사용)하세요",
+      "route": "ORAL",
+      "dosage_form": "SYRUP"
+    },
+    {
+      "name": "비오플250산",
+      "insurance_code": "644702121",
+      "dose_per_time": 0.5,
+      "unit": "포",
+      "daily_count": 2,
+      "total_days": 3,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": "가루약,물약 따로 식후 30분",
+      "route": "ORAL",
+      "dosage_form": "POWDER"
+    }
+  ]
+}

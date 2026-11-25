@@ -1,0 +1,59 @@
+{
+  "prescription_date": null,
+  "hospital_name": "튼튼소아청소년과의원",
+  "diagnosis_extracted": null,
+  "medications": [
+    {
+      "name": "벤토린에보할러",
+      "insurance_code": null,
+      "dose_per_time": 2.0,
+      "unit": null,
+      "daily_count": 4,
+      "total_days": 7,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": null,
+      "route": "EXTERNAL",
+      "dosage_form": "ETC"
+    },
+    {
+      "name": "풀미코트레스퓰0.5mg",
+      "insurance_code": null,
+      "dose_per_time": 1.0,
+      "unit": null,
+      "daily_count": 2,
+      "total_days": 7,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": null,
+      "route": "EXTERNAL",
+      "dosage_form": "ETC"
+    },
+    {
+      "name": "오논드라이시럽",
+      "insurance_code": null,
+      "dose_per_time": 1.15,
+      "unit": "g",
+      "daily_count": 2,
+      "total_days": 7,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": null,
+      "route": "ORAL",
+      "dosage_form": "DRY_SYRUP"
+    },
+    {
+      "name": "클래리시드건조시럽",
+      "insurance_code": null,
+      "dose_per_time": 4.6,
+      "unit": "mL",
+      "daily_count": 2,
+      "total_days": 7,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": null,
+      "route": "ORAL",
+      "dosage_form": "DRY_SYRUP"
+    }
+  ]
+}

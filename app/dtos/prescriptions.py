@@ -13,7 +13,8 @@ from typing import Annotated, Any, Literal
 from pydantic import BaseModel, Field
 
 from app.dtos.base import BaseSerializerModel
-from app.models.prescriptions import DosageForm, PrescriptionStatus, Route, SourceType
+from app.models.medications import DosageForm, Route
+from app.models.prescriptions import PrescriptionStatus, SourceType
 
 Unit = Literal["mL", "포", "정", "캡슐", "g", "방울", "개"]
 

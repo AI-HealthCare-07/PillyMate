@@ -24,7 +24,9 @@ from app.dtos.prescriptions import (
     PrescriptionDetailResponse,
 )
 from app.models.children import Child
-from app.models.prescriptions import Guide, Medication, Prescription, PrescriptionStatus
+from app.models.guides import Guide
+from app.models.medications import Medication
+from app.models.prescriptions import Prescription, PrescriptionStatus
 from app.repositories.prescription_repository import PrescriptionRepository
 from app.services.guide.service import generate_guide
 from app.services.guide.view import to_view

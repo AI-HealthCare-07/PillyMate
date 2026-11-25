@@ -9,6 +9,10 @@ TORTOISE_APP_MODELS = [
     "app.models.guardians",
     "app.models.children",
     "app.models.prescriptions",
+    "app.models.medications",
+    "app.models.guides",
+    "app.models.push_tokens",
+    "app.models.medication_alarms",
 ]
 
 TORTOISE_ORM = {

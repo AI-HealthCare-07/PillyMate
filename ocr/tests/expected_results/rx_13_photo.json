@@ -1,0 +1,59 @@
+{
+  "prescription_date": "2026-11-09",
+  "hospital_name": "코숨이비인후과의원",
+  "diagnosis_extracted": "J329",
+  "medications": [
+    {
+      "name": "오구멘틴정375밀리그램",
+      "insurance_code": "642104112",
+      "dose_per_time": 1.0,
+      "unit": "정",
+      "daily_count": 3,
+      "total_days": 14,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": "식후 즉시",
+      "route": "ORAL",
+      "dosage_form": "TABLET"
+    },
+    {
+      "name": "슈다페드정60밀리그램",
+      "insurance_code": "657900328",
+      "dose_per_time": 1.0,
+      "unit": "정",
+      "daily_count": 2,
+      "total_days": 7,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": "아침,점심 식후 30분",
+      "route": "ORAL",
+      "dosage_form": "TABLET"
+    },
+    {
+      "name": "뮤코펙트정30밀리그램",
+      "insurance_code": "652601092",
+      "dose_per_time": 1.0,
+      "unit": "정",
+      "daily_count": 3,
+      "total_days": 14,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": "식후 30분",
+      "route": "ORAL",
+      "dosage_form": "TABLET"
+    },
+    {
+      "name": "나조넥스나잘스프레이",
+      "insurance_code": "646701893",
+      "dose_per_time": 2.0,
+      "unit": null,
+      "daily_count": 1,
+      "total_days": 14,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": "양쪽 코에 1회씩 분무",
+      "route": "EXTERNAL",
+      "dosage_form": "ETC"
+    }
+  ]
+}

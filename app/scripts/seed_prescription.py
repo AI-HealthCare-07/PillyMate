@@ -25,16 +25,10 @@ from app.core.config import Env
 from app.core.db.databases import TORTOISE_ORM
 from app.models.children import Child
 from app.models.guardians import Guardian
-from app.models.prescriptions import (
-    DosageForm,
-    Medication,
-    Prescription,
-    PrescriptionStatus,
-    Route,
-    SourceType,
-)
+from app.models.medications import DosageForm, Medication, Route
+from app.models.prescriptions import Prescription, PrescriptionStatus, SourceType
 
-DEMO_CHILD = {
+DEMO_CHILD: dict[str, Any] = {
     "name": "예시아이",
     "birth_date": date(2023, 4, 2),
     "weight_kg": Decimal("16.90"),
@@ -42,7 +36,7 @@ DEMO_CHILD = {
     "notes": "시드 스크립트로 만든 예시 자녀",
 }
 
-DEMO_PRESCRIPTION = {
+DEMO_PRESCRIPTION: dict[str, Any] = {
     "source_type": SourceType.PRESCRIPTION,
     "status": PrescriptionStatus.OCR_DONE,
     "prescription_date": date(2026, 11, 12),

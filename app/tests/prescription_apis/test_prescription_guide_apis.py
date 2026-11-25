@@ -13,7 +13,8 @@ from tortoise.contrib.test import TestCase
 
 from app.main import app
 from app.models.guardians import Guardian
-from app.models.prescriptions import Medication, Prescription, PrescriptionStatus
+from app.models.medications import Medication
+from app.models.prescriptions import Prescription, PrescriptionStatus
 from app.scripts.seed_prescription import confirm_body_example, create_demo_prescription
 from app.services.guide import service as guide_service
 
