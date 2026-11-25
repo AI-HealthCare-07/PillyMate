@@ -52,7 +52,7 @@ AI-1은 OCR 모듈을 넘기고 빠집니다. 이 문서만 보고 화면을 연
   "hospital_name": "해솔소아청소년과의원",
   "diagnosis_extracted": "J00,J209",
   "medications": [
-    { "name": "세파클러건조시럽(내복)/60(1)mL/병", "insurance_code": "643901230",
+    { "name": "세파클러건조시럽", "insurance_code": "643901230",
       "dose_per_time": 4.2, "unit": "mL", "daily_count": 3, "total_days": 5,
       "as_needed": false, "max_daily_count": null, "usage": "가루약,물약 따로 식후 30분",
       "route": "ORAL", "dosage_form": "DRY_SYRUP", "confidence": 1.0 },
@@ -60,7 +60,7 @@ AI-1은 OCR 모듈을 넘기고 빠집니다. 이 문서만 보고 화면을 연
       "dose_per_time": 0.5, "unit": "포", "daily_count": 3, "total_days": 5,
       "as_needed": false, "max_daily_count": null, "usage": "가루약,물약 따로 식후 30분",
       "route": "ORAL", "dosage_form": "POWDER", "confidence": 1.0 },
-    { "name": "세토펜현탁액(아세트아미노펜)/100(1)mL/병", "insurance_code": "649806731",
+    { "name": "세토펜현탁액", "insurance_code": "649806731",
       "dose_per_time": 5.0, "unit": "mL", "daily_count": null, "total_days": 3,
       "as_needed": true, "max_daily_count": null, "usage": "필요시 (5)mL씩복용(사용)하세요",
       "route": "ORAL", "dosage_form": "SYRUP", "confidence": 1.0 }
@@ -103,7 +103,7 @@ AI-1은 OCR 모듈을 넘기고 빠집니다. 이 문서만 보고 화면을 연
 
 | 필드 | 타입 | 뜻 | `null`일 때 / 주의 |
 | --- | --- | --- | --- |
-| `name` | string | 약 이름. 처방전은 인쇄된 그대로 긴 이름, 약봉투는 짧은 이름 | 항상 있음. 글자 한두 개가 틀릴 수 있음 (예: 밀리그램 → 밀리그림) |
+| `name` | string | 약 이름. 괄호나 `/` 앞까지만 (예: `맥시부펜시럽(덱시부프로펜)/100(1)mL/병` → `맥시부펜시럽`) | 항상 있음. 글자 한두 개가 틀릴 수 있음 (예: 밀리그램 → 밀리그림) |
 | `insurance_code` | string \| null | 9자리 보험 약품코드 | 약봉투는 항상 null. 화면에 안 보여도 됨 |
 | `dose_per_time` | number \| null | 1회 양 (숫자만) | `6.6667`처럼 처방전에 인쇄된 소수가 그대로 옴 → 표시할 때 소수 둘째 자리 정도로 반올림 권장 |
 | `unit` | string \| null | `mL`·`포`·`정`·`캡슐`·`g`·`방울`·`개` 중 하나 | 목록에 없는 단위(관, 분무, 흡입)나 못 읽으면 null |

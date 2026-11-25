@@ -4,7 +4,7 @@
   "diagnosis_extracted": "B084",
   "medications": [
     {
-      "name": "세토펜현탁액(아세트아미노펜)/100(1)mL/병",
+      "name": "세토펜현탁액",
       "insurance_code": "649806731",
       "dose_per_time": 4.0,
       "unit": "mL",
@@ -17,7 +17,7 @@
       "dosage_form": "SYRUP"
     },
     {
-      "name": "맥시부펜시럽(덱시부프로펜)(내복)/50(1)mL/병",
+      "name": "맥시부펜시럽",
       "insurance_code": "643500802",
       "dose_per_time": 3.3333,
       "unit": "mL",
@@ -30,7 +30,7 @@
       "dosage_form": "SYRUP"
     },
     {
-      "name": "비오플250산(사카로마이세스보울라디)/1포",
+      "name": "비오플250산",
       "insurance_code": "644702121",
       "dose_per_time": 0.5,
       "unit": "포",

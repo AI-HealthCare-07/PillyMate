@@ -4,7 +4,7 @@
   "diagnosis_extracted": "J459,J209",
   "medications": [
     {
-      "name": "벤토린에보할러(살부타몰황산염)/200회/개",
+      "name": "벤토린에보할러",
       "insurance_code": "664500112",
       "dose_per_time": 2.0,
       "unit": null,
@@ -17,7 +17,7 @@
       "dosage_form": "ETC"
     },
     {
-      "name": "풀미코트레스퓰0.5mg/2mL(부데소니드)/1관",
+      "name": "풀미코트레스퓰0.5mg",
       "insurance_code": "663900245",
       "dose_per_time": 1.0,
       "unit": null,
@@ -30,7 +30,7 @@
       "dosage_form": "ETC"
     },
     {
-      "name": "오논드라이시럽(프란루카스트수화물)/1g",
+      "name": "오논드라이시럽",
       "insurance_code": "662700538",
       "dose_per_time": 1.15,
       "unit": "g",
@@ -43,7 +43,7 @@
       "dosage_form": "DRY_SYRUP"
     },
     {
-      "name": "클래리시드건조시럽125mg/5mL(클래리스로마이신)/50(1)mL/병",
+      "name": "클래리시드건조시럽125mg",
       "insurance_code": "642300719",
       "dose_per_time": 4.6,
       "unit": "mL",
