@@ -63,7 +63,7 @@ export async function registerPrescription({ childId, sourceType = 'PRESCRIPTION
 const number = (value) => (value === null || value === undefined ? '' : String(Math.round(Number(value) * 100) / 100));
 
 /** 응답 약 하나 → S-04 약 카드 형식. 신뢰도가 낮은 약은 값이 있는 칸마다 '확인 필요'를 달아요. */
-function toConfirmMed(med) {
+export function toConfirmMed(med) {
   const perDay = med.as_needed
     ? med.max_daily_count ? `필요할 때, 최대 ${med.max_daily_count}번` : '필요할 때'
     : med.daily_count ? `${med.daily_count}번` : '';

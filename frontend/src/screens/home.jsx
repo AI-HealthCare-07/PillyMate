@@ -98,7 +98,8 @@ export function HomeScreen({ go, onTab }) {
 
         {/* ── 왼쪽(모바일은 전체) 단 ── */}
         <div className="flex min-w-0 flex-col gap-4 xl:gap-6">
-          {pending.map((r) => (
+          {/* 확인 전 처방 — 가장 최근 것만 카드로 보여 주고, 나머지는 건강기록에서 확인해요. */}
+          {pending.slice(0, 1).map((r) => (
             <button
               key={r.id}
               type="button"
@@ -118,6 +119,11 @@ export function HomeScreen({ go, onTab }) {
               <ChevronRight size={20} className="shrink-0" aria-hidden />
             </button>
           ))}
+          {pending.length > 1 && (
+            <button type="button" onClick={openHealthLog} className="-mt-2 inline-flex min-h-11 items-center gap-0.5 self-end rounded-md px-2 text-14 font-semibold text-mark-ink hover:bg-mark-soft">
+              확인하지 않은 처방 {pending.length - 1}개 더 보기<ChevronRight size={16} aria-hidden />
+            </button>
+          )}
 
           {/* 오늘 먹을 약 — 화면의 핵심. 세이지 계열 */}
           {care ? (

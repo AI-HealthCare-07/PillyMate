@@ -1,6 +1,7 @@
 import pytest
 
 from ocr.ocr_result_formatter import (
+    display_drug_name,
     format_bag_guide_medication,
     format_prescription_medication,
     infer_dosage_form,
@@ -86,3 +87,25 @@ def test_bag_taking_time_applies_only_to_oral_regular_drugs():
     assert external["usage"] == "적당량"
     assert external["dose_per_time"] is None
     assert external["route"] == "EXTERNAL"
+
+
+@pytest.mark.parametrize(
+    ("raw", "shown"),
+    [
+        ("맥시부펜시럽(덱시부프로펜)/100(1)mL/병", "맥시부펜시럽"),
+        ("돔페리돈현탁액1mg/mL/100(1)mL/병", "돔페리돈현탁액1mg"),
+        ("세파클러건조시럽 (내복)", "세파클러건조시럽"),
+        ("오논드라이시럽（프란루카스트수화물）", "오논드라이시럽"),  # 전각 괄호
+        ("옴니세프세립", "옴니세프세립"),
+        ("(급여)타이레놀", "(급여)타이레놀"),  # 앞에 남는 글자가 없으면 원래 이름
+    ],
+)
+def test_display_drug_name_keeps_text_before_parenthesis_or_slash(raw, shown):
+    assert display_drug_name(raw) == shown
+
+
+def test_name_is_shortened_but_unit_still_comes_from_package_notation():
+    med = format_prescription_medication({"명칭": "맥시부펜시럽(덱시부프로펜)/100(1)mL/병", "1회투약량": 4})
+    assert med["name"] == "맥시부펜시럽"
+    assert med["unit"] == "mL"
+    assert med["dosage_form"] == "SYRUP"

@@ -37,7 +37,7 @@ result = await run_in_threadpool(run_ocr, image_bytes, source_type)
   "hospital_name": "해솔소아청소년과의원",
   "diagnosis_extracted": "J00,J209",
   "medications": [
-    { "name": "세파클러건조시럽(내복)/60(1)mL/병", "insurance_code": "643901230",
+    { "name": "세파클러건조시럽", "insurance_code": "643901230",
       "dose_per_time": 4.2, "unit": "mL", "daily_count": 3, "total_days": 5,
       "max_daily_count": null, "as_needed": false, "usage": "식후 30분",
       "route": "ORAL", "dosage_form": "DRY_SYRUP", "confidence": 0.95 }
@@ -168,7 +168,8 @@ uv run python -m ocr.tools.check_parser_accuracy --details
 
 - `diagnosis_extracted`: 질병분류기호가 여러 개면 `"J00,J209"`처럼 쉼표로 잇습니다. BE-2 DB 컬럼 길이 확인 필요.
 - 약봉투 `prescription_date`: 약봉투에는 조제일자만 있어서 `null`로 둡니다. 조제일자를 대신 넣을지 FE-2와 결정 필요.
-- 처방전 약 이름은 `세파클러건조시럽(내복)/60(1)mL/병`처럼 인쇄된 그대로 둡니다 (함량 정보 보존).
+- 약 이름은 괄호(`(`·`（`)나 `/`가 처음 나오기 전까지만 남깁니다 (11/25 변경). `맥시부펜시럽(덱시부프로펜)/100(1)mL/병` → `맥시부펜시럽`.
+  단위·제형은 자르기 전 이름(포장 표기)으로 먼저 판단합니다. 괄호로 시작해 남는 글자가 없으면 원래 이름을 둡니다.
 - 허용 목록에 없는 단위(`관`, `분무`, `흡입`)는 `null`입니다. 목록에 추가할지 BE-2·FE-2와 결정 필요.
 - 신뢰도 기준값(0.6 / 0.8)은 멘토링 논의 기준을 그대로 쓴 것이라, 실제 촬영 사진으로 다시 확인해야 합니다.
   참고로 0.9로 강조하면 샘플에서 강조 6개 중 5개가 실제 오타였고, 0.8이면 1개만 잡혔습니다.

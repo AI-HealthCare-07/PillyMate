@@ -4,7 +4,7 @@
   "diagnosis_extracted": "J101",
   "medications": [
     {
-      "name": "타미플루캡슐30밀리그램(오셀타미비르인산염)/1캡슐",
+      "name": "타미플루캡슐30밀리그램",
       "insurance_code": "671800231",
       "dose_per_time": 2.0,
       "unit": "캡슐",
@@ -17,7 +17,7 @@
       "dosage_form": "CAPSULE"
     },
     {
-      "name": "부루펜정200밀리그램(이부프로펜)/1정",
+      "name": "부루펜정200밀리그램",
       "insurance_code": "650402151",
       "dose_per_time": 1.0,
       "unit": "정",
@@ -30,7 +30,7 @@
       "dosage_form": "TABLET"
     },
     {
-      "name": "코푸시럽(내복)/100(1)mL/병",
+      "name": "코푸시럽",
       "insurance_code": "657300412",
       "dose_per_time": 10.0,
       "unit": "mL",

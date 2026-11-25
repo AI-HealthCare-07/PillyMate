@@ -21,10 +21,18 @@ from ocr.tools.check_parser_accuracy import compare_result
 TESTS_DIR = Path(__file__).resolve().parent
 RESPONSE_PATHS = sorted((TESTS_DIR / "clova_responses").glob("*.json"))
 NAME_SIMILARITY_THRESHOLD = 0.85
+# 약 이름은 괄호·'/' 앞까지만 남기므로(예: '돔페리돈현탁액1mg') 짧다. 짧은 이름은 두 글자만 틀려도
+# 비율이 0.85 아래로 떨어지니, 다른 글자가 두 개 이하면 비율과 상관없이 통과시킨다.
+MAX_MISREAD_CHARACTERS = 2
 
 
 def is_close_name(actual, expected):
-    return bool(actual and expected) and SequenceMatcher(None, actual, expected).ratio() >= NAME_SIMILARITY_THRESHOLD
+    if not (actual and expected):
+        return False
+    matcher = SequenceMatcher(None, actual, expected)
+    matched = sum(block.size for block in matcher.get_matching_blocks())
+    misread = max(len(actual), len(expected)) - matched
+    return misread <= MAX_MISREAD_CHARACTERS or matcher.ratio() >= NAME_SIMILARITY_THRESHOLD
 
 
 @pytest.mark.skipif(
