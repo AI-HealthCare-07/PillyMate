@@ -9,15 +9,14 @@ from app.dependencies.security import CurrentGuardian
 from app.dtos.prescription_registration import (
     OcrConfidenceJudgement,
     PrescriptionRegistrationResponse,
-    RegisteredMedication,
 )
 from app.models.prescriptions import SourceType
+from app.services.prescription_query import to_registered_medication
 from app.services.prescription_registration import (
     OcrFailedError,
     OcrLowConfidenceError,
     PrescriptionImageError,
     image_url_of,
-    low_confidence_of,
     register_prescription,
 )
 
@@ -84,24 +83,5 @@ async def create_prescription(
         has_guide=False,
         created_at=prescription.created_at,
         ocr_confidence=OcrConfidenceJudgement(**judgement),
-        medications=[
-            RegisteredMedication(
-                medication_id=medication.id,
-                name=medication.name,
-                insurance_code=medication.insurance_code,
-                dose_per_time=None if medication.dose_per_time is None else float(medication.dose_per_time),
-                unit=medication.unit,
-                daily_count=medication.daily_count,
-                total_days=medication.total_days,
-                as_needed=medication.as_needed,
-                max_daily_count=medication.max_daily_count,
-                usage=medication.usage,
-                route=medication.route,
-                dosage_form=medication.dosage_form,
-                confidence=None if medication.confidence is None else float(medication.confidence),
-                low_confidence=low_confidence_of(medication),
-                is_user_edited=medication.is_user_edited,
-            )
-            for medication in medications
-        ],
+        medications=[to_registered_medication(medication) for medication in medications],
     )
