@@ -169,7 +169,7 @@ AI-1은 OCR 모듈을 넘기고 빠집니다. 이 문서만 보고 화면을 연
 | 위치 | 지금 | 맞춰야 할 것 |
 | --- | --- | --- |
 | `screens/upload.jsx` 파일 선택 | ~~WEBP 허용~~ | 11/25 반영: jpg·png만 |
-| `screens/upload.jsx` | 처방전/약봉투 선택 없음 | **`source_type` 선택 추가** |
+| `screens/upload.jsx` | ~~처방전/약봉투 선택 없음~~ | 11/25 반영: "어떤 사진인가요?"에서 처방전·약봉투를 골라 `source_type`으로 보내요 |
 | `screens/upload.jsx` `ReadingScreen` | ~~2.5초 뒤 예시 값으로 이동~~ | 11/25 반영: `POST /prescriptions` 호출, 422 `OCR_LOW_CONFIDENCE`·502면 다시 찍기 알럿. 아이 목록은 `GET /children`(서버)에서 받아요 |
 | `screens/confirm.jsx` `dateParts(ocr.date)` | 날짜가 항상 있다고 가정 | 약봉투는 `prescription_date: null` → 날짜 입력 받기 |
 | `screens/confirm.jsx` 병명 | `ocr.disease` 사용 | `diagnosis_extracted`는 코드(J00)라 병명으로 쓰지 않기 |

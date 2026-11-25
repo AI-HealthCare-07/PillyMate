@@ -59,7 +59,8 @@ export async function registerPrescription({ childId, sourceType = 'PRESCRIPTION
   throw new PrescriptionRegistrationError(message, { retake, status: response.status });
 }
 
-const number = (value) => (value === null || value === undefined ? '' : String(Number(value)));
+// 화면에는 소수 둘째 자리까지만 보여요 (0.3333포 → 0.33포). 확정 때 보낼 원래 숫자는 서버에 그대로 있어요.
+const number = (value) => (value === null || value === undefined ? '' : String(Math.round(Number(value) * 100) / 100));
 
 /** 응답 약 하나 → S-04 약 카드 형식. 신뢰도가 낮은 약은 값이 있는 칸마다 '확인 필요'를 달아요. */
 function toConfirmMed(med) {
@@ -83,17 +84,17 @@ function toConfirmMed(med) {
   };
 }
 
-const todayKey = () => new Date().toLocaleDateString('sv-SE'); // YYYY-MM-DD
-
 /** 등록 응답 → 처방 임시 데이터(fe2Draft)에 넣을 값 */
 export function draftFieldsFromRegistration(data) {
   return {
     status: 'ocr-done',
     prescriptionId: data.prescription_id,
+    sourceType: data.source_type,
     ocrConfidence: data.ocr_confidence,
     ocr: {
       hospital: data.hospital_name ?? '병원 이름을 읽지 못했어요',
-      date: data.prescription_date ?? todayKey(),
+      // 약봉투에는 처방일이 없어서 null이에요. 확인 화면에서 약 받은 날을 직접 고르게 해요.
+      date: data.prescription_date ?? null,
       disease: data.diagnosis_user_input || data.diagnosis_extracted || '',
     },
     ocrMeds: data.medications.map(toConfirmMed),

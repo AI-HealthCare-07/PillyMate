@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertTriangle, Camera, Check, Circle, ImageIcon, RefreshCw } from 'lucide-react';
 import { Button, SmallButton } from '../components/ui/Button.jsx';
 import { Field } from '../components/ui/Field.jsx';
-import { Avatar, Panel, SectionLabel } from '../components/ui/misc.jsx';
+import { Avatar, Panel, SectionLabel, SelectChip } from '../components/ui/misc.jsx';
 import { AlertDialog } from '../components/ui/AlertDialog.jsx';
 import { AppShell, Body, Header } from '../components/ui/layout.jsx';
 import { RxPaper } from '../components/rx/RxPaper.jsx';
@@ -15,11 +15,19 @@ import {
   registerPrescription,
 } from '../api/prescriptionRegistration.js';
 
-/** S-03 처방 올리기 — 파일 선택/검증/미리보기는 실제 동작합니다. */
+// 서버 OCR은 문서 종류마다 다른 양식으로 읽어요. 약봉투를 처방전으로 보내면 약을 찾지 못해요.
+const SOURCE_TYPES = [
+  { value: 'PRESCRIPTION', label: '처방전' },
+  { value: 'PILL_BAG', label: '약봉투' },
+];
+const sourceLabel = (value) => SOURCE_TYPES.find((t) => t.value === value)?.label ?? '처방전';
+
+/** S-03 처방 올리기 — 처방전·약봉투 사진을 골라 서버에서 읽어요. */
 export function UploadScreen({ go, back, onTab }) {
   const previous = getPrescriptionDraft();
   // 처방은 항상 아이 화면에서 고른 아이의 약으로 올려요. 바꾸려면 아이 화면에서 다시 골라요.
   const { childId: child, child: childInfo } = useSelectedChild();
+  const [sourceType, setSourceType] = useState(previous?.sourceType ?? 'PRESCRIPTION');
   const [disease, setDisease] = useState(previous?.disease ?? '');
   const [note, setNote] = useState(previous?.note ?? '');
   const [file, setFile] = useState(previous?.file ?? null);
@@ -38,7 +46,7 @@ export function UploadScreen({ go, back, onTab }) {
       return;
     }
     const url = URL.createObjectURL(selected);
-    setPrescriptionDraft({ childId: child, disease, note, file: selected, previewUrl: url, status: 'selected', guideReady: false });
+    setPrescriptionDraft({ childId: child, sourceType, disease, note, file: selected, previewUrl: url, status: 'selected', guideReady: false });
     setFile(selected);
     setPreviewUrl(url);
     setError('');
@@ -46,14 +54,14 @@ export function UploadScreen({ go, back, onTab }) {
 
   const startReading = () => {
     if (!file || !previewUrl) {
-      setError('처방전 사진을 먼저 선택해 주세요.');
+      setError(`${sourceLabel(sourceType)} 사진을 먼저 선택해 주세요.`);
       return;
     }
     if (!child) {
       setError('아이를 먼저 선택해 주세요.');
       return;
     }
-    setPrescriptionDraft({ childId: child, disease: disease.trim(), note: note.trim(), file, previewUrl, status: 'selected', guideReady: false });
+    setPrescriptionDraft({ childId: child, sourceType, disease: disease.trim(), note: note.trim(), file, previewUrl, status: 'selected', guideReady: false });
     go('reading');
   };
   const read = <Button className="w-full lg:w-auto lg:min-w-[200px]" onClick={startReading}>처방 내용 읽기</Button>;
@@ -83,16 +91,27 @@ export function UploadScreen({ go, back, onTab }) {
           )}
         </div>
         <div className="flex flex-col gap-2.5">
-          <SectionLabel>처방전 사진</SectionLabel>
+          <SectionLabel>어떤 사진인가요?</SectionLabel>
+          <div className="flex gap-2" role="group" aria-label="사진 종류">
+            {SOURCE_TYPES.map((t) => (
+              <SelectChip key={t.value} selected={sourceType === t.value} onClick={() => setSourceType(t.value)}>{t.label}</SelectChip>
+            ))}
+          </div>
+          <p className="text-13 text-muted">
+            {sourceType === 'PILL_BAG' ? '약국에서 받은 약봉투의 글자 면 전체가 나오게 찍어 주세요.' : '병원에서 받은 처방전 전체가 나오게 찍어 주세요.'}
+          </p>
+        </div>
+        <div className="flex flex-col gap-2.5">
+          <SectionLabel>{sourceLabel(sourceType)} 사진</SectionLabel>
           <Panel className="flex items-center gap-3.5 p-3">
             {previewUrl ? (
-              <img src={previewUrl} alt="선택한 처방전 미리보기" className="h-24 w-[72px] shrink-0 rounded-md border border-line object-cover" />
+              <img src={previewUrl} alt={`선택한 ${sourceLabel(sourceType)} 미리보기`} className="h-24 w-[72px] shrink-0 rounded-md border border-line object-cover" />
             ) : (
               <RxPaper width={72} marks={[[140, 186, 30]]} />
             )}
             <div className="flex flex-1 flex-col gap-2.5">
               <div className="flex flex-col gap-0.5">
-                <p className="text-16 font-semibold">{file ? file.name : '처방전 사진을 선택해 주세요'}</p>
+                <p className="text-16 font-semibold">{file ? file.name : `${sourceLabel(sourceType)} 사진을 선택해 주세요`}</p>
                 <p className="text-13 text-muted">{file ? `${(file.size / 1024 / 1024).toFixed(2)}MB` : 'JPG, PNG · 최대 10MB'}</p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -120,7 +139,11 @@ const STEPS = [
   { label: '약 정보 정리하기', state: 'next' },
 ];
 
-const RETAKE_TIPS = ['밝은 곳에서 그림자 없이 찍어 주세요.', '처방전 전체가 화면에 들어오게 해 주세요.', '글자가 또렷하게 보일 때 찍어 주세요.'];
+const RETAKE_TIPS = [
+  '밝은 곳에서 그림자 없이 찍어 주세요.',
+  '처방전이나 약봉투 전체가 화면에 들어오게 해 주세요.',
+  '처방 올리기에서 고른 사진 종류(처방전·약봉투)가 맞는지 확인해 주세요.',
+];
 
 /**
  * 다시 찍기 알럿 — 신뢰도가 낮거나(60% 미만) OCR이 실패하면 처방이 저장되지 않아요.
@@ -188,7 +211,7 @@ export function ReadingScreen({ go, back, onTab }) {
     if (!current?.file) { go('upload', undefined, { replace: true }); return undefined; }
     if (startedAttempt.current === attempt) return undefined;
     startedAttempt.current = attempt;
-    registerPrescription({ childId: current.childId, file: current.file, disease: current.disease, note: current.note })
+    registerPrescription({ childId: current.childId, sourceType: current.sourceType, file: current.file, disease: current.disease, note: current.note })
       .then((data) => {
         if (!mounted.current) return;
         setPrescriptionDraft({ ...getPrescriptionDraft(), ...draftFieldsFromRegistration(data) });
@@ -223,7 +246,7 @@ export function ReadingScreen({ go, back, onTab }) {
           </div>
         ) : (
           <div className="flex flex-col gap-2 text-center">
-            <h2 className="text-22 font-bold">처방전을 읽고 있어요</h2>
+            <h2 className="text-22 font-bold">{sourceLabel(getPrescriptionDraft()?.sourceType) === '약봉투' ? '약봉투를' : '처방전을'} 읽고 있어요</h2>
             <p className="text-15 text-muted">최대 30초쯤 걸려요. 화면을 닫지 말아 주세요.</p>
           </div>
         )}
