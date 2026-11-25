@@ -6,6 +6,7 @@
     "acetaminophen": "antipyretic_apap",
     "ibuprofen": "antipyretic_ibu",
     "amoxicillin/clavulanate": "antibiotic",
+    "amoxicillin": "antibiotic",
     "cefaclor": "antibiotic",
     "clarithromycin": "antibiotic",
     "saccharomyces boulardii": "probiotic",

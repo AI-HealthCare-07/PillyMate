@@ -3,13 +3,14 @@
 프론트(frontend/src/components/rx/guide.jsx)가 읽는 키를 맨 위에 둔다.
     schedule  : [{"slot": "아침", "items": [["세파클러", "4.2mL", "5일"], ...]}, ...]  → Schedule
     asNeeded  : "세토펜: 필요할 때 1회 5mL. ..." (없으면 "")                           → Schedule 아래 한 줄
-    howTo     : [{"name", "how", "note"}]                                              → HowTo
+    howTo     : [{"name", "how", "note", ...}]                                         → HowTo
+                기존 화면용: name·how·note
+                카드 윗부분: shortName·purpose·dose·when·keyPoint
+                자세히 보기: steps·cautions·sideEffects·storage·pharmacistCheck·form
     life      : [문장, ...]                                                              → LifeTips
     danger    : [문장, ...]                                                              → DangerSignals
 그 밖에 title·summary·checklist·disclaimer·sources를 두고,
 원래 결과 전체는 detail에 넣어 둔다 (챗봇·근거 화면에서 쓸 수 있게).
-
-가이드를 프론트 형식(schedule, asNeeded, howTo, life, danger)으로 바꿔요
 """
 
 from __future__ import annotations

@@ -99,41 +99,46 @@ def interval_hours(*texts: str | None) -> int | None:
     return None
 
 
-# 약 이름 → 성분(영문 키, DATA-REF-007 ingredient_to_class와 같은 이름). 위에 있을수록 우선.
+# 약 이름에 왼쪽 단어가 들어 있으면 오른쪽 성분으로 본다. 위에서부터 처음 맞는 줄을 쓴다.
+# 이름이 겹치는 것은 더 구체적인 쪽을 위에 둔다. (예: 덱시부프로펜 > 이부프로펜, 레보세티리진 > 세티리진)
+# 주석 형식: [성분명] 또는 [상품명] + 한글 성분 · 약 종류
 INGREDIENT_RULES = [
-    ("덱시부프로펜", "dexibuprofen"),
-    ("맥시부펜", "dexibuprofen"),
-    ("이부프로펜", "ibuprofen"),
-    ("부루펜", "ibuprofen"),
-    ("아세트아미노펜", "acetaminophen"),
-    ("세토펜", "acetaminophen"),
-    ("써스펜", "acetaminophen"),
-    ("챔프", "acetaminophen"),
-    ("암브록솔", "ambroxol"),
-    ("뮤코펙트", "ambroxol"),
-    ("레보드로프로피진", "levodropropizine"),
-    ("사카로", "saccharomyces boulardii"),
-    ("비오플", "saccharomyces boulardii"),
-    ("세프디니르", "cefdinir"),
-    ("옴니세프", "cefdinir"),
-    ("세파클러", "cefaclor"),
-    ("클래리스로마이신", "clarithromycin"),
-    ("클래리시드", "clarithromycin"),
-    ("아목시실린", "amoxicillin/clavulanate"),
-    ("오구멘틴", "amoxicillin/clavulanate"),
-    ("오구엔틴", "amoxicillin/clavulanate"),
-    ("레보세티리진", "levocetirizine"),
-    ("세티리진", "cetirizine"),
-    ("히드록시진", "hydroxyzine"),
-    ("유시락스", "hydroxyzine"),
-    ("히드로코르티손", "hydrocortisone"),
-    ("로코이드", "hydrocortisone"),
-    ("토브라마이신", "tobramycin"),
-    ("토브렉스", "tobramycin"),
-    ("레보플록사신", "levofloxacin"),
-    ("러보플록사신", "levofloxacin"),
-    ("크라비트", "levofloxacin"),
-    ("플루오로메톨론", "fluorometholone"),
+    ("덱시부프로펜", "dexibuprofen"),  # [성분명] 덱시부프로펜 · 해열진통소염제 ('이부프로펜'보다 위에 둬야 함)
+    ("맥시부펜", "dexibuprofen"),  # [상품명] 맥시부펜시럽 = 덱시부프로펜
+    ("이부프로펜", "ibuprofen"),  # [성분명] 이부프로펜 · 해열진통소염제
+    ("이부펜", "ibuprofen"),  # [상품명 일부] 챔프이부펜 등 = 이부프로펜 ('챔프'보다 위에 둬야 함)
+    ("부루펜", "ibuprofen"),  # [상품명] 부루펜시럽 = 이부프로펜
+    ("아세트아미노펜", "acetaminophen"),  # [성분명] 아세트아미노펜 · 해열진통제
+    ("세토펜", "acetaminophen"),  # [상품명] 세토펜현탁액 = 아세트아미노펜
+    ("써스펜", "acetaminophen"),  # [상품명] 써스펜좌약 = 아세트아미노펜 (좌약)
+    ("챔프", "acetaminophen"),  # [상품명] 챔프시럽 = 아세트아미노펜
+    ("암브록솔", "ambroxol"),  # [성분명] 암브록솔 · 거담제(가래)
+    ("뮤코펙트", "ambroxol"),  # [상품명] 뮤코펙트시럽·정 = 암브록솔
+    ("레보드로프로피진", "levodropropizine"),  # [성분명] 레보드로프로피진 · 진해제(기침)
+    ("사카로", "saccharomyces boulardii"),  # [성분명 앞부분] 사카로마이세스 보울라디 · 정장제
+    ("비오플", "saccharomyces boulardii"),  # [상품명] 비오플250산 = 사카로마이세스 보울라디
+    ("세프디니르", "cefdinir"),  # [성분명] 세프디니르 · 항생제
+    ("옴니세프", "cefdinir"),  # [상품명] 옴니세프세립 = 세프디니르
+    ("세파클러", "cefaclor"),  # [성분명] 세파클러 · 항생제 (세파클러건조시럽처럼 성분명이 곧 약 이름)
+    ("클래리스로마이신", "clarithromycin"),  # [성분명] 클래리스로마이신 · 항생제
+    ("클래리시드", "clarithromycin"),  # [상품명] 클래리시드건조시럽 = 클래리스로마이신
+    ("클라불란산", "amoxicillin/clavulanate"),  # [성분명] 클라불란산이 이름에 있으면 아목시실린·클라불란산 복합제 · 항생제
+    ("오구멘틴", "amoxicillin/clavulanate"),  # [상품명] 오구멘틴 = 아목시실린·클라불란산 복합제
+    ("오구엔틴", "amoxicillin/clavulanate"),  # OCR 오타 ('오구멘틴'을 잘못 읽은 것)
+    ("아목시실린", "amoxicillin"),  # [성분명] 아목시실린 단독 · 항생제 (위 셋에 안 걸릴 때만)
+    ("레보세티리진", "levocetirizine"),  # [성분명] 레보세티리진 · 항히스타민제 ('세티리진'보다 위에 둬야 함)
+    ("세티리진", "cetirizine"),  # [성분명] 세티리진 · 항히스타민제(콧물·가려움)
+    ("히드록시진", "hydroxyzine"),  # [성분명] 히드록시진 · 항히스타민제(가려움)
+    ("유시락스", "hydroxyzine"),  # [상품명] 유시락스시럽 = 히드록시진
+    ("히드로코르티손", "hydrocortisone"),  # [성분명] 히드로코르티손 · 바르는 스테로이드제
+    ("로코이드", "hydrocortisone"),  # [상품명] 로코이드크림 = 히드로코르티손
+    ("토브라마이신", "tobramycin"),  # [성분명] 토브라마이신 · 항생 점안제
+    ("토브렉스", "tobramycin"),  # [상품명] 토브렉스점안액 = 토브라마이신
+    ("레보플록사신", "levofloxacin"),  # [성분명] 레보플록사신 · 항생 점안제
+    ("러보플록사신", "levofloxacin"),  # OCR 오타 ('레보플록사신'을 잘못 읽은 것)
+    ("크라비트", "levofloxacin"),  # [상품명] 크라비트점안액 = 레보플록사신
+    ("플루오로메톨론", "fluorometholone"),  # [성분명] 플루오로메톨론 · 스테로이드 점안제
+    ("플루메토론", "fluorometholone"),  # [상품명] 플루메토론점안액 = 플루오로메톨론
 ]
 
 
