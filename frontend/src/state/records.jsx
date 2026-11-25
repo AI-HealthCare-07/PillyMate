@@ -90,6 +90,8 @@ function guideFromMeds({ meds, ...base }) {
       name: m.name,
       how: [v(m.dose) && `한 번에 ${v(m.dose)}`, v(m.perDay) && (/^\d/.test(v(m.perDay)) ? `하루 ${v(m.perDay)}` : v(m.perDay)), v(m.timing)].filter(Boolean).join(', ') + ' 먹여요.',
       note: v(m.days) ? `복용 기간: ${v(m.days)}` : '',
+      // 약별 복용법 표에 쓰는 처방전 값 그대로(1회 양·하루 횟수·기간·먹는 때). 빈 값은 화면에서 '—'로 보여요.
+      dose: v(m.dose), perDay: v(m.perDay), days: v(m.days), timing: v(m.timing), asNeeded: isAsNeeded(m),
     })),
     life: [],
     danger: [],

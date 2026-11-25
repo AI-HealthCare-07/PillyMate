@@ -64,25 +64,25 @@ export function UploadScreen({ go, back, onTab }) {
     setPrescriptionDraft({ childId: child, sourceType, disease: disease.trim(), note: note.trim(), file, previewUrl, status: 'selected', guideReady: false });
     go('reading');
   };
-  const read = <Button className="w-full lg:w-auto lg:min-w-[200px]" onClick={startReading}>처방 내용 읽기</Button>;
+  const read = <Button className="w-full" onClick={startReading}>처방 내용 읽기</Button>;
   return (
-    <AppShell tab="upload" onTab={onTab} header={<Header title="처방 올리기" onBack={() => back('home')} />} actions={{ mobile: read, desktop: null }} actionsBar={false}>
-      <Body className="gap-[22px] pt-1">
-        <div className="flex flex-col gap-2.5">
+    <AppShell tab="upload" onTab={onTab} width="wide" header={<Header title="처방 올리기" onBack={() => back('home')} />} actions={{ mobile: read, desktop: null }} actionsBar={false}>
+      <Body className="gap-7 pt-1 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,440px)] lg:grid-rows-[auto_auto_auto_auto_1fr] lg:items-start lg:gap-x-12 lg:gap-y-7 lg:pt-6 xl:gap-x-16">
+        <div className="flex flex-col gap-2.5 lg:col-start-2 lg:row-start-1">
           <SectionLabel>누구의 약인가요?</SectionLabel>
           {childInfo ? (
-            <Panel className="flex items-center gap-3.5 py-3 pl-3.5 pr-2">
+            <Panel className="flex items-center gap-3.5 py-3 pl-4 pr-2">
               <Avatar name={childInfo.name} size={40} />
-              <div className="flex flex-1 flex-col gap-0.5">
+              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <p className="text-16 font-semibold">{childInfo.name}의 약</p>
                 <p className="text-13 text-muted">{[childInfo.age, childInfo.weight].filter(Boolean).join(', ')}</p>
                 {childInfo.allergy && (
-                  <p className="flex items-center gap-1 text-13 font-medium text-danger">
-                    <AlertTriangle size={14} strokeWidth={2} aria-hidden />{childInfo.allergy}
+                  <p className="flex items-start gap-1 text-13 font-medium text-danger">
+                    <AlertTriangle size={14} strokeWidth={2} className="mt-[3px] shrink-0" aria-hidden />{childInfo.allergy}
                   </p>
                 )}
               </div>
-              <button type="button" onClick={() => go('children')} className="rounded-md px-2 py-1.5 text-14 font-semibold text-brand hover:bg-paper">
+              <button type="button" onClick={() => go('children')} className="inline-flex min-h-11 shrink-0 items-center rounded-md px-3 text-14 font-semibold text-brand hover:bg-paper">
                 아이 바꾸기
               </button>
             </Panel>
@@ -90,7 +90,7 @@ export function UploadScreen({ go, back, onTab }) {
             <Button variant="secondary" className="w-full" onClick={() => go('children')}>아이 먼저 고르기</Button>
           )}
         </div>
-        <div className="flex flex-col gap-2.5">
+        <div className="flex flex-col gap-2.5 lg:col-start-2">
           <SectionLabel>어떤 사진인가요?</SectionLabel>
           <div className="flex gap-2" role="group" aria-label="사진 종류">
             {SOURCE_TYPES.map((t) => (
@@ -101,20 +101,22 @@ export function UploadScreen({ go, back, onTab }) {
             {sourceType === 'PILL_BAG' ? '약국에서 받은 약봉투의 글자 면 전체가 나오게 찍어 주세요.' : '병원에서 받은 처방전 전체가 나오게 찍어 주세요.'}
           </p>
         </div>
-        <div className="flex flex-col gap-2.5">
+        <div className="flex flex-col gap-2.5 lg:col-start-1 lg:row-span-5 lg:row-start-1">
           <SectionLabel>{sourceLabel(sourceType)} 사진</SectionLabel>
-          <Panel className="flex items-center gap-3.5 p-3">
-            {previewUrl ? (
-              <img src={previewUrl} alt={`선택한 ${sourceLabel(sourceType)} 미리보기`} className="h-24 w-[72px] shrink-0 rounded-md border border-line object-cover" />
-            ) : (
-              <RxPaper width={72} marks={[[140, 186, 30]]} />
-            )}
-            <div className="flex flex-1 flex-col gap-2.5">
-              <div className="flex flex-col gap-0.5">
-                <p className="text-16 font-semibold">{file ? file.name : `${sourceLabel(sourceType)} 사진을 선택해 주세요`}</p>
+          <Panel className="flex items-center gap-4 p-3 pr-4 lg:flex-col lg:items-stretch lg:gap-0 lg:p-0">
+            <div className="flex shrink-0 lg:min-h-[400px] lg:items-center lg:justify-center lg:border-b lg:border-line lg:bg-paper lg:p-8">
+              {previewUrl ? (
+                <img src={previewUrl} alt={`선택한 ${sourceLabel(sourceType)} 미리보기`} className="h-24 w-[72px] shrink-0 rounded-md border border-line object-cover lg:h-auto lg:max-h-[440px] lg:w-auto lg:max-w-full lg:object-contain" />
+              ) : (
+                <RxPaper width={72} marks={[[140, 186, 30]]} className="lg:h-auto lg:w-[220px]" />
+              )}
+            </div>
+            <div className="flex min-w-0 flex-1 flex-col gap-3 lg:gap-4 lg:px-5 lg:py-4 xl:flex-row xl:items-center xl:justify-between">
+              <div className="flex min-w-0 flex-col gap-0.5">
+                <p className="break-all text-16 font-semibold">{file ? file.name : `${sourceLabel(sourceType)} 사진을 선택해 주세요`}</p>
                 <p className="text-13 text-muted">{file ? `${(file.size / 1024 / 1024).toFixed(2)}MB` : 'JPG, PNG · 최대 10MB'}</p>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex shrink-0 flex-wrap gap-2">
                 <SmallButton icon={Camera} onClick={() => cameraInput.current?.click()}>사진 찍기</SmallButton>
                 <SmallButton icon={ImageIcon} onClick={() => fileInput.current?.click()}>앨범/파일</SmallButton>
               </div>
@@ -122,11 +124,11 @@ export function UploadScreen({ go, back, onTab }) {
           </Panel>
           <input ref={cameraInput} type="file" accept={ACCEPT_ATTRIBUTE} capture="environment" className="hidden" onChange={chooseFile} aria-label="카메라로 처방전 촬영" />
           <input ref={fileInput} type="file" accept={ACCEPT_ATTRIBUTE} className="hidden" onChange={chooseFile} aria-label="처방전 이미지 선택" />
-          {error && <p role="alert" className="text-13 text-danger">{error}</p>}
+          {error && <p role="alert" className="text-14 font-medium text-danger">{error}</p>}
         </div>
-        <Field label="병명 (아는 경우)" placeholder="예: 중이염" value={disease} onChange={(e) => setDisease(e.target.value)} />
-        <Field label="특이사항" multiline placeholder="예: 어제부터 39도 열이 나요" helper="적어 주시면 가이드에 반영돼요." value={note} onChange={(e) => setNote(e.target.value)} />
-        <div className="hidden justify-end lg:flex">{read}</div>
+        <Field label="병명 (아는 경우)" placeholder="예: 중이염" value={disease} onChange={(e) => setDisease(e.target.value)} className="lg:col-start-2" />
+        <Field label="특이사항" multiline placeholder="예: 어제부터 39도 열이 나요" helper="적어 주시면 가이드에 반영돼요." value={note} onChange={(e) => setNote(e.target.value)} className="lg:col-start-2" />
+        <div className="hidden lg:col-start-2 lg:flex lg:border-t lg:border-line lg:pt-6">{read}</div>
       </Body>
     </AppShell>
   );
@@ -169,10 +171,10 @@ function RetakeAlert({ open, message, onPick, onGiveUp }) {
   return (
     <>
       <AlertDialog open={open} title="사진을 다시 찍어 주세요" description={message}>
-        <ul className="flex list-disc flex-col gap-1 pl-5 text-14 text-muted">
+        <ul className="flex list-disc flex-col gap-1.5 rounded-lg bg-mark-soft py-3 pl-8 pr-4 text-14 text-ink">
           {RETAKE_TIPS.map((tip) => <li key={tip}>{tip}</li>)}
         </ul>
-        {error && <p role="alert" className="text-13 text-danger">{error}</p>}
+        {error && <p role="alert" className="text-14 font-medium text-danger">{error}</p>}
         <div className="flex flex-col gap-2">
           <Button className="w-full" onClick={() => cameraInput.current?.click()}>
             <Camera size={18} className="mr-1.5" aria-hidden />사진 다시 찍기
@@ -180,7 +182,7 @@ function RetakeAlert({ open, message, onPick, onGiveUp }) {
           <Button variant="secondary" className="w-full" onClick={() => fileInput.current?.click()}>
             <ImageIcon size={18} className="mr-1.5" aria-hidden />앨범에서 고르기
           </Button>
-          <button type="button" onClick={onGiveUp} className="self-center rounded-md px-3 py-2 text-14 font-medium text-muted hover:text-ink">
+          <button type="button" onClick={onGiveUp} className="inline-flex min-h-11 items-center self-center rounded-md px-3 text-14 font-medium text-muted hover:bg-paper hover:text-ink">
             처방 올리기로 돌아가기
           </button>
         </div>
@@ -235,34 +237,36 @@ export function ReadingScreen({ go, back, onTab }) {
 
   const cancel = <Button variant="secondary" className="w-full lg:w-auto lg:min-w-[160px]" onClick={() => back('upload')}>취소</Button>;
   return (
-    <AppShell tab="upload" onTab={onTab} showTabs={false} header={<Header title="처방 읽는 중" onBack={() => back('upload')} />} actions={{ mobile: cancel }}>
-      <div className="flex flex-1 flex-col items-center gap-7 p-6 lg:px-0" aria-live="polite">
-        <RxPaper width={200} marks={[[140, 186, 30], [232, 206, 30]]} scanning={!failure} />
-        {failure ? (
-          <div className="flex flex-col items-center gap-4 text-center">
-            <h2 className="text-22 font-bold">처방전을 올리지 못했어요</h2>
-            <p role="alert" className="text-15 text-danger">{failure}</p>
-            <Button variant="secondary" onClick={() => back('upload')}>처방 올리기로 돌아가기</Button>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-2 text-center">
-            <h2 className="text-22 font-bold">{sourceLabel(getPrescriptionDraft()?.sourceType) === '약봉투' ? '약봉투를' : '처방전을'} 읽고 있어요</h2>
-            <p className="text-15 text-muted">최대 30초쯤 걸려요. 화면을 닫지 말아 주세요.</p>
-          </div>
-        )}
-        <Panel as="ol" className="w-full" aria-label="진행 단계">
-          {STEPS.map((s, j) => (
-            <li key={s.label} className={`flex items-center gap-3 px-4 py-3.5 ${j ? 'border-t border-line' : ''}`}>
-              {s.state === 'done' && <Check size={22} strokeWidth={2} className="text-brand" aria-hidden />}
-              {s.state === 'active' && <RefreshCw size={22} strokeWidth={2} className="animate-spin text-brand [animation-duration:2s]" aria-hidden />}
-              {s.state === 'next' && <Circle size={22} strokeWidth={2} className="text-faint" aria-hidden />}
-              <span className={`flex-1 text-15 ${s.state === 'active' ? 'font-semibold' : 'font-medium'} ${s.state === 'next' ? 'text-muted' : ''}`}>{s.label}</span>
-              <span className={`text-13 ${s.state === 'active' ? 'font-semibold text-brand' : 'text-muted'}`}>
-                {s.state === 'done' ? '끝났어요' : s.state === 'active' ? '읽는 중' : '다음 순서'}
-              </span>
-            </li>
-          ))}
-        </Panel>
+    <AppShell tab="upload" onTab={onTab} showTabs={false} width="reading" header={<Header title="처방 읽는 중" onBack={() => back('upload')} />} actions={{ mobile: cancel }}>
+      <div className="flex flex-1 flex-col items-center gap-8 px-5 pb-8 pt-6 lg:grid lg:grid-cols-[200px_minmax(0,1fr)] lg:items-start lg:gap-12 lg:px-0 lg:pb-12 lg:pt-8" aria-live="polite">
+        <RxPaper width={200} marks={[[140, 186, 30], [232, 206, 30]]} scanning={!failure} className="max-w-[56vw] h-auto lg:max-w-none" />
+        <div className="flex w-full flex-col gap-6">
+          {failure ? (
+            <div className="flex flex-col items-center gap-4 text-center lg:items-start lg:text-left">
+              <h2 className="text-22 font-bold lg:text-24">처방전을 올리지 못했어요</h2>
+              <p role="alert" className="w-full rounded-lg border border-danger/30 bg-danger-soft px-4 py-3 text-15 font-medium text-danger">{failure}</p>
+              <Button variant="secondary" onClick={() => back('upload')}>처방 올리기로 돌아가기</Button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2 text-center lg:text-left">
+              <h2 className="text-22 font-bold lg:text-24">{sourceLabel(getPrescriptionDraft()?.sourceType) === '약봉투' ? '약봉투를' : '처방전을'} 읽고 있어요</h2>
+              <p className="text-15 text-muted">최대 30초쯤 걸려요. 화면을 닫지 말아 주세요.</p>
+            </div>
+          )}
+          <Panel as="ol" className="w-full" aria-label="진행 단계">
+            {STEPS.map((s, j) => (
+              <li key={s.label} className={`flex min-h-[56px] items-center gap-3 px-4 py-3 ${j ? 'border-t border-line' : ''}`}>
+                {s.state === 'done' && <Check size={22} strokeWidth={2} className="shrink-0 text-ok" aria-hidden />}
+                {s.state === 'active' && <RefreshCw size={22} strokeWidth={2} className="shrink-0 animate-spin text-brand [animation-duration:2s]" aria-hidden />}
+                {s.state === 'next' && <Circle size={22} strokeWidth={2} className="shrink-0 text-edge" aria-hidden />}
+                <span className={`min-w-0 flex-1 text-15 ${s.state === 'active' ? 'font-semibold' : 'font-medium'} ${s.state === 'next' ? 'text-muted' : ''}`}>{s.label}</span>
+                <span className={`shrink-0 text-13 ${s.state === 'active' ? 'font-semibold text-brand' : 'text-muted'}`}>
+                  {s.state === 'done' ? '끝났어요' : s.state === 'active' ? '읽는 중' : '다음 순서'}
+                </span>
+              </li>
+            ))}
+          </Panel>
+        </div>
       </div>
       <RetakeAlert open={Boolean(retakeMessage)} message={retakeMessage} onPick={retakeWith} onGiveUp={giveUp} />
     </AppShell>

@@ -17,18 +17,18 @@ export function AlertDialog({ open, title, description, children }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-ink/60" aria-hidden />
+      <div className="absolute inset-0 bg-ink/50" aria-hidden />
       <div
         ref={panelRef}
         role="alertdialog"
         aria-modal="true"
         aria-labelledby={`${id}-title`}
         aria-describedby={`${id}-desc`}
-        className="relative flex max-h-full w-full max-w-[480px] flex-col gap-4 overflow-y-auto rounded-xl bg-surface p-5 shadow-paper"
+        className="relative flex max-h-full w-full max-w-[480px] flex-col gap-5 overflow-y-auto rounded-2xl border border-line bg-surface p-6 shadow-raised"
       >
-        <div className="flex flex-col gap-1">
-          <h2 id={`${id}-title`} className="text-18 font-bold">{title}</h2>
-          <p id={`${id}-desc`} className="text-15">{description}</p>
+        <div className="flex flex-col gap-1.5">
+          <h2 id={`${id}-title`} className="text-20 font-bold">{title}</h2>
+          <p id={`${id}-desc`} className="text-15 text-muted">{description}</p>
         </div>
         {children}
       </div>

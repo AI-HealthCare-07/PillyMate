@@ -28,7 +28,7 @@ export function Popover({ label, trigger, children, className = '' }) {
         role="dialog"
         aria-label={label}
         inert={open ? undefined : ''}
-        className={`absolute right-3 top-[calc(100%+8px)] z-50 max-w-[calc(100vw-24px)] origin-top-right rounded-xl border border-line bg-surface shadow-raised transition duration-150 lg:right-10 ${open ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0'} ${className}`}
+        className={`absolute right-3 top-[calc(100%+8px)] z-50 max-w-[calc(100vw-24px)] origin-top-right rounded-2xl border border-line bg-surface shadow-raised transition duration-150 lg:right-10 ${open ? 'scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0'} ${className}`}
       >
         {children({ close })}
       </div>

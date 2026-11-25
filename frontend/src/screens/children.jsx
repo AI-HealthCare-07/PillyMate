@@ -19,15 +19,15 @@ export function ChildListScreen({ go, onTab }) {
     refreshChildren();
   }, [refreshChildren]);
   return (
-    <AppShell tab="children" onTab={onTab} header={<Header title="아이" />}>
+    <AppShell tab="children" onTab={onTab} header={<Header title="아이" />} width="wide">
       <Body className="gap-5">
-        <p className="text-15 text-muted">고른 아이의 기록만 보여 드리고, 처방을 올릴 때도 그 아이 정보로 가이드를 만들어요. 체중과 알레르기는 최신으로 유지해 주세요.</p>
+        <p className="text-15 text-muted lg:max-w-reading">고른 아이의 기록만 보여 드리고, 처방을 올릴 때도 그 아이 정보로 가이드를 만들어요. 체중과 알레르기는 최신으로 유지해 주세요.</p>
         {status === 'loading' && !childList.length && (
-          <Panel className="px-4 py-6 text-center text-15 text-muted">아이 목록을 불러오고 있어요.</Panel>
+          <Panel className="px-5 py-8 text-center text-15 text-muted lg:max-w-reading">아이 목록을 불러오고 있어요.</Panel>
         )}
         {status === 'error' && (
-          <Panel role="alert" className="flex flex-col items-center gap-3 px-4 py-6 text-center text-15">
-            <p className="text-danger">{loadError}</p>
+          <Panel role="alert" className="flex flex-col items-center gap-3 border-danger/30 bg-danger-soft px-5 py-8 text-center text-15 lg:max-w-reading">
+            <p className="font-medium text-danger">{loadError}</p>
             {loadError === '로그인이 필요해요.' ? (
               <Button variant="secondary" onClick={() => go('login')}>로그인하러 가기</Button>
             ) : (
@@ -36,31 +36,31 @@ export function ChildListScreen({ go, onTab }) {
           </Panel>
         )}
         {status === 'idle' && (
-          <Panel className="flex flex-col items-center gap-3 px-4 py-6 text-center text-15 text-muted">
+          <Panel className="flex flex-col items-center gap-3 px-5 py-8 text-center text-15 text-muted lg:max-w-reading">
             <p>로그인하면 등록한 아이를 볼 수 있어요.</p>
             <Button variant="secondary" onClick={() => go('login')}>로그인하러 가기</Button>
           </Panel>
         )}
         {status === 'ready' && !childList.length && (
-          <Panel className="px-4 py-6 text-center text-15 text-muted">등록된 아이가 없어요. 아이를 추가해 주세요.</Panel>
+          <Panel className="px-5 py-8 text-center text-15 text-muted lg:max-w-reading">등록된 아이가 없어요. 아이를 추가해 주세요.</Panel>
         )}
-        <Panel as="ul" aria-label="아이 목록" className={childList.length ? '' : 'hidden'}>
+        <Panel as="ul" aria-label="아이 목록" className={childList.length ? 'lg:grid lg:grid-cols-2 lg:gap-4 lg:overflow-visible lg:rounded-none lg:border-0 lg:bg-transparent 2xl:grid-cols-3' : 'hidden'}>
           {childList.map((c, j) => {
             const on = c.id === selected;
             return (
               <li
                 key={c.id}
-                className={`flex items-center transition-colors ${j ? 'border-t border-line' : ''} ${on ? 'bg-brand-soft' : 'hover:bg-paper'}`}
+                className={`flex items-center transition-colors lg:overflow-hidden lg:rounded-xl lg:border ${j ? 'border-t border-line' : ''} ${on ? 'bg-brand-soft lg:border-brand' : 'bg-surface hover:bg-paper lg:border-line'}`}
               >
                 <button
                   type="button"
                   aria-pressed={on}
                   onClick={() => selectChild(c.id)}
-                  className="flex flex-1 items-center gap-3.5 py-4 pl-4 pr-2 text-left"
+                  className="flex min-w-0 flex-1 items-center gap-3.5 self-stretch py-4 pl-4 pr-2 text-left lg:py-5 lg:pl-5"
                 >
                   <Avatar name={c.name} size={44} />
-                  <span className="flex flex-1 flex-col gap-0.5">
-                    <span className="flex items-center gap-1.5">
+                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                       <span className={`text-17 font-semibold ${on ? 'text-brand' : ''}`}>{c.name}</span>
                       {on && (
                         <span className="flex items-center gap-0.5 text-13 font-semibold text-brand">
@@ -70,11 +70,11 @@ export function ChildListScreen({ go, onTab }) {
                     </span>
                     <span className="text-14 text-muted">{c.age}, {c.weight}</span>
                     {c.allergy ? (
-                      <span className="flex items-center gap-1.5 text-14 font-medium text-danger">
-                        <AlertTriangle size={16} strokeWidth={2} aria-hidden />{c.allergy}
+                      <span className="mt-1 flex items-start gap-1.5 text-14 font-semibold text-danger">
+                        <AlertTriangle size={16} strokeWidth={2} className="mt-[3px] shrink-0" aria-hidden />{c.allergy}
                       </span>
                     ) : (
-                      <span className="text-14 text-muted">알레르기 없음</span>
+                      <span className="mt-1 text-14 text-muted">알레르기 없음</span>
                     )}
                   </span>
                 </button>
@@ -82,7 +82,7 @@ export function ChildListScreen({ go, onTab }) {
                   type="button"
                   onClick={() => go('child-edit', { childId: c.id })}
                   aria-label={`${c.name} 정보 편집`}
-                  className="mr-3 flex shrink-0 items-center gap-1 rounded-md border border-line bg-surface px-3 py-2.5 text-14 font-semibold hover:bg-paper"
+                  className="mr-3 flex min-h-11 shrink-0 items-center gap-1 rounded-md border border-line bg-surface px-3 text-14 font-semibold hover:bg-paper lg:mr-4"
                 >
                   <Pencil size={15} strokeWidth={2} aria-hidden />편집
                 </button>
@@ -90,7 +90,7 @@ export function ChildListScreen({ go, onTab }) {
             );
           })}
         </Panel>
-        <Button variant="secondary" className="w-full" onClick={addFlow.start}>아이 추가하기</Button>
+        <Button variant="secondary" className="w-full lg:w-auto lg:min-w-[200px] lg:self-start" onClick={addFlow.start}>아이 추가하기</Button>
         {addFlow.modal}
       </Body>
     </AppShell>
@@ -167,10 +167,11 @@ function ChildForm({ back, onTab, title, initial, onSave, onDelete, extraValidat
     </Button>
   );
   return (
-    <AppShell tab="children" onTab={onTab} showTabs={false} header={<Header title={title} onBack={() => back('children')} />} actions={{ mobile: save }}>
-      <Body className="gap-5">
+    <AppShell tab="children" onTab={onTab} showTabs={false} header={<Header title={title} onBack={() => back('children')} />} actions={{ mobile: save }} width="reading">
+      <Body className="gap-7 lg:gap-8">
+        <div className="flex flex-col gap-5 lg:grid lg:grid-cols-2 lg:items-start lg:gap-4">
         <Field label="이름 또는 별명" value={name} onChange={(e) => setName(e.target.value)} placeholder="예: 지우" maxLength={20} error={errors.name} />
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 items-start gap-3">
           <Field
             label="생년월일"
             type="date"
@@ -194,8 +195,9 @@ function ChildForm({ back, onTab, title, initial, onSave, onDelete, extraValidat
             <span className="pointer-events-none absolute right-4 top-[46px] text-15 text-muted" aria-hidden>kg</span>
           </div>
         </div>
-        <fieldset className="flex flex-col gap-2.5">
-          <legend className="contents"><SectionLabel>알레르기</SectionLabel></legend>
+        </div>
+        <fieldset className="flex flex-col gap-3 border-t border-line pt-6">
+          <legend className="contents"><SectionLabel className="!font-semibold !text-ink">알레르기</SectionLabel></legend>
           <div className="flex flex-wrap gap-2">
             {chips.map((a) => (
               <SelectChip key={a} selected={allergy.includes(a)} onClick={() => toggle(a)}>{a}</SelectChip>
@@ -215,25 +217,25 @@ function ChildForm({ back, onTab, title, initial, onSave, onDelete, extraValidat
                 maxLength={20}
                 aria-label="알레르기 직접 입력"
                 placeholder="예: 땅콩, 계란"
-                className="h-11 min-w-0 flex-1 rounded-md border border-line bg-surface px-3.5 text-15 placeholder:text-faint focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
+                className="h-11 min-w-0 flex-1 rounded-md border border-edge/50 bg-surface px-3.5 text-16 placeholder:text-faint focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand-soft"
               />
-              <button type="button" onClick={addCustom} disabled={!custom.trim()} className="shrink-0 rounded-md bg-brand px-4 text-14 font-semibold text-on-brand disabled:opacity-40">
+              <button type="button" onClick={addCustom} disabled={!custom.trim()} className="min-h-11 shrink-0 rounded-md bg-brand px-4 text-14 font-semibold text-on-brand hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-40">
                 확인
               </button>
-              <button type="button" onClick={closeCustom} className="shrink-0 rounded-md border border-line bg-surface px-3.5 text-14 font-semibold hover:bg-paper">
+              <button type="button" onClick={closeCustom} className="min-h-11 shrink-0 rounded-md border border-line bg-surface px-3.5 text-14 font-semibold hover:bg-paper">
                 취소
               </button>
             </div>
           )}
         </fieldset>
-        {saveError && <p role="alert" className="text-14 text-danger">{saveError}</p>}
-        <Field label="특이사항" multiline value={note} onChange={(e) => setNote(e.target.value)} placeholder="예: 시럽을 잘 안 먹어요, 열성 경련이 있었어요" helper="가이드를 만들 때 함께 고려해요." />
+        {saveError && <p role="alert" className="rounded-lg border border-danger/30 bg-danger-soft px-4 py-3 text-14 font-medium text-danger">{saveError}</p>}
+        <Field className="border-t border-line pt-6" label="특이사항" multiline value={note} onChange={(e) => setNote(e.target.value)} placeholder="예: 시럽을 잘 안 먹어요, 열성 경련이 있었어요" helper="가이드를 만들 때 함께 고려해요." />
         {onDelete && (
-          <div className="mt-4 flex flex-col gap-2 border-t border-line pt-6">
+          <div className="mt-2 flex flex-col gap-1 border-t border-line pt-6">
             <button
               type="button"
               onClick={onDelete}
-              className="inline-flex items-center justify-center gap-1.5 self-start rounded-md px-1 py-2 text-15 font-semibold text-danger hover:underline"
+              className="-ml-1 inline-flex min-h-11 items-center justify-center gap-1.5 self-start rounded-md px-1 text-15 font-semibold text-danger hover:underline"
             >
               <Trash2 size={18} strokeWidth={1.75} aria-hidden />이 아이 삭제하기
             </button>
@@ -363,7 +365,7 @@ function DeleteChildModal({ open, name, onClose, onConfirm }) {
           <button
             type="submit"
             disabled={!matches}
-            className="inline-flex h-13 items-center justify-center rounded-lg bg-danger px-5 text-16 font-semibold text-on-brand transition-colors hover:bg-[#8A1F18] disabled:cursor-not-allowed disabled:bg-sunk disabled:text-faint"
+            className="inline-flex h-13 items-center justify-center rounded-lg bg-danger px-5 text-16 font-semibold text-on-brand transition-colors hover:bg-danger-hover disabled:cursor-not-allowed disabled:bg-sunk disabled:text-muted"
           >
             영구 삭제하기
           </button>
