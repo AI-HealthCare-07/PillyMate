@@ -55,8 +55,17 @@ DEFAULT_UNIT_BY_FORM = {"SYRUP": "mL", "DRY_SYRUP": "mL", "TABLET": "정", "CAPS
 
 
 def main_drug_name(name):
-    """'세파클러건조시럽(내복)/60(1)mL/병' → '세파클러건조시럽'. 제형을 판단할 때만 쓴다."""
-    return re.split(r"[(/]", name or "", maxsplit=1)[0].strip()
+    """'세파클러건조시럽(내복)/60(1)mL/병' → '세파클러건조시럽'. 괄호나 '/'가 처음 나오기 전까지만 남긴다."""
+    return re.split(r"[(/（／]", name or "", maxsplit=1)[0].strip()
+
+
+def display_drug_name(name):
+    """보호자에게 보여 줄 약 이름. '맥시부펜시럽(덱시부프로펜)/100(1)mL/병' → '맥시부펜시럽'.
+
+    성분·포장 표기는 단위·제형을 짐작하는 데만 쓰고(그래서 원래 이름으로 먼저 판단한다) 출력에서는 뗀다.
+    '(급여)타이레놀'처럼 괄호로 시작해 남는 글자가 없으면 원래 이름을 그대로 둔다.
+    """
+    return main_drug_name(name) or name
 
 
 def match_dosage_form(text):
@@ -168,7 +177,7 @@ def build_medication(
     max_daily_count,
 ):
     return {
-        "name": name,
+        "name": display_drug_name(name),
         "insurance_code": insurance_code,
         "dose_per_time": to_float(dose_per_time),
         "unit": unit,

@@ -4,7 +4,7 @@
   "diagnosis_extracted": null,
   "medications": [
     {
-      "name": "몬테루카스트츄정5밀리그램(몬테루카스트나트륨)/1정",
+      "name": "몬테루카스트츄정5밀리그램",
       "insurance_code": "662100341",
       "dose_per_time": 1.0,
       "unit": "정",
@@ -17,7 +17,7 @@
       "dosage_form": "TABLET"
     },
     {
-      "name": "레보세티리진염산염정5밀리그램/1정",
+      "name": "레보세티리진염산염정5밀리그램",
       "insurance_code": "648902381",
       "dose_per_time": 1.0,
       "unit": "정",
@@ -30,7 +30,7 @@
       "dosage_form": "TABLET"
     },
     {
-      "name": "나조넥스나잘스프레이(모메타손푸로에이트)/140회/병",
+      "name": "나조넥스나잘스프레이",
       "insurance_code": "646701893",
       "dose_per_time": 2.0,
       "unit": null,

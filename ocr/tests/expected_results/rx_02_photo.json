@@ -4,7 +4,7 @@
   "diagnosis_extracted": "H669,J019",
   "medications": [
     {
-      "name": "오구멘틴듀오시럽228mg/5mL(내복)/70(1)mL/병",
+      "name": "오구멘틴듀오시럽228mg",
       "insurance_code": "642103581",
       "dose_per_time": 7.0,
       "unit": "mL",
@@ -17,7 +17,7 @@
       "dosage_form": "SYRUP"
     },
     {
-      "name": "부루펜시럽(이부프로펜)(내복)/90(1)mL/병",
+      "name": "부루펜시럽",
       "insurance_code": "650400921",
       "dose_per_time": 6.6667,
       "unit": "mL",
@@ -30,7 +30,7 @@
       "dosage_form": "SYRUP"
     },
     {
-      "name": "세티리진시럽1mg/mL(내복)/100(1)mL/병",
+      "name": "세티리진시럽1mg",
       "insurance_code": "648901441",
       "dose_per_time": 5.0,
       "unit": "mL",

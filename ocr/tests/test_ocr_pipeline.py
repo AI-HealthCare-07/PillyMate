@@ -71,7 +71,7 @@ def test_prescription_result_matches_api_spec(fake_clova):
     assert result["diagnosis_extracted"] == "J00,J209"
     first, second = result["medications"]
     assert first == {
-        "name": "세파클러건조시럽(내복)/60(1)mL/병",
+        "name": "세파클러건조시럽",
         "insurance_code": "643901230",
         "dose_per_time": 4.2,
         "unit": "mL",

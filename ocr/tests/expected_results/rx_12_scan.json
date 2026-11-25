@@ -4,7 +4,7 @@
   "diagnosis_extracted": "K590,R104",
   "medications": [
     {
-      "name": "듀락칸이지시럽(락툴로오스농축액)/15mL/포",
+      "name": "듀락칸이지시럽",
       "insurance_code": "671200441",
       "dose_per_time": 1.0,
       "unit": "mL",
@@ -17,7 +17,7 @@
       "dosage_form": "SYRUP"
     },
     {
-      "name": "트리메부틴말레산염정100밀리그램/1정",
+      "name": "트리메부틴말레산염정100밀리그램",
       "insurance_code": "669800213",
       "dose_per_time": 1.0,
       "unit": "정",
@@ -30,7 +30,7 @@
       "dosage_form": "TABLET"
     },
     {
-      "name": "비오플250산(사카로마이세스보울라디)/1포",
+      "name": "비오플250산",
       "insurance_code": "644702121",
       "dose_per_time": 1.0,
       "unit": "포",

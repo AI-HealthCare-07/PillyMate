@@ -4,7 +4,7 @@
   "diagnosis_extracted": "H109",
   "medications": [
     {
-      "name": "크라비트점안액0.5%(러보플록사신)/5mL/병",
+      "name": "크라비트점안액0.5%",
       "insurance_code": "645800191",
       "dose_per_time": 1.0,
       "unit": "방울",
@@ -17,7 +17,7 @@
       "dosage_form": "EYE_DROP"
     },
     {
-      "name": "플루메토론0.1%점안액(플루오로메톨론)/5mL/병",
+      "name": "플루메토론0.1%점안액",
       "insurance_code": "646300451",
       "dose_per_time": 1.0,
       "unit": "방울",
@@ -30,7 +30,7 @@
       "dosage_form": "EYE_DROP"
     },
     {
-      "name": "세티리진시럽1mg/mL(내복)/100(1)mL/병",
+      "name": "세티리진시럽1mg",
       "insurance_code": "648901441",
       "dose_per_time": 10.0,
       "unit": "mL",

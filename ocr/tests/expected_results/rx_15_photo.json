@@ -4,7 +4,7 @@
   "diagnosis_extracted": "S008,S8000",
   "medications": [
     {
-      "name": "부루펜시럽(이부프로펜)(내복)/90(1)mL/병",
+      "name": "부루펜시럽",
       "insurance_code": "650400921",
       "dose_per_time": 6.0,
       "unit": "mL",
@@ -17,7 +17,7 @@
       "dosage_form": "SYRUP"
     },
     {
-      "name": "후시딘연고(퓨시드산나트륨)/10g/개",
+      "name": "후시딘연고",
       "insurance_code": "640800176",
       "dose_per_time": 1.0,
       "unit": "g",

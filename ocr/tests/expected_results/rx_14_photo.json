@@ -4,7 +4,7 @@
   "diagnosis_extracted": "H669,H103",
   "medications": [
     {
-      "name": "세파클러건조시럽(내복)/60(1)mL/병",
+      "name": "세파클러건조시럽",
       "insurance_code": "643901230",
       "dose_per_time": 4.5,
       "unit": "mL",
@@ -17,7 +17,7 @@
       "dosage_form": "DRY_SYRUP"
     },
     {
-      "name": "타리비드이용액0.3%(오플록사신)/5mL/병",
+      "name": "타리비드이용액0.3%",
       "insurance_code": "645900514",
       "dose_per_time": 3.0,
       "unit": "방울",
@@ -30,7 +30,7 @@
       "dosage_form": "ETC"
     },
     {
-      "name": "토브렉스점안액0.3%(토브라마이신)/5mL/병",
+      "name": "토브렉스점안액0.3%",
       "insurance_code": "645700822",
       "dose_per_time": 1.0,
       "unit": "방울",
@@ -43,7 +43,7 @@
       "dosage_form": "EYE_DROP"
     },
     {
-      "name": "부루펜시럽(이부프로펜)(내복)/90(1)mL/병",
+      "name": "부루펜시럽",
       "insurance_code": "650400921",
       "dose_per_time": 5.0,
       "unit": "mL",

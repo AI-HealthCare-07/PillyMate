@@ -4,7 +4,7 @@
   "diagnosis_extracted": "J00,J209",
   "medications": [
     {
-      "name": "세파클러건조시럽(내복)/60(1)mL/병",
+      "name": "세파클러건조시럽",
       "insurance_code": "643901230",
       "dose_per_time": 4.2,
       "unit": "mL",
@@ -17,7 +17,7 @@
       "dosage_form": "DRY_SYRUP"
     },
     {
-      "name": "뮤코펙트시럽(암브록솔염산염)/100(1)mL/병",
+      "name": "뮤코펙트시럽",
       "insurance_code": "652600871",
       "dose_per_time": 3.0,
       "unit": "mL",
@@ -30,7 +30,7 @@
       "dosage_form": "SYRUP"
     },
     {
-      "name": "비오플250산(사카로마이세스보울라디)/1포",
+      "name": "비오플250산",
       "insurance_code": "644702121",
       "dose_per_time": 0.5,
       "unit": "포",
@@ -43,7 +43,7 @@
       "dosage_form": "POWDER"
     },
     {
-      "name": "세토펜현탁액(아세트아미노펜)/100(1)mL/병",
+      "name": "세토펜현탁액",
       "insurance_code": "649806731",
       "dose_per_time": 5.0,
       "unit": "mL",
