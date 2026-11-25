@@ -32,7 +32,7 @@ IMAGE_TYPE_MESSAGE = "jpg 또는 png 사진만 올릴 수 있어요."
 IMAGE_SIZE_MESSAGE = "10MB 이하 사진만 올릴 수 있어요."
 OCR_FAILED_MESSAGE = "처방전을 읽지 못했어요. 다시 찍어 주세요."
 OCR_LOW_CONFIDENCE_MESSAGE = (
-    "사진이 흐릿해서 약 정보를 정확히 읽지 못했어요. 밝은 곳에서 처방전 전체가 나오게 다시 찍어 주세요."
+    "사진이 흐릿해서 약 정보를 정확히 읽지 못했어요. 밝은 곳에서 처방전이나 약봉투 전체가 나오게 다시 찍어 주세요."
 )
 
 
