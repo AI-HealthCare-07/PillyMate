@@ -26,6 +26,33 @@ const EfficacyBadge = ({ med, dim }) => {
   );
 };
 
+/** 한 때(아침 등)의 약을 처방별로 묶어요. 처방 순서는 오늘 일정에 나온 순서 그대로예요. */
+function byCourse(doses) {
+  const groups = new Map();
+  for (const d of doses) {
+    if (!groups.has(d.course.id)) groups.set(d.course.id, { course: d.course, doses: [] });
+    groups.get(d.course.id).doses.push(d);
+  }
+  return [...groups.values()];
+}
+
+/** 오늘 먹을 약 한 줄씩 — 약 이름, 효능, 1회 양 */
+function DoseList({ doses, on }) {
+  return (
+    <ul className={`flex min-w-0 flex-1 flex-col gap-1.5 ${on ? 'text-muted line-through' : ''}`}>
+      {doses.map((d) => (
+        <li key={d.key} className={`flex items-start justify-between gap-2 ${d.given && !on ? 'text-muted line-through' : ''}`}>
+          <span className="flex min-w-0 flex-col items-start gap-1">
+            <span className="break-keep text-15 font-medium">{d.name}</span>
+            <EfficacyBadge med={d} dim={on || d.given} />
+          </span>
+          <span className="shrink-0 pt-0.5 text-13 text-muted">{d.dose}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 /**
  * 홈 — 지금 고른 아이 기준으로 오늘 먹을 약, 확인할 처방, 최근 기록을 한눈에 보여요.
  * 먹였어요 체크는 기록 탭의 복약 달력과 같은 데이터를 써요.
@@ -50,7 +77,10 @@ export function HomeScreen({ go, onTab }) {
   const careGuideId = careGuide?.id ?? null;
   const openGuides = () =>
     navigate(`/guides?${new URLSearchParams({ child: childId, ...(careGuideId ? { open: careGuideId } : {}) })}`);
-  const careDay = care ? Math.round((fromKey(today) - fromKey(care.start)) / 86400000) + 1 : 0;
+  const dayOf = (course) => Math.round((fromKey(today) - fromKey(course.start)) / 86400000) + 1;
+  // 오늘 먹을 약이 나온 처방들(목록과 같은 순서). 약이 없으면 지금 먹는 처방 하나만 보여요.
+  const todayCourses = [...new Map(doses.map((d) => [d.course.id, d.course])).values()];
+  const headerCourses = todayCourses.length ? todayCourses : care ? [care] : [];
   const todayLabel = fromKey(today).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' });
 
   if (!child) {
@@ -69,6 +99,8 @@ export function HomeScreen({ go, onTab }) {
   }
 
   const slots = groupBySlot(doses);
+  // 오늘 먹을 약이 두 처방 이상에서 왔는지 — 그럴 때만 처방별로 칸을 나눠요.
+  const multiCourse = new Set(doses.map((d) => d.course.id)).size > 1;
   const slotsDone = slots.filter((g) => g.done).length;
   const nextSlot = slots.find((g) => !g.done)?.slot;
   const allDone = slots.length > 0 && slotsDone === slots.length;
@@ -132,7 +164,9 @@ export function HomeScreen({ go, onTab }) {
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex min-w-0 flex-col gap-0.5">
                     <h2 id="today-meds" className="text-18 font-bold text-brand">오늘 먹을 약</h2>
-                    <p className="text-13 text-ok">{care.title} · {care.hospital} · {care.days}일 중 {careDay}일째</p>
+                    {headerCourses.map((c) => (
+                      <p key={c.id} className="text-13 text-ok">{c.title} · {c.hospital} · {c.days}일 중 {dayOf(c)}일째</p>
+                    ))}
                   </div>
                   <button type="button" onClick={openGuides} className="inline-flex h-11 shrink-0 items-center gap-1 rounded-pill bg-surface pl-4 pr-3 text-14 font-semibold text-brand hover:bg-white">
                     가이드<ChevronRight size={16} aria-hidden />
@@ -172,17 +206,19 @@ export function HomeScreen({ go, onTab }) {
                           {g.slot}
                           {next && <span className="mt-1 w-fit rounded-pill bg-brand-soft px-2 py-px text-12 font-semibold text-brand">다음 복용</span>}
                         </span>
-                        <ul className={`flex min-w-0 flex-1 flex-col gap-1.5 ${on ? 'text-muted line-through' : ''}`}>
-                          {g.doses.map((d) => (
-                            <li key={d.key} className={`flex items-start justify-between gap-2 ${d.given && !on ? 'text-muted line-through' : ''}`}>
-                              <span className="flex min-w-0 flex-col items-start gap-1">
-                                <span className="break-keep text-15 font-medium">{d.name}</span>
-                                <EfficacyBadge med={d} dim={on || d.given} />
-                              </span>
-                              <span className="shrink-0 pt-0.5 text-13 text-muted">{d.dose}</span>
-                            </li>
-                          ))}
-                        </ul>
+                        {multiCourse ? (
+                          // 처방이 여러 개 겹친 날 — 같은 때 안에서도 처방(병원)별로 칸을 나눠 어디서 받은 약인지 보여요.
+                          <ul className="flex min-w-0 flex-1 flex-col divide-y divide-line">
+                            {byCourse(g.doses).map(({ course, doses: courseDoses }) => (
+                              <li key={course.id} className="flex flex-col gap-1.5 py-2.5 first:pt-0 last:pb-0">
+                                <span className={`break-keep text-12 font-semibold ${on ? 'text-faint' : 'text-muted'}`}>{course.hospital} · {course.title}</span>
+                                <DoseList doses={courseDoses} on={on} />
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <DoseList doses={g.doses} on={on} />
+                        )}
                         <span
                           className={`flex size-10 shrink-0 items-center justify-center rounded-pill ${on ? 'bg-brand text-on-brand' : partial ? 'border-2 border-brand bg-surface text-brand' : 'border-2 border-edge bg-surface text-transparent'}`}
                           aria-hidden
