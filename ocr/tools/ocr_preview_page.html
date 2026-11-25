@@ -98,7 +98,7 @@
     const resultBox = document.getElementById("result");
     let selectedFile = null;
     let lastResult = null;
-    let threshold = 0.9;
+    let threshold = 0.8; // ocr_confidence_policy.REVIEW_BELOW
 
     function el(tag, attrs = {}, ...children) {
       const node = document.createElement(tag);
@@ -182,6 +182,7 @@
         ...[
           ["처방일", result.prescription_date], ["병원명", result.hospital_name],
           ["질병분류기호", result.diagnosis_extracted], ["읽은 약", `${meds.length}개`],
+          ["신뢰도 판정", data.judgement && `${data.judgement.level} (최저 ${data.judgement.min_confidence ?? "—"})`],
         ].map(([label, value]) => el("div", {}, el("dt", {}, label), el("dd", {}, value ?? "—"))),
       );
 
@@ -210,7 +211,6 @@
 
       resultBox.replaceChildren(
         summary, toolbar, table,
-        el("details", {}, el("summary", {}, "마스킹한 원문 (raw_text_masked · DB에만 저장)"), el("pre", {}, result.raw_text_masked || "")),
         el("details", {}, el("summary", {}, "run_ocr() 반환값 JSON"), el("pre", {}, JSON.stringify(result, null, 2))),
       );
     }

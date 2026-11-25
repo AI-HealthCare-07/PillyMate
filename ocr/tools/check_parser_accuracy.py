@@ -6,7 +6,7 @@
     uv run python -m ocr.tools.check_parser_accuracy --details  # 틀린 값까지 출력
 
 - CLOVA 응답: ocr/tests/clova_responses/<사진 이름>.json (save_clova_responses로 만든다)
-- 정답:       ocr/tests/expected_results/<사진 이름>.json (API 명세 형식, raw_text_masked 제외)
+- 정답:       ocr/tests/expected_results/<사진 이름>.json (API 명세 형식)
 """
 
 import argparse

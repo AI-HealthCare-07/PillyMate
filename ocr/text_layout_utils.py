@@ -84,11 +84,6 @@ def to_number(text):
     return float(text) if "." in text else int(text)
 
 
-def fields_to_plain_text(fields):
-    """CLOVA fields를 사람이 읽는 원문으로 잇는다 (lineBreak가 있으면 줄을 바꾼다)."""
-    return "".join(field["inferText"] + ("\n" if field.get("lineBreak") else " ") for field in fields).strip()
-
-
 def average_confidence(boxes):
     """상자들의 CLOVA 인식 신뢰도 평균(0~1). 신뢰도가 없으면 None."""
     values = [b.confidence for b in boxes if isinstance(b.confidence, int | float)]

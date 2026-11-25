@@ -5,7 +5,7 @@ API 서버(app)와 상관없이 혼자 돌아간다. 사진을 올릴 때마다 
     uv run --env-file ~/ocr/.env python -m ocr.tools.ocr_preview_server     # → http://127.0.0.1:8010
 
 - GET  /                          테스트 페이지 (ocr_preview_page.html)
-- POST /api/ocr?source_type=...   본문에 사진 파일 그대로 → {"result": run_ocr 결과, "elapsed_ms": 걸린 시간}
+- POST /api/ocr?source_type=...   본문에 사진 파일 그대로 → {"result", "judgement": 신뢰도 판정, "elapsed_ms"}
   실패하면 422(OcrInputError) 또는 502(그 밖의 OcrError)와 {"error_type", "message"}
 
 로컬(127.0.0.1)에서만 열리며, 요청 본문이나 OCR 결과는 서버 로그에 남기지 않는다.
@@ -19,7 +19,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
-from ocr import OcrError, OcrInputError, run_ocr
+from ocr import OcrError, OcrInputError, judge_ocr_confidence, run_ocr
 
 PAGE_PATH = Path(__file__).with_name("ocr_preview_page.html")
 DEFAULT_PORT = 8010
@@ -75,7 +75,7 @@ class OcrPreviewHandler(BaseHTTPRequestHandler):
             self.send_json(502, {"error_type": type(error).__name__, "message": str(error)})
             return
         elapsed_ms = round((time.perf_counter() - started) * 1000)
-        self.send_json(200, {"result": result, "elapsed_ms": elapsed_ms})
+        self.send_json(200, {"result": result, "judgement": judge_ocr_confidence(result), "elapsed_ms": elapsed_ms})
 
     def log_message(self, format, *args):
         # 기본 로그(요청 줄·상태코드)만 남긴다. 본문과 결과는 출력하지 않는다.

@@ -139,8 +139,9 @@ AI-1은 OCR 모듈을 넘기고 빠집니다. 이 문서만 보고 화면을 연
 
 ## 4. S-04 화면 표시 규칙
 
-1. **신뢰도 강조**: `confidence < 0.9`인 약을 "흐릿하게 읽힌 약"으로 강조하는 것을 제안합니다.
-   샘플 104개 약 중 6개가 강조되고, 그중 5개가 실제로 이름 오타였습니다 (0.8로 하면 1개만 잡힘). 기준값은 명세상 FE-2·AI-1이 정하는 값입니다.
+1. **신뢰도 강조** (11/25 반영, 11/24 멘토링 3절 기준): 서버가 약마다 `low_confidence`(`confidence < 0.8`)를 내려 줍니다.
+   가장 낮은 약이 0.6 미만이면 서버가 저장하지 않고 `422 {"code": "OCR_LOW_CONFIDENCE"}`를 돌려주며, 화면은 다시 찍기 모달을 띄웁니다 (5절).
+   참고: 샘플에서 0.9로 강조하면 6개 중 5개가 실제 이름 오타였고, 0.8이면 1개만 잡혔습니다. 기준값은 실제 촬영 사진으로 다시 확인해야 합니다.
    `confidence`는 약 하나에 하나뿐이라, 칸마다 `low`를 다는 현재 카드 구조에서는 약 단위로 표시하거나 이름 옆에 표시하는 게 맞습니다.
 2. **null인 칸**은 비워 두고 입력을 받습니다. 모듈은 빈 값을 추정해 채우지 않습니다 (명세 7절 폴백 기준). 비어 있는 `dose_per_time`·`daily_count`·`total_days`는 S-04에서 경고만 하고 확정은 막지 않습니다.
 3. **필요시 약(`as_needed: true`)**: "하루 횟수" 대신 "하루 최대 횟수(`max_daily_count`)" 입력칸을 보여 주세요. 확정 때 필수이고, `daily_count`는 비워서 보내야 합니다 (값이 있으면 422).
@@ -156,27 +157,28 @@ AI-1은 OCR 모듈을 넘기고 빠집니다. 이 문서만 보고 화면을 연
 | 422 | jpg·png가 아님 | jpg 또는 png 사진만 올릴 수 있어요. | 사진 다시 고르기 |
 | 422 | 10MB 초과 | 10MB 이하 사진만 올릴 수 있어요. | 사진 다시 고르기 |
 | 404 | 내 자녀가 아님 | 자녀 정보를 찾을 수 없어요. | |
-| 502 | OCR 실패·30초 초과 | 처방전을 읽지 못했어요. 다시 찍어 주세요. | **"다시 찍기"** (처방은 만들어지지 않음) |
+| 422 | 신뢰도 0.6 미만·약 0개 (`code: OCR_LOW_CONFIDENCE`) | 사진이 흐릿해서 약 정보를 정확히 읽지 못했어요. … | **다시 찍기 모달** (처방은 만들어지지 않음) |
+| 502 | OCR 실패·30초 초과 | 처방전을 읽지 못했어요. 다시 찍어 주세요. | **다시 찍기 모달** (처방은 만들어지지 않음) |
 
 - 글자를 하나도 못 읽거나 CLOVA가 응답하지 않으면 502입니다.
-- 글자는 읽었는데 **약을 하나도 못 찾으면** 모듈은 오류 대신 `medications: []`를 돌려줍니다.
-  BE-2가 이걸 그대로 저장할지(201, S-04에서 "약 추가"로 직접 입력) 502로 돌려보낼지는 BE-2와 정해 주세요. 샘플 30장에서는 이런 경우가 없었습니다.
+- 글자는 읽었는데 **약을 하나도 못 찾으면** 저장하지 않고 `OCR_LOW_CONFIDENCE`로 다시 찍기를 요청합니다.
+- 구현: `frontend/src/api/prescriptionRegistration.js`, `screens/upload.jsx`의 `ReadingScreen`·`RetakeModal`.
 
 ## 6. 지금 프론트 코드와 맞춰야 할 것 (FE-2 TODO 목록)
 
 | 위치 | 지금 | 맞춰야 할 것 |
 | --- | --- | --- |
-| `screens/upload.jsx` 파일 선택 | `image/jpeg,image/png,image/webp` 허용 | **WEBP 제외** (OCR은 jpg·png만, 명세 5번) |
-| `screens/upload.jsx` | 처방전/약봉투 선택 없음 | **`source_type` 선택 추가** |
-| `screens/upload.jsx` `ReadingScreen` | 2.5초 뒤 예시 값으로 이동 (데모) | `POST /prescriptions` 호출, 502면 이동하지 말고 "다시 찍기" |
+| `screens/upload.jsx` 파일 선택 | ~~WEBP 허용~~ | 11/25 반영: jpg·png만 |
+| `screens/upload.jsx` | ~~처방전/약봉투 선택 없음~~ | 11/25 반영: "어떤 사진인가요?"에서 처방전·약봉투를 골라 `source_type`으로 보내요 |
+| `screens/upload.jsx` `ReadingScreen` | ~~2.5초 뒤 예시 값으로 이동~~ | 11/25 반영: `POST /prescriptions` 호출, 422 `OCR_LOW_CONFIDENCE`·502면 다시 찍기 알럿. 아이 목록은 `GET /children`(서버)에서 받아요 |
 | `screens/confirm.jsx` `dateParts(ocr.date)` | 날짜가 항상 있다고 가정 | 약봉투는 `prescription_date: null` → 날짜 입력 받기 |
 | `screens/confirm.jsx` 병명 | `ocr.disease` 사용 | `diagnosis_extracted`는 코드(J00)라 병명으로 쓰지 않기 |
-| `components/rx/meds.jsx` 카드 | `low`가 칸 단위 | `confidence`는 약 단위 (4절 1번) |
+| `components/rx/meds.jsx` 카드 | `low`가 칸 단위 | 11/25: `low_confidence` 약은 값이 있는 칸마다 `low`로 표시 (`api/prescriptionRegistration.js`) |
 | 약 카드 | "하루 횟수"만 있음 | 필요시 약은 "하루 최대 횟수" 입력 (4절 3번) |
 
 ### 응답 약 → 현재 카드 모양 변환 예시
 
-현재 카드 모양(`{ id, name, dose: {value, low}, perDay, days, timing }`)에 맞춘 예시입니다. 그대로 쓰지 않아도 됩니다.
+실제 구현은 `frontend/src/api/prescriptionRegistration.js`의 `toConfirmMed()`입니다. 아래는 처음 제안한 예시(기준 0.9)로 남겨 둡니다.
 
 ```js
 const LOW_CONFIDENCE = 0.9;
@@ -203,7 +205,7 @@ export function toConfirmCard(med) {
 ## 7. 개인정보 — 프론트로 오는 것과 오지 않는 것
 
 - 프론트가 받는 응답에는 **환자 이름·주민등록번호·나이·전화번호가 없습니다.** 의사 이름·면허번호, 약국 정보, 영수증 금액도 넣지 않습니다.
-- 처방전 원문(`raw_text_masked`)은 위 정보를 `[이름]`, `[주민번호]`, `[나이]`, `[전화번호]`로 가린 뒤 **DB에만 저장**되고 응답에는 없습니다.
+- 처방전 OCR 원문은 마스킹본도 **저장하지 않습니다** (11/25 변경). 정리된 항목(병원·처방일·약)만 DB에 남습니다.
 - 원본 사진은 `image_url`(10분짜리 주소)로만 볼 수 있고, 가이드를 만들거나 7일이 지나면 `null`입니다 → "원본 사진은 보관 기간(7일)이 지나 삭제됐어요." 안내 (명세 6번).
 - 사진은 판독을 위해 **네이버 클라우드 CLOVA OCR로 전송**됩니다.
 

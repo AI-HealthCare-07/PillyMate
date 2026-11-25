@@ -22,6 +22,39 @@ export function LoginScreen({ go }) {
   const [gender, setGender] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [showConsent, setShowConsent] = useState(false);
+  const [termsAgreed, setTermsAgreed] = useState(false);
+  const [privacyAgreed, setPrivacyAgreed] = useState(false);
+  const allAgreed = termsAgreed && privacyAgreed;
+
+  // 생년월일 기준 만 나이 계산
+  function calculateAge(value) {
+    if (!value) return null;
+
+    const today = new Date();
+    const birthday = new Date(value + 'T00:00:00');
+
+    if (Number.isNaN(birthday.getTime()) || birthday > today) {
+      return null;
+    }
+
+    let age = today.getFullYear() - birthday.getFullYear();
+
+    if (
+      today.getMonth() < birthday.getMonth() ||
+      (
+        today.getMonth() === birthday.getMonth() &&
+        today.getDate() < birthday.getDate()
+      )
+    ) {
+      age -= 1;
+    }
+
+    return age;
+  }
+
+  const age = calculateAge(birthDate);
+
 
   // 3. 입력값 검증
   function validate() {
@@ -36,6 +69,10 @@ export function LoginScreen({ go }) {
     }
 
     if (isSignup) {
+      if (!allAgreed) {
+        return '필수 약관에 동의해 주세요.';
+      }
+
       const passwordPattern =
         /^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[^a-zA-Z0-9]).{8,}$/;
 
@@ -62,18 +99,17 @@ export function LoginScreen({ go }) {
         return '생년월일을 입력해 주세요.';
       }
 
-      const today = new Date();
-      const limit = new Date(
-        today.getFullYear() - 14,
-        today.getMonth(),
-        today.getDate()
-      );
 
-      const birthday = new Date(birthDate + 'T00:00:00');
 
-      if (birthday >= limit) {
+      if (age === null) {
+        return '올바른 생년월일을 입력해 주세요.';
+      }
+
+      if (age < 14) {
         return '가입 가능한 연령인지 확인해 주세요.';
       }
+
+
 
       if (!phonePattern.test(phoneNumber.trim())) {
         return '올바른 휴대폰 번호를 입력해 주세요.';
@@ -85,14 +121,28 @@ export function LoginScreen({ go }) {
 
   // 4. 로그인 / 회원가입 화면 전환
   function changeMode() {
-    setIsSignup(!isSignup);
     setError('');
     setMessage('');
     setPassword('');
+    setTermsAgreed(false);
+    setPrivacyAgreed(false);
+
+    if (isSignup) {
+      setIsSignup(false);
+      setShowConsent(false);
+    } else {
+      setShowConsent(true);
+    }
+  }
+
+  function continueSignup() {
+    if (!allAgreed) return;
+    setShowConsent(false);
+    setIsSignup(true);
   }
 
   // 5. 로그인 및 회원가입 요청
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
     if (loading) return;
@@ -125,67 +175,69 @@ export function LoginScreen({ go }) {
           password: password,
         };
 
-    fetch(`${API_URL}/${endpoint}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify(requestData),
-    })
-      .then(function (response) {
-        return response.json()
-          .catch(function () {
-            throw new Error('서버 응답을 확인할 수 없습니다.');
-          })
-          .then(function (data) {
-            if (!response.ok) {
-              const detail = data.detail;
-
-              const errorMessage =
-                typeof detail === 'string'
-                  ? detail
-                  : Array.isArray(detail)
-                    ? detail.map(item => item.msg).join(' / ')
-                    : '요청 처리에 실패했습니다.';
-
-              throw new Error(errorMessage);
-            }
-
-            return data;
-          });
-      })
-      .then(function (data) {
-        if (isSignup) {
-          // 회원가입 성공
-          setIsSignup(false);
-          setPassword('');
-          setMessage('회원가입이 완료되었습니다. 로그인해 주세요.');
-        } else {
-          // 로그인 성공
-          if (!data.access_token) {
-            throw new Error('로그인 토큰을 받지 못했습니다.');
-          }
-
-          sessionStorage.setItem(
-            'access_token',
-            data.access_token
-          );
-
-          // 기존 자녀 관리 화면 이동
-          go('children');
-        }
-      })
-      .catch(function (err) {
-        setError(
-          err instanceof TypeError
-            ? '서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.'
-            : err.message
-        );
-      })
-      .finally(function () {
-        setLoading(false);
+    try {
+      // API 요청 후 응답 기다리기
+      const response = await fetch(`${API_URL}/${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(requestData),
       });
+
+      // 응답 데이터 읽기
+      let data;
+
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error('서버 응답을 확인할 수 없습니다.');
+      }
+
+      // 서버 오류 확인
+      if (!response.ok) {
+        const detail = data.detail;
+
+        const errorMessage =
+          typeof detail === 'string'
+            ? detail
+            : Array.isArray(detail)
+              ? detail.map(item => item.msg).join(' / ')
+              : '요청 처리에 실패했습니다.';
+
+        throw new Error(errorMessage);
+      }
+
+      // 회원가입 또는 로그인 성공 처리
+      if (isSignup) {
+        setIsSignup(false);
+        setPassword('');
+        setTermsAgreed(false);
+        setPrivacyAgreed(false);
+        setMessage('회원가입이 완료되었습니다. 로그인해 주세요.');
+      } else {
+        if (!data.access_token) {
+          throw new Error('로그인 토큰을 받지 못했습니다.');
+        }
+
+        sessionStorage.setItem(
+          'access_token',
+          data.access_token
+        );
+
+        go('children');
+      }
+
+    } catch (err) {
+      setError(
+        err instanceof TypeError
+          ? '서버에 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.'
+          : err.message
+      );
+    } finally {
+      setLoading(false);
+    }
   }
 
   // 6. 모바일 / 데스크톱 버튼
@@ -205,17 +257,17 @@ export function LoginScreen({ go }) {
               : '로그인'}
         </Button>
 
-        <Button
-          type="button"
-          variant="secondary"
-          className="w-full"
-          disabled={loading}
-          onClick={changeMode}
-        >
-          {isSignup
-            ? '이미 계정이 있어요'
-            : '처음이에요, 가입할게요'}
-        </Button>
+        {!isSignup && (
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-full"
+            disabled={loading}
+            onClick={changeMode}
+          >
+            처음이에요, 가입할게요
+          </Button>
+        )}
       </>
     );
   }
@@ -224,6 +276,120 @@ export function LoginScreen({ go }) {
     mobile: renderButtons(),
     desktop: null,
   };
+
+
+  // 회원가입 전 필수 약관 동의 화면
+  if (showConsent) {
+    return (
+      <AppShell showTabs={false} showTopBar={false}>
+        <div className="flex flex-1 flex-col gap-6 px-6 py-12 lg:px-0">
+          <Logo size={28} />
+
+          <h1 className="text-28 font-bold">
+            서비스 이용 동의
+          </h1>
+
+          <p className="text-15 text-muted">
+            PillyMate를 이용하기 위해 필수 약관에 동의해 주세요.
+          </p>
+
+          <label className="flex items-center gap-3 rounded-lg border border-line bg-surface p-4">
+            <input
+              type="checkbox"
+              className="h-5 w-5 accent-[#10594f]"
+              checked={allAgreed}
+              onChange={e => {
+                setTermsAgreed(e.target.checked);
+                setPrivacyAgreed(e.target.checked);
+              }}
+            />
+            <span className="font-bold">전체 동의하기</span>
+          </label>
+
+          <div className="flex flex-col gap-4 rounded-lg border border-line p-4">
+            <label className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                className="h-5 w-5 accent-[#10594f]"
+                checked={termsAgreed}
+                onChange={e => setTermsAgreed(e.target.checked)}
+              />
+              <span>[필수] 서비스 이용약관 동의</span>
+            </label>
+
+            <details className="text-14 text-muted">
+              <summary className="cursor-pointer">
+                서비스 이용약관 안내
+              </summary>
+              <p className="mt-3">
+                PillyMate는 처방전과 복약 정보를 관리하는
+                서비스입니다. 복약 가이드는 참고용이며
+                의료진의 진료나 처방을 대신하지 않습니다.
+              </p>
+            </details>
+
+            <label className="flex items-start gap-3 border-t border-line pt-4">
+              <input
+                type="checkbox"
+                className="h-5 w-5 accent-[#10594f]"
+                checked={privacyAgreed}
+                onChange={e => setPrivacyAgreed(e.target.checked)}
+              />
+              <span>[필수] 개인정보 수집·이용 동의</span>
+            </label>
+
+            <details className="text-14 text-muted">
+              <summary className="cursor-pointer">
+                개인정보 수집·이용 내용 보기
+              </summary>
+
+              <div className="mt-3 flex flex-col gap-3">
+                <p>
+                  수집 항목: 이메일, 비밀번호, 이름,
+                  성별, 생년월일, 휴대폰 번호
+                </p>
+                <p>
+                  이용 목적: 회원 식별, 연령 확인,
+                  계정 관리
+                </p>
+                <p>
+                  보유 기간: 회원 탈퇴 시까지
+                  (법령상 보존 의무가 있는 경우 제외)
+                </p>
+                <p>
+                  동의를 거부할 수 있으나,
+                  필수 정보 수집에 동의하지 않으면
+                  회원가입이 제한됩니다.
+                </p>
+              </div>
+            </details>
+          </div>
+
+          <Button
+            type="button"
+            className="w-full"
+            disabled={!allAgreed}
+            onClick={continueSignup}
+          >
+            동의하고 계속하기
+          </Button>
+
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-full"
+            onClick={() => {
+              setShowConsent(false);
+              setTermsAgreed(false);
+              setPrivacyAgreed(false);
+            }}
+          >
+            로그인으로 돌아가기
+          </Button>
+        </div>
+      </AppShell>
+    );
+  }
 
   // 7. 화면 표시
   return (
@@ -269,6 +435,8 @@ export function LoginScreen({ go }) {
 
         <div className="flex flex-col gap-4">
 
+          <div className="flex items-end gap-2">
+            <div className="min-w-0 flex-1">
           <Field
             label="이메일"
             type="email"
@@ -278,6 +446,22 @@ export function LoginScreen({ go }) {
             disabled={loading}
             onChange={e => setEmail(e.target.value)}
           />
+            </div>
+
+            {isSignup && (
+              <Button
+                type="button"
+                variant="secondary"
+                className="shrink-0"
+                disabled={loading}
+                onClick={() => {
+                  setError('이메일 중복 확인 API 연동 준비 중입니다.');
+                }}
+              >
+                중복 확인
+              </Button>
+            )}
+          </div>
 
           <Field
             label="비밀번호"
@@ -355,6 +539,8 @@ export function LoginScreen({ go }) {
                 disabled={loading}
                 onChange={e => setPhoneNumber(e.target.value)}
               />
+
+
             </>
           )}
 

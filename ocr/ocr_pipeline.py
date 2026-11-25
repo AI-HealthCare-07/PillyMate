@@ -1,4 +1,7 @@
-"""run_ocr(): 사진 → CLOVA OCR → 처방전·약봉투 파서 → 개인정보 마스킹 → API 명세 형식.
+"""run_ocr(): 사진 → CLOVA OCR → 처방전·약봉투 파서 → API 명세 형식.
+
+OCR 원문(CLOVA가 읽은 글자 전체)은 파서에만 쓰고 결과에 넣지 않는다. 함수가 끝나면 메모리에서 사라진다.
+환자 성명·주민등록번호 같은 식별정보는 정리된 결과에 들어갈 자리가 없다.
 
 API 명세 7절의 AI-1 내부 모듈. BE-2가 `POST /prescriptions`(def, 동기) 안에서 함수로 호출한다.
 """
@@ -7,8 +10,6 @@ from ocr import medicine_bag_parser, prescription_parser
 from ocr.clova_ocr_client import DEFAULT_TIMEOUT_SECONDS, ClovaCredentials, request_clova_ocr
 from ocr.ocr_exceptions import OcrInputError, OcrParseError, OcrRecognitionError
 from ocr.ocr_result_formatter import format_medicine_bag_result, format_prescription_result
-from ocr.personal_info_masking import mask_personal_info
-from ocr.text_layout_utils import fields_to_plain_text
 
 PRESCRIPTION = "PRESCRIPTION"
 PILL_BAG = "PILL_BAG"
@@ -35,12 +36,10 @@ def validate_source_type(source_type):
 
 
 def parse_document(fields, source_type):
-    """문서 종류에 맞는 파서로 정리하고, 마스킹에 쓸 환자 이름들과 함께 돌려준다."""
+    """문서 종류에 맞는 파서로 정리한다."""
     if source_type == PRESCRIPTION:
-        parsed = prescription_parser.parse(fields)
-        return parsed, [parsed["환자"]["성명"]]
-    parsed = medicine_bag_parser.parse(fields)
-    return parsed, [parsed["복약안내"]["환자"]["성명"], parsed["영수증"]["환자성명"]]
+        return prescription_parser.parse(fields)
+    return medicine_bag_parser.parse(fields)
 
 
 def build_result_from_fields(fields, source_type):
@@ -50,11 +49,10 @@ def build_result_from_fields(fields, source_type):
         raise OcrRecognitionError("이미지에서 글자를 찾지 못했어요.")
 
     try:
-        parsed, patient_names = parse_document(fields, source_type)
-        raw_text_masked = mask_personal_info(fields_to_plain_text(fields), patient_names)
+        parsed = parse_document(fields, source_type)
         if source_type == PRESCRIPTION:
-            return format_prescription_result(parsed, raw_text_masked)
-        return format_medicine_bag_result(parsed, raw_text_masked)
+            return format_prescription_result(parsed)
+        return format_medicine_bag_result(parsed)
     except PARSER_ERRORS as error:
         # 원래 예외 메시지에는 읽은 글자가 들어 있을 수 있어서 종류만 남긴다.
         raise OcrParseError(f"인식 결과를 항목으로 정리하지 못했어요 ({type(error).__name__}).") from None

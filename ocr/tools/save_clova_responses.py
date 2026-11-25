@@ -15,7 +15,7 @@ import json
 import sys
 from pathlib import Path
 
-from ocr import SOURCE_TYPES, ClovaCredentials, OcrError
+from ocr import PRESCRIPTION, SOURCE_TYPES, ClovaCredentials, OcrError
 from ocr.clova_ocr_client import request_clova_ocr
 from ocr.ocr_pipeline import PARSER_ERRORS, detect_image_format, parse_document
 from ocr.personal_info_masking import mask_personal_info_in_fields
@@ -23,10 +23,16 @@ from ocr.personal_info_masking import mask_personal_info_in_fields
 DEFAULT_OUTPUT_DIR = Path(__file__).resolve().parent.parent / "tests" / "clova_responses"
 
 
+def find_patient_names(parsed, source_type):
+    if source_type == PRESCRIPTION:
+        return [parsed["환자"]["성명"]]
+    return [parsed["복약안내"]["환자"]["성명"], parsed["영수증"]["환자성명"]]
+
+
 def remove_patient_info(fields, source_type):
     """파서로 환자 이름을 찾아 글자 상자에서 이름과 주민등록번호를 가린다."""
     try:
-        _, patient_names = parse_document(fields, source_type)
+        patient_names = find_patient_names(parse_document(fields, source_type), source_type)
     except PARSER_ERRORS:
         patient_names = []
     return mask_personal_info_in_fields(fields, patient_names)

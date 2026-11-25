@@ -14,7 +14,8 @@ export const emptyMed = () => ({
 });
 
 function Value({ v }) {
-  if (!v.value) return <span className="text-16 text-faint">—</span>;
+  // 읽지 못한 칸은 비워 두고, 보호자가 연필 버튼으로 채우도록 알려요.
+  if (!v.value) return <span className="text-14 font-medium text-faint">입력 필요</span>;
   if (v.low) return <LowValue value={v.value} stacked size="text-16" />;
   return <span className="text-16 font-medium">{v.value}</span>;
 }

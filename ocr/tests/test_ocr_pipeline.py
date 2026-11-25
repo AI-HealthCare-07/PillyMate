@@ -19,7 +19,7 @@ PNG_BYTES = b"\x89PNG\r\n\x1a\n" + b"0" * 32
 JPG_BYTES = b"\xff\xd8\xff\xe0" + b"0" * 32
 CREDENTIALS = ClovaCredentials(invoke_url="https://clova.example.test/general", secret_key="test-secret")
 
-SPEC_DOCUMENT_KEYS = {"prescription_date", "hospital_name", "diagnosis_extracted", "raw_text_masked", "medications"}
+SPEC_DOCUMENT_KEYS = {"prescription_date", "hospital_name", "diagnosis_extracted", "medications"}
 SPEC_MEDICATION_KEYS = {
     "name", "insurance_code", "dose_per_time", "unit", "daily_count", "total_days",
     "max_daily_count", "as_needed", "usage", "route", "dosage_form", "confidence",
@@ -115,7 +115,20 @@ def test_patient_name_and_resident_number_never_leave_the_module(fake_clova, fie
     everything = json.dumps(result, ensure_ascii=False)
     assert "김하윤" not in everything
     assert "230512" not in everything
-    assert "[이름]" in result["raw_text_masked"]
+
+
+@pytest.mark.parametrize(
+    ("fields", "source_type"),
+    [(fake_prescription_fields(), "PRESCRIPTION"), (fake_medicine_bag_fields(), "PILL_BAG")],
+)
+def test_ocr_raw_text_is_not_returned(fake_clova, fields, source_type):
+    """원문은 마스킹본도 돌려주지 않는다. 결과에는 정리된 항목만 있다."""
+    fake_clova(fields)
+
+    result = run_ocr(PNG_BYTES, source_type, credentials=CREDENTIALS)
+
+    assert "raw_text_masked" not in result
+    assert "[이름]" not in json.dumps(result, ensure_ascii=False)
 
 
 def test_unknown_source_type_is_input_error():
