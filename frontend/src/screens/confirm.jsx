@@ -145,6 +145,7 @@ export function ConfirmScreen({ go, back, onTab }) {
     // 만든 가이드의 id를 임시 데이터에 남겨서, 만드는 중 화면 → 가이드 화면이 이 아이의 이 가이드를 보여 줘요.
     if (child) {
       const { guide } = recordPrescription({
+        prescriptionId: draft?.prescriptionId,
         childId: child.id,
         date,
         hospital: ocr.hospital,
