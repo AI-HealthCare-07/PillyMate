@@ -10,7 +10,7 @@ import { Highlight, LowConfidenceBanner } from '../components/rx/Highlight.jsx';
 import { MedList, emptyMed } from '../components/rx/meds.jsx';
 import { medFields, meds as sampleMeds, prescription as rx } from '../data/sample.js';
 import { getPrescriptionDraft, setPrescriptionDraft } from './fe2Draft.js';
-import { dateParts, todayKey, useRecords } from '../state/records.jsx';
+import { dateParts, isAsNeeded, todayKey, useRecords } from '../state/records.jsx';
 import { useSelectedChild } from '../state/selectedChild.jsx';
 
 const MARKS = [[140, 186, 30], [190, 226, 22]];
@@ -121,10 +121,12 @@ export function ConfirmScreen({ go, back, onTab }) {
       ['days', '복용 기간'],
     ];
     for (const med of meds) {
-      for (const [key, label] of requiredFields) {
+      // 열날 때·필요할 때 먹는 약은 정해진 기간이 없어요(복약 달력에도 넣지 않아요). 기간이 비어 있어도 돼요.
+      const fields = isAsNeeded(med) ? requiredFields.filter(([key]) => key !== 'days') : requiredFields;
+      for (const [key, label] of fields) {
         if (!String(med[key]?.value ?? '').trim()) {
           window.alert(
-            `「${med.name}」의 ${label} 정보가 없습니다. ${words.name} 원본을 확인하거나 의료기관·약국에 문의해 주세요. 확인 전에는 가이드를 만들 수 없습니다.`
+            `「${med.name}」의 ${label} 정보가 없습니다. 연필 버튼을 눌러 적어 주세요. 모르면 ${words.name} 원본을 확인하거나 의료기관·약국에 문의해 주세요. 확인 전에는 가이드를 만들 수 없습니다.`
           );
           return;
         }
