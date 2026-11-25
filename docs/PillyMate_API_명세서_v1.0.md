@@ -10,7 +10,7 @@
 
 | 항목 | 결정 | 확정일 |
 | --- | --- | --- |
-| 회원가입 항목 | 이메일·비밀번호·**이름·생년월일** (네 항목 모두 필수) | 11/20 |
+| 회원가입 항목 | 이메일·비밀번호·**이름·성별·생년월일·휴대전화 번호** (여섯 항목 모두 필수). 처음 네 항목(이메일·비밀번호·이름·생년월일)은 11/20에 확정했고, 성별·휴대전화는 가입 화면(S-01)에 맞춰 11/25 추가 | 11/20, 11/25 변경 |
 | 오래 걸리는 요청 | **동기 처리** (OCR 최대 30초, 가이드 최대 60초) | 11/20 |
 | 자녀 등록 연령 | **만 18세 미만 미성년자**만 등록 가능 (NFR-SEC-004) | 11/24 결정 (근거: 11/17 회의록) |
 | 원본 이미지 보관 | **가이드 생성 시 삭제**, 가이드를 만들지 않은 사진은 **7일 뒤 자동 삭제** (NFR-SEC-007) | 11/23 채택 |
@@ -77,19 +77,20 @@ FastAPI는 필수값 누락도 기본으로 422를 보내므로, BE-1이 `Reques
 
 ### 1. `POST /auth/signup` 회원가입
 
-네 항목 모두 필수입니다.
+여섯 항목 모두 필수입니다. `gender`는 `MALE` 또는 `FEMALE`이고, `phone_number`는 `010-1234-5678`, `01012345678`, `+821012345678` 형식을 받아 **숫자만(`01012345678`)** 저장합니다.
 
 ```json
 // 요청
-{ "email": "parent@example.com", "password": "pilly1234!", "name": "김보호", "birth_date": "1990-05-14" }
+{ "email": "parent@example.com", "password": "pilly1234!", "name": "김보호", "gender": "FEMALE", "birth_date": "1990-05-14", "phone_number": "010-1234-5678" }
 
 // 응답 201
-{ "guardian_id": 1, "email": "parent@example.com", "name": "김보호", "birth_date": "1990-05-14" }
+{ "guardian_id": 1, "email": "parent@example.com", "name": "김보호", "birth_date": "1990-05-14", "gender": "FEMALE", "phone_number": "01012345678" }
 ```
 
 - 비밀번호 8~64자, bcrypt 해시로 저장
 - 이메일은 소문자로 바꿔 저장 (대소문자 구분 없이 로그인)
 - 만 19세 미만이면 `422` "만 19세 이상만 가입할 수 있어요." (NFR-SEC-005)
+- `gender`가 `MALE`·`FEMALE`이 아니거나 `phone_number` 형식이 맞지 않으면 `422`
 - 에러: `400` 필수값 누락, `409` 이미 가입된 이메일, `422` 이메일 형식·비밀번호 규칙·날짜 형식·나이 제한
 
 ### 2. `POST /auth/login` 로그인
@@ -118,7 +119,7 @@ FastAPI는 필수값 누락도 기본으로 422를 보내므로, BE-1이 `Reques
 
 ```json
 // 응답 200
-{ "guardian_id": 1, "email": "parent@example.com", "name": "김보호", "birth_date": "1990-05-14", "created_at": "2026-11-20T10:00:00+09:00" }
+{ "guardian_id": 1, "email": "parent@example.com", "name": "김보호", "birth_date": "1990-05-14", "gender": "FEMALE", "phone_number": "01012345678", "created_at": "2026-11-20T10:00:00+09:00" }
 ```
 
 앱을 다시 열었을 때 저장된 토큰이 유효한지 확인하는 데 씁니다. `401`이면 로그인 화면으로 보냅니다.
@@ -469,6 +470,7 @@ FE는 아래 문구를 그대로 보여 줍니다. 자동 검증 `422`(목록)�
 | 변경 | 쓰는 API | 담당 |
 | --- | --- | --- |
 | `guardian.name`, `guardian.birth_date` 추가 | 1, 2, A1, A2 | BE-2 (스키마) |
+| `guardian.gender`, `guardian.phone_number` 추가 (NULL 허용: 이전 가입자·데모 계정) | 1, A2 | BE-1 (마이그레이션 4번) |
 | `medication.route`, `medication.dosage_form` 추가 | 5, 6, 7, 8 | BE-2 |
 | `medication.ocr_value_snapshot`, `medication.is_user_edited` 추가 | 6, 7 | BE-2 |
 | `diagnosis_user_input` 필수 CHECK (`CONFIRMED`·`GUIDE_DONE`일 때) | 7 | BE-2 |

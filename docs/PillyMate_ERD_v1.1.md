@@ -26,6 +26,8 @@ erDiagram
         varchar(255) password_hash "bcrypt, NOT NULL"
         varchar(50) name "NOT NULL"
         date birth_date "만 19세 이상, NOT NULL"
+        varchar(10) gender "MALE 또는 FEMALE, NULL(이전 가입자)"
+        varchar(20) phone_number "숫자만 저장, NULL(이전 가입자)"
         datetime created_at "NOT NULL"
         datetime updated_at "NOT NULL"
     }
@@ -118,6 +120,8 @@ erDiagram
 | `password_hash` | `VARCHAR(255)` | - | N | bcrypt 해시값 (원본 8~64자) |
 | `name` | `VARCHAR(50)` | - | N | 보호자 이름 |
 | `birth_date` | `DATE` | - | N | 생년월일 (가입 시 만 19세 이상 서버 검증) |
+| `gender` | `VARCHAR(10)` | - | Y | 성별 `MALE` / `FEMALE` (가입 시 필수, 이전 가입자는 NULL) |
+| `phone_number` | `VARCHAR(20)` | - | Y | 휴대전화 번호, 숫자만 저장 (예: `01012345678`, 가입 시 필수, 이전 가입자는 NULL) |
 | `created_at` | `DATETIME` | - | N | 생성 일시 (KST) |
 | `updated_at` | `DATETIME` | - | N | 수정 일시 (KST) |
 

@@ -14,6 +14,8 @@ def signup_payload(**overrides: object) -> dict[str, object]:
         "password": "pilly1234!",
         "name": "김보호",
         "birth_date": "1990-05-14",
+        "gender": "FEMALE",
+        "phone_number": "010-1234-5678",
     }
     data.update(overrides)
     return data

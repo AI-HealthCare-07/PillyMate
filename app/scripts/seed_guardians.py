@@ -26,6 +26,8 @@ DEMO_GUARDIAN = {
     "password": os.getenv("SEED_DEMO_PASSWORD", "pilly1234!"),
     "name": "김보호",
     "birth_date": date(1990, 5, 14),
+    "gender": "FEMALE",
+    "phone_number": "01012345678",
 }
 
 

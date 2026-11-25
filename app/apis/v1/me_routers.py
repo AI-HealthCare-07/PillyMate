@@ -14,5 +14,7 @@ async def get_me(guardian: CurrentGuardian) -> MeResponse:
         email=guardian.email,
         name=guardian.name,
         birth_date=guardian.birth_date,
+        gender=guardian.gender,
+        phone_number=guardian.phone_number,
         created_at=guardian.created_at,
     )

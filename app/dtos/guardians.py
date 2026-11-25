@@ -10,6 +10,8 @@ class MeResponse(BaseModel):
     email: str
     name: str
     birth_date: date
+    gender: str | None = None
+    phone_number: str | None = None
     created_at: datetime
 
     @field_serializer("created_at")

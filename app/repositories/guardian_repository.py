@@ -16,8 +16,23 @@ class GuardianRepository:
     async def exists_by_email(self, email: str) -> bool:
         return await self._model.filter(email=email).exists()
 
-    async def create_guardian(self, email: str, password_hash: str, name: str, birth_date: date) -> Guardian:
-        return await self._model.create(email=email, password_hash=password_hash, name=name, birth_date=birth_date)
+    async def create_guardian(
+        self,
+        email: str,
+        password_hash: str,
+        name: str,
+        birth_date: date,
+        gender: str | None = None,
+        phone_number: str | None = None,
+    ) -> Guardian:
+        return await self._model.create(
+            email=email,
+            password_hash=password_hash,
+            name=name,
+            birth_date=birth_date,
+            gender=gender,
+            phone_number=phone_number,
+        )
 
     async def count_children(self, guardian_id: int) -> int:
         """로그인 응답의 child_count. 자녀 모델(BE-2)이 머지되기 전에는 0을 돌려준다."""
