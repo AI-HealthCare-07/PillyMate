@@ -10,14 +10,13 @@ import json
 import sys
 from pathlib import Path
 
-from ocr import SOURCE_TYPES, OcrError, run_ocr
+from ocr import SOURCE_TYPES, OcrError, judge_ocr_confidence, run_ocr
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description="사진 한 장을 OCR해서 API 명세 형식으로 출력해요.")
     parser.add_argument("image", type=Path, help="jpg 또는 png 사진 경로")
     parser.add_argument("--source-type", required=True, choices=SOURCE_TYPES, help="처방전 또는 약봉투")
-    parser.add_argument("--hide-raw-text", action="store_true", help="마스킹한 원문(raw_text_masked)은 빼고 출력")
     args = parser.parse_args(argv)
 
     try:
@@ -29,8 +28,7 @@ def main(argv=None):
         print(f"OCR 실패 ({type(error).__name__}): {error}", file=sys.stderr)
         return 1
 
-    if args.hide_raw_text:
-        result.pop("raw_text_masked", None)
+    result["confidence_judgement"] = judge_ocr_confidence(result)
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0
 

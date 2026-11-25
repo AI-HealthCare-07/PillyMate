@@ -2,11 +2,12 @@
 
 반환 형식:
 {
-  "prescription_date", "hospital_name", "diagnosis_extracted", "raw_text_masked",
+  "prescription_date", "hospital_name", "diagnosis_extracted",
   "medications": [{ "name", "insurance_code", "dose_per_time", "unit", "daily_count", "total_days",
                     "max_daily_count", "as_needed", "usage", "route", "dosage_form", "confidence" }]
 }
 모르는 값은 None이다. 환자 성명·주민등록번호 같은 식별정보는 이 형식에 들어가지 않는다.
+OCR 원문(마스킹본 포함)도 돌려주지 않는다 (11/24 멘토링 4절: 필요한 데이터만 구조화해 저장).
 
 값 규칙은 API 명세 11절 결정 사항을 따른다.
 - unit: mL · 포 · 정 · 캡슐 · g · 방울 · 개 (그 밖의 단위는 None)
@@ -203,7 +204,7 @@ def format_prescription_medication(drug):
     )
 
 
-def format_prescription_result(parsed, raw_text_masked):
+def format_prescription_result(parsed):
     """prescription_parser.parse() 결과 → 명세 형식."""
     codes = parsed.get("질병분류기호") or []
     return {
@@ -211,7 +212,6 @@ def format_prescription_result(parsed, raw_text_masked):
         "hospital_name": (parsed.get("의료기관") or {}).get("명칭"),
         # 질병분류기호가 여러 개면 쉼표로 잇는다 (참고용 표시 값).
         "diagnosis_extracted": ",".join(codes) or None,
-        "raw_text_masked": raw_text_masked,
         "medications": [format_prescription_medication(drug) for drug in parsed.get("처방의약품") or []],
     }
 
@@ -270,7 +270,7 @@ def format_bag_receipt_medication(drug):
     )
 
 
-def format_medicine_bag_result(parsed, raw_text_masked):
+def format_medicine_bag_result(parsed):
     """medicine_bag_parser.parse() 결과 → 명세 형식.
 
     약봉투에는 처방일·질병분류기호가 없으므로 None이다 (명세 7절).
@@ -288,6 +288,5 @@ def format_medicine_bag_result(parsed, raw_text_masked):
         "prescription_date": None,
         "hospital_name": guide.get("병원"),
         "diagnosis_extracted": None,
-        "raw_text_masked": raw_text_masked,
         "medications": medications,
     }

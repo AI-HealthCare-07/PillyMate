@@ -36,7 +36,6 @@ result = await run_in_threadpool(run_ocr, image_bytes, source_type)
   "prescription_date": "2026-11-12",
   "hospital_name": "해솔소아청소년과의원",
   "diagnosis_extracted": "J00,J209",
-  "raw_text_masked": "… 성 명 [이름] 전화번호 [전화번호] … 주민등록번호 [주민번호] …",
   "medications": [
     { "name": "세파클러건조시럽(내복)/60(1)mL/병", "insurance_code": "643901230",
       "dose_per_time": 4.2, "unit": "mL", "daily_count": 3, "total_days": 5,
@@ -51,14 +50,24 @@ result = await run_in_threadpool(run_ocr, image_bytes, source_type)
 - `route`: `ORAL`·`EXTERNAL` 또는 `null` / `dosage_form`: 11절 목록 또는 `null`
 - `as_needed`가 `true`면 `daily_count`는 항상 `null`입니다.
 - `confidence`: 그 약 줄에 있는 글자들의 CLOVA 인식 신뢰도 평균(0~1)
-- 환자 성명·주민등록번호·나이·전화번호는 결과 어디에도 없습니다. `raw_text_masked`에서는 아래처럼 바뀝니다.
-  - `[이름]` 환자 이름 (의사·약사 이름도 '성명' 라벨 뒤에 있으면 함께 가려짐)
-  - `[주민번호]` 230512-4083217, 230512-4******
-  - `[전화번호]` 031-764-2210, 010-1234-5678, (02)123-4567, 1588-1234 (병원·약국 번호 포함)
-  - `[나이]` 만 3세, 만 3세 2개월, 생후 8개월, (18개월)
-  - 명세(7절)는 이름·주민번호만 정했고, 나이·전화번호는 11/24 AI-1 결정으로 추가했습니다.
-  - 병원 이메일·주소, 약국 상호는 환자 정보가 아니라서 그대로 남습니다.
-  `raw_text_masked`는 DB에만 저장하고 응답이나 로그로 내보내지 않습니다 (명세 6절).
+- 환자 성명·주민등록번호·나이·전화번호는 결과 어디에도 없습니다.
+- **OCR 원문은 돌려주지 않습니다** (11/25 변경, 11/24 멘토링 4절 "필요한 데이터만 구조화해 저장").
+  CLOVA가 읽은 글자 전체는 `run_ocr()` 안에서 파서에만 쓰이고 함수가 끝나면 사라집니다.
+  예전 `raw_text_masked`(마스킹 원문) 키와 DB 컬럼은 없앴습니다.
+
+### 신뢰도 판정 (`ocr/ocr_confidence_policy.py`)
+
+`judge_ocr_confidence(result)` → `{"level", "min_confidence", "low_confidence_count"}`.
+가장 낮은 약 신뢰도로 사진 전체를 판정합니다 (11/24 멘토링 3절 기준).
+
+| 가장 낮은 약 신뢰도 | `level` | `POST /prescriptions` 처리 |
+| --- | --- | --- |
+| 0.8 이상 | `OK` | 저장, 그대로 확인 |
+| 0.6 이상 ~ 0.8 미만 | `REVIEW` | 저장, 0.8 미만 약은 `low_confidence: true` → S-04에서 노란 표시로 직접 수정 |
+| 0.6 미만, 또는 약을 하나도 못 읽음 | `RETAKE` | 저장하지 않고 사진 삭제, `422 {"code": "OCR_LOW_CONFIDENCE"}` → 다시 찍기 모달 |
+
+기준값은 회의록대로 "실제 테스트 후 확정"이라 `RETAKE_BELOW`, `REVIEW_BELOW` 상수로 두었습니다.
+샘플 30장 기준으로 `REVIEW`는 1장(rx_10, 최저 0.78), `RETAKE`는 0장입니다.
 
 ### 예외 (`ocr/ocr_exceptions.py`)
 
@@ -78,8 +87,8 @@ result = await run_in_threadpool(run_ocr, image_bytes, source_type)
 | 무엇을 | 누가 | 내용 |
 | --- | --- | --- |
 | 환경변수 | BE-1·BE-2 | `CLOVA_OCR_URL`(APIGW Invoke URL), `CLOVA_OCR_SECRET` 를 `.env`·배포 서버에 추가 |
-| `app/Dockerfile` | BE-2 | `COPY ./ocr ./ocr` 추가 (지금은 `./app`만 복사) |
-| `docker-compose.yml` | BE-2 | fastapi 서비스에 `./ocr:/app/ocr` 볼륨 추가 (로컬에서 수정 즉시 반영) |
+| `app/Dockerfile` | 반영됨 | `COPY ./ocr ./ocr` |
+| `docker-compose.yml` | 반영됨 | fastapi 서비스에 `./ocr:/app/ocr` 볼륨 (로컬에서 수정 즉시 반영) |
 
 환경변수 대신 값을 직접 넘길 수도 있습니다: `run_ocr(..., credentials=ClovaCredentials(url, secret))`.
 
@@ -93,7 +102,7 @@ result = await run_in_threadpool(run_ocr, image_bytes, source_type)
 uv run pytest ocr
 ```
 
-가짜 처방전·약봉투 배치(`tests/fake_clova_fields.py`)로 파서, 명세 형식, 마스킹, 예외를 확인합니다.
+가짜 처방전·약봉투 배치(`tests/fake_clova_fields.py`)로 파서, 명세 형식, 신뢰도 판정, 예외를 확인합니다.
 
 **2) 사진 한 장 실제로 돌려 보기 — CLOVA 1회 호출**
 
@@ -108,7 +117,7 @@ uv run --env-file ~/ocr/.env python -m ocr.tools.ocr_preview_server
 ```
 
 http://127.0.0.1:8010 에서 처방전·약봉투를 고르고 사진을 올리면 `run_ocr()` 결과를 표로 보여 줍니다.
-신뢰도가 기준값(기본 0.9) 미만인 약은 노란색으로 표시됩니다. API 서버(`app`)와 상관없이 혼자 돌아가는 개발용 도구입니다.
+신뢰도 판정(`OK`·`REVIEW`·`RETAKE`)이 함께 나오고, 기준값(기본 0.8) 미만인 약은 노란색으로 표시됩니다. API 서버(`app`)와 상관없이 혼자 돌아가는 개발용 도구입니다.
 
 **3) 샘플 사진의 CLOVA 응답 저장 — 사진마다 1회 호출, 이미 저장한 사진은 건너뜀**
 
@@ -143,13 +152,14 @@ uv run python -m ocr.tools.check_parser_accuracy --details
 
 | 파일 | 역할 |
 | --- | --- |
-| `ocr_pipeline.py` | `run_ocr()`: 사진 → CLOVA → 파서 → 마스킹 → 명세 형식 |
+| `ocr_pipeline.py` | `run_ocr()`: 사진 → CLOVA → 파서 → 명세 형식 (원문은 버림) |
+| `ocr_confidence_policy.py` | 신뢰도 판정 `judge_ocr_confidence()` (OK·REVIEW·RETAKE) |
 | `clova_ocr_client.py` | CLOVA OCR(General V2) 동기 호출, 타임아웃, 오류 변환 |
 | `ocr_exceptions.py` | `OcrError`와 하위 예외 |
 | `text_layout_utils.py` | 기울기 보정, 좌표로 행 묶기, 신뢰도 평균 |
 | `prescription_parser.py` | 처방전 양식 → 항목(한글 키) |
 | `medicine_bag_parser.py` | 약봉투(영수증 + 복약안내) → 항목(한글 키) |
-| `personal_info_masking.py` | 원문의 이름·주민등록번호·전화번호·나이를 `[이름]`, `[주민번호]`, `[전화번호]`, `[나이]`로 |
+| `personal_info_masking.py` | 테스트용 CLOVA 응답을 저장할 때(`tools/save_clova_responses.py`) 이름·주민등록번호 등을 가림 |
 | `ocr_result_formatter.py` | 한글 키 → 명세 snake_case, 제형·경로·단위 추정 |
 | `tools/` | AI-1용 명령줄 도구 (위 테스트 방법 2~4) |
 | `tests/` | pytest 테스트, 가짜 CLOVA 응답, 정답 파일 |
@@ -160,7 +170,8 @@ uv run python -m ocr.tools.check_parser_accuracy --details
 - 약봉투 `prescription_date`: 약봉투에는 조제일자만 있어서 `null`로 둡니다. 조제일자를 대신 넣을지 FE-2와 결정 필요.
 - 처방전 약 이름은 `세파클러건조시럽(내복)/60(1)mL/병`처럼 인쇄된 그대로 둡니다 (함량 정보 보존).
 - 허용 목록에 없는 단위(`관`, `분무`, `흡입`)는 `null`입니다. 목록에 추가할지 BE-2·FE-2와 결정 필요.
-- `confidence`를 S-04에서 강조할 기준값은 FE-2와 정해야 합니다 (명세 6절). AI-1 제안은 0.9 (샘플에서 강조 6개 중 5개가 실제 오타).
+- 신뢰도 기준값(0.6 / 0.8)은 멘토링 논의 기준을 그대로 쓴 것이라, 실제 촬영 사진으로 다시 확인해야 합니다.
+  참고로 0.9로 강조하면 샘플에서 강조 6개 중 5개가 실제 오타였고, 0.8이면 1개만 잡혔습니다.
 - 필요시 복용약의 `max_daily_count`는 "1일 최대 n회"가 적혀 있을 때만 채웁니다. 없으면 보호자가 S-04에서 입력합니다.
   샘플 30장의 필요시 약 15개 중 이 문구가 적힌 것은 없어서, 지금은 전부 보호자가 입력해야 합니다.
 - 약 이름 OCR 오타: 처방전의 `insurance_code`(9자리 보험코드)는 정확히 읽히므로, 보험코드로 공식 약 이름을
