@@ -5,7 +5,8 @@ import { Button } from '../components/ui/Button.jsx';
 import { AppShell, Header } from '../components/ui/layout.jsx';
 import { AlarmTimeModal } from '../components/rx/AlarmTimeModal.jsx';
 import { AlarmBar, DangerSignals, Disclaimer, GuideSummary, HowTo, LifeTips, Schedule } from '../components/rx/guide.jsx';
-import { getPrescriptionDraft } from './fe2Draft.js';
+import { getPrescriptionDraft, setPrescriptionDraft } from './fe2Draft.js';
+import { createGuide, getGuide } from '../api/prescriptionFlow.js';
 import { alarmSlots, hhmm, todayKey, useRecords } from '../state/records.jsx';
 import { useSelectedChild } from '../state/selectedChild.jsx';
 import { BackLink } from './confirm.jsx';
@@ -18,56 +19,52 @@ import { BackLink } from './confirm.jsx';
  * 데스크톱: 본문 672px + 오른쪽 단(위험 신호, 알림, 처방 다시 보기)
  */
 
-// 복약 가이드 생성 및 조회 API
-async function requestGuide(prescriptionId, method = 'POST') {
-  const token = sessionStorage.getItem('access_token');
+/** 건강기록 id('rx305') → 서버 처방 id(305). 예시 기록('p…', 'v…')이면 null */
+const prescriptionIdOf = (visitId) => (/^rx\d+$/.test(visitId ?? '') ? Number(visitId.slice(2)) : null);
 
-  if (!token) {
-    throw new Error('로그인이 필요합니다.');
-  }
+/**
+ * 화면 기록의 가이드(처방 숫자로 만든 것)에 서버 가이드(guide_content)를 덮어써요.
+ * - 복용법·생활 습관·위험 신호·필요할 때 먹는 약: 서버(AI-2) 값
+ * - 하루 복약 일정(schedule): 화면 기록 값 그대로 — 복약 달력·알림이 이 값을 써요
+ * - 복용법 표의 숫자(dose·perDay·days·timing): 화면 기록 값 그대로, 설명(how·note)만 서버 값
+ */
+function withServerGuide(guide, server) {
+  if (!server) return guide;
+  const serverHowTo = server.howTo ?? [];
+  const howTo = guide.howTo.length
+    ? guide.howTo.map((item, i) => {
+        const s = serverHowTo.find((h) => h.name === item.name) ?? serverHowTo[i];
+        return s ? { ...item, how: s.how || item.how, note: s.note || item.note } : item;
+      })
+    : serverHowTo;
+  return {
+    ...guide,
+    asNeeded: server.asNeeded || guide.asNeeded,
+    howTo,
+    life: server.life?.length ? server.life : guide.life,
+    danger: server.danger?.length ? server.danger : guide.danger,
+    summary: server.summary ?? guide.summary,
+    serverStatus: server.status ?? null, // 'ok' | 'fallback'
+  };
+}
 
-  if (!prescriptionId) {
-    throw new Error('처방전 ID가 없습니다.');
-  }
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 90000);
-
-  try {
-    const response = await fetch(
-      `/api/v1/prescriptions/${encodeURIComponent(prescriptionId)}/guide`,
-      {
-        method,
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        signal: controller.signal,
-      }
-    );
-
-    if (response.status === 401) {
-      sessionStorage.removeItem('access_token');
-      throw new Error('로그인이 만료되었습니다.');
-    }
-
-    if (!response.ok) {
-      throw new Error('복약 가이드 요청에 실패했습니다.');
-    }
-
-    const data = await response.json();
-    return data;
-
-  } catch (error) {
-    if (error.name === 'AbortError') {
-      throw new Error('응답 시간이 초과되었습니다.');
-    }
-
-    throw error;
-
-  } finally {
-    clearTimeout(timeout);
-  }
+/** 서버 가이드 불러오기 — 방금 만든 것은 임시 데이터에서, 없으면(가이드 탭에서 연 경우 등) GET으로 */
+function useServerGuide(prescriptionId) {
+  const [server, setServer] = useState(() => {
+    const draft = getPrescriptionDraft();
+    return prescriptionId && draft?.prescriptionId === prescriptionId ? draft.serverGuide ?? null : null;
+  });
+  useEffect(() => {
+    if (!prescriptionId || server) return undefined;
+    let cancelled = false;
+    getGuide(prescriptionId)
+      .then((res) => !cancelled && setServer(res.guide_content))
+      .catch(() => {}); // 404(아직 없음)·연결 실패면 화면 기록 가이드를 그대로 보여요
+    return () => {
+      cancelled = true;
+    };
+  }, [prescriptionId, server]);
+  return server;
 }
 
 export function GuideScreen({ go, back, onTab }) {
@@ -82,7 +79,9 @@ export function GuideScreen({ go, back, onTab }) {
     return () => window.removeEventListener('popstate', onPop);
   }, [navigate]);
   const { childList } = useSelectedChild();
-  const guide = guideById(state?.guideId ?? getPrescriptionDraft()?.guideId);
+  const localGuide = guideById(state?.guideId ?? getPrescriptionDraft()?.guideId);
+  const serverGuide = useServerGuide(prescriptionIdOf(localGuide?.visitId));
+  const guide = localGuide && withServerGuide(localGuide, serverGuide);
   const child = guide && childList.find((c) => c.id === guide.childId);
   // 찾을 가이드가 없으면(주소로 바로 들어온 경우 등) 가이드 목록으로 보내요.
   if (!guide || !child) return <Navigate to="/guides" replace />;
@@ -147,21 +146,44 @@ export function GuideScreen({ go, back, onTab }) {
 
 const Sk = ({ className }) => <div className={`animate-pulse rounded-md bg-sunk ${className}`} />;
 
-/** S-05 만드는 중 — 실제 가이드와 같은 모양의 뼈대. 데모에서는 2.5초 뒤 가이드로 넘어가요 */
+/**
+ * S-05 만드는 중 — 실제 가이드와 같은 모양의 뼈대.
+ * 서버 처방이면 가이드 생성 API(POST /prescriptions/{id}/guide, 약 20초)를 부르고, 끝나면 가이드로 넘어가요.
+ * 예시 데이터(처방 id 없음)는 2.5초 뒤 넘어가요.
+ */
 export function GuideLoadingScreen({ go, back, onTab }) {
   const draft = getPrescriptionDraft();
   const { childList } = useSelectedChild();
   const childName = childList.find((c) => c.id === draft?.childId)?.name ?? '아이';
+  const prescriptionId = draft?.prescriptionId;
+  const guideId = draft?.guideId;
   useEffect(() => {
-    const t = setTimeout(() => go('guide', { guideId: draft?.guideId }, { replace: true }), 2500);
-    return () => clearTimeout(t);
-  }, [go, draft?.guideId]);
+    const toGuide = () => go('guide', { guideId }, { replace: true });
+    if (!prescriptionId) {
+      const t = setTimeout(toGuide, 2500);
+      return () => clearTimeout(t);
+    }
+    let cancelled = false;
+    // 서버는 같은 처방으로 다시 불러도 새로 만들지 않고 기존 가이드를 돌려줘요(개발 모드에서 두 번 불려도 안전).
+    createGuide(prescriptionId)
+      .then((res) => {
+        if (cancelled) return;
+        setPrescriptionDraft({ ...getPrescriptionDraft(), serverGuide: res.guide_content });
+        toGuide();
+      })
+      .catch(() => {
+        if (!cancelled) go('guide-error', undefined, { replace: true });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [go, prescriptionId, guideId]);
   return (
     <AppShell tab="history" onTab={onTab} showTabs={false} width="reading" header={<Header title="" onBack={() => back('confirm')} />}>
       <div className="flex flex-1 flex-col gap-8 px-5 pb-8 pt-1 lg:px-0 lg:pb-12 lg:pt-4" aria-busy="true" aria-live="polite">
         <div className="flex flex-col gap-2">
           <h1 className="text-22 font-bold lg:text-28">가이드를 만들고 있어요</h1>
-          <p className="text-15 text-muted">처방과 {childName}의 정보를 정리하는 중이에요. 10초쯤 걸릴 수 있어요.</p>
+          <p className="text-15 text-muted">처방과 {childName}의 정보를 정리하는 중이에요. 20초쯤 걸릴 수 있어요. 화면을 닫지 말고 기다려 주세요.</p>
         </div>
         <div className="flex flex-col gap-3">
           <Sk className="h-[18px] w-[120px]" />
