@@ -78,6 +78,11 @@ export function toConfirmMed(med) {
     medicationId: med.medication_id,
     name: med.name,
     confidence: med.confidence,
+    // 화면에는 안 보이지만 확정 API(PUT /confirm)에 그대로 돌려보내야 하는 OCR 값이에요.
+    // 카드를 고쳐도 MedEdit가 ...med로 남겨 둬요.
+    unit: med.unit ?? null,
+    route: med.route ?? null,
+    dosageForm: med.dosage_form ?? null,
     ...Object.fromEntries(
       Object.entries(values).map(([key, value]) => [key, med.low_confidence && value ? { value, low: true } : { value }]),
     ),
