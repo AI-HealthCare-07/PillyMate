@@ -1,9 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { hasLoginToken } from '../api/children.js';
-import { fetchChildPrescriptions, fetchPrescriptionDetail } from '../api/prescriptionRecords.js';
+import { fetchGuide } from '../api/prescriptionGuide.js';
+import { deletePrescription, fetchChildPrescriptions, fetchPrescriptionDetail } from '../api/prescriptionRecords.js';
 import { toConfirmMed } from '../api/prescriptionRegistration.js';
-import { getGuide } from '../api/prescriptionFlow.js';
 import { courses as sampleCourses, guides as sampleGuides, sampleMissed, visits as sampleVisits } from '../data/sample.js';
 import { useSelectedChild } from './selectedChild.jsx';
 
@@ -63,8 +63,8 @@ export function groupBySlot(doses) {
 const SLOTS_BY_COUNT = { 1: ['아침'], 2: ['아침', '저녁'], 3: ['아침', '점심', '저녁'], 4: ['아침', '점심', '저녁', '자기 전'] };
 const SLOT_ORDER = ['아침', '점심', '저녁', '자기 전'];
 const firstNumber = (text) => Number(String(text ?? '').match(/\d+/)?.[0] ?? 0);
-/** 열날 때·필요할 때 먹는 약인지 — 정해진 때와 기간이 없어요. */
-export const isAsNeeded = (m) => /열|필요|아플|통증/.test(`${m.perDay?.value ?? ''} ${m.days?.value ?? ''}`);
+/** 열날 때·필요할 때 먹는 약인지 — 정해진 때와 기간이 없어요. 먹는 때를 '필요시'로 고른 약도 여기에 들어요. */
+export const isAsNeeded = (m) => /열|필요|아플|통증/.test(`${m.perDay?.value ?? ''} ${m.days?.value ?? ''} ${m.timing?.value ?? ''}`);
 
 /**
  * 확인한 약 목록(OCR 결과)으로 복약 일정을 만들어요.
@@ -125,6 +125,28 @@ function buildPrescriptionRecord({ prescriptionId, childId, date, hospital, titl
   return { visit, course, guide };
 }
 
+/**
+ * 서버가 만든 가이드(명세 8·9번 응답의 guide_content) → 가이드 탭 형식.
+ * 서버가 이미 화면 형식(schedule·asNeeded·howTo·life·danger)으로 저장해 둬서 이름만 맞춰요.
+ * visit은 그 처방의 건강기록이에요. 가이드 id는 g{건강기록 id}라서 처방마다 하나예요.
+ */
+function guideFromServer(visit, guideResponse) {
+  const content = guideResponse.guide_content ?? {};
+  return {
+    id: `g${visit.id}`, childId: visit.childId, visitId: visit.id, title: visit.title, hospital: visit.hospital, date: visit.date,
+    summary: content.summary ?? '',
+    schedule: content.schedule ?? [],
+    asNeeded: content.asNeeded || null,
+    howTo: content.howTo ?? [],
+    life: content.life ?? [],
+    danger: content.danger ?? [],
+    checklist: content.checklist ?? [],
+    disclaimer: content.disclaimer ?? '',
+    serverStatus: content.status ?? null, // 'ok'(AI가 씀) | 'fallback'(AI 없이 템플릿만)
+    fromServer: true,
+  };
+}
+
 const SOURCE_LABEL = { PRESCRIPTION: '처방전', PILL_BAG: '약봉투' };
 /** 서버가 확정한 처방(7번 확정 API 이후 상태) — 그때부터 복약 일정과 가이드가 생겨요. */
 const CONFIRMED_STATUSES = ['CONFIRMED', 'GUIDE_DONE'];
@@ -132,9 +154,10 @@ const CONFIRMED_STATUSES = ['CONFIRMED', 'GUIDE_DONE'];
 /**
  * 서버 처방 상세(명세 6번) → 건강기록. 확정 전(OCR_DONE)이면 '확인 전' 기록이라 일정·가이드 없이
  * 읽어 둔 약(ocrMeds)만 들고 있다가, 보호자가 '처방 확인하기'로 확인하면 recordPrescription이 대신해요.
- * 약봉투는 처방일이 없어서 올린 날(created_at, KST)을 날짜로 써요.
+ * 확정한 처방은 복약 일정을 만들고, 가이드는 서버가 만든 것(guideResponse)이 있을 때만 보여요(지어내지 않아요).
+ * 약봉투의 날짜는 조제일자(약 받은 날)예요. 날짜를 못 읽은 처방은 올린 날(created_at, KST)을 날짜로 써요.
  */
-function recordFromServerPrescription(detail) {
+function recordFromServerPrescription(detail, guideResponse) {
   const ocrMeds = detail.medications.map(toConfirmMed);
   const base = {
     prescriptionId: detail.prescription_id,
@@ -145,13 +168,15 @@ function recordFromServerPrescription(detail) {
   };
   if (CONFIRMED_STATUSES.includes(detail.status)) {
     const record = buildPrescriptionRecord({ ...base, meds: ocrMeds });
-    return { ...record, visit: { ...record.visit, sourceType: detail.source_type } };
+    const visit = { ...record.visit, sourceType: detail.source_type };
+    return { visit, course: record.course, guide: guideResponse ? guideFromServer(visit, guideResponse) : null };
   }
   return {
     visit: {
       id: `rx${detail.prescription_id}`, ...base, note: detail.symptom_notes ?? '', source: 'ocr', status: '확인 전',
-      // 약봉투는 처방일이 없어요(null). 확인 화면에서 약 받은 날을 다시 고르게 해요.
-      sourceType: detail.source_type, prescriptionDate: detail.prescription_date, disease: detail.diagnosis_user_input ?? '', ocrMeds,
+      // 날짜를 못 읽었으면(null) 확인 화면에서 약 받은 날을 다시 고르게 해요.
+      sourceType: detail.source_type, prescriptionDate: detail.prescription_date, disease: detail.diagnosis_user_input ?? '',
+      diagnosisCodes: detail.diagnosis_extracted ?? '', ocrMeds,
       meds: ocrMeds.map((m) => ({ name: m.name, days: m.days.value })),
     },
     course: null,
@@ -159,7 +184,7 @@ function recordFromServerPrescription(detail) {
   };
 }
 
-const EMPTY_SERVER_RECORDS = { visits: [], courses: [], guides: [], guideContent: {} };
+const EMPTY_SERVER_RECORDS = { visits: [], courses: [], guides: [] };
 
 /**
  * 화면 기록의 가이드(처방 숫자로 만든 것)에 서버 가이드(AI-2, guide_content)를 덮어써요.
@@ -190,8 +215,9 @@ export function withServerGuide(guide, server) {
 const RECORD_PATHS = ['/home', '/history', '/guides'];
 
 /**
- * 로그인한 보호자의 모든 아이 처방을 서버에서 불러와요(목록 → 상세).
- * 상세는 처방 번호·상태가 같으면 다시 받지 않아요. 실패하면 직전 기록을 그대로 둬요.
+ * 로그인한 보호자의 모든 아이 처방을 서버에서 불러와요(목록 → 상세 → 가이드가 있으면 가이드).
+ * 상세는 처방 번호·상태가 같으면 다시 받지 않아요. 가이드는 한 번 만들면 바뀌지 않아서 처방마다 한 번만 받아요.
+ * 목록·상세가 실패하면 직전 기록을 그대로 둬요. 가이드만 실패하면 그 처방은 가이드 없이 보여요.
  */
 function useServerPrescriptionRecords() {
   const { childList } = useSelectedChild();
@@ -226,28 +252,25 @@ function useServerPrescriptionRecords() {
             }
           }),
         );
-        // 가이드를 만든 처방(GUIDE_DONE)은 서버 가이드도 불러와요. 한 번 받은 가이드는 다시 받지 않아요.
-        const guideContent = {};
-        await Promise.all(
-          details
-            .filter((d) => d.status === 'GUIDE_DONE')
-            .map(async (d) => {
-              const id = d.prescription_id;
-              if (!guideCache.current.has(id)) guideCache.current.set(id, getGuide(id).then((res) => res.guide_content));
-              try {
-                guideContent[`rx${id}`] = await guideCache.current.get(id);
-              } catch {
-                guideCache.current.delete(id); // 다음에 다시 시도해요. 그동안은 화면 기록 가이드를 보여요
-              }
-            }),
+        const guides = await Promise.all(
+          details.map(async (detail) => {
+            if (detail.status !== 'GUIDE_DONE' && !detail.has_guide) return null;
+            const id = detail.prescription_id;
+            if (!guideCache.current.has(id)) guideCache.current.set(id, fetchGuide(id));
+            try {
+              return await guideCache.current.get(id);
+            } catch {
+              guideCache.current.delete(id);
+              return null;
+            }
+          }),
         );
         if (cancelled) return;
-        const built = details.map(recordFromServerPrescription);
+        const built = details.map((detail, i) => recordFromServerPrescription(detail, guides[i]));
         setRecords({
           visits: built.map((r) => r.visit),
           courses: built.map((r) => r.course).filter(Boolean),
           guides: built.map((r) => r.guide).filter(Boolean),
-          guideContent,
         });
       } catch {
         // 서버에 닿지 않으면 직전 기록을 그대로 보여요. 다음에 화면을 옮길 때 다시 불러요.
@@ -290,14 +313,18 @@ const RecordsContext = createContext(null);
  * TODO(API): 처방 확정 API(7번)가 머지되면 확인한 약 목록을 서버에 저장하고, 복약 체크도 서버에 저장.
  */
 export function RecordsProvider({ children }) {
-  const [state, setState] = useState({ doses: {}, visits: [], courses: [], guides: [], alarmOff: [], alarmSince: {}, alarmTimes: {}, removedChildIds: [] });
+  const [state, setState] = useState({ doses: {}, visits: [], courses: [], guides: [], alarmOff: [], alarmSince: {}, alarmTimes: {}, removedChildIds: [], deletedPrescriptionIds: [] });
   const server = useServerPrescriptionRecords();
 
   const value = useMemo(() => {
     // 이번 방문에서 확인한 기록 > 서버 기록 > 예시 기록. 같은 처방(id)이거나 같은 날·같은 병원이면 앞의 것만 보여요.
     const localIds = new Set(state.visits.map((v) => v.id));
     const localKeys = new Set(state.visits.map(visitKey));
-    const serverVisits = server.visits.filter((v) => !localIds.has(v.id) && !localKeys.has(visitKey(v)));
+    // 지운 처방은 서버 기록을 다시 불러오기 전에도 바로 숨겨요.
+    const deleted = new Set(state.deletedPrescriptionIds);
+    const serverVisits = server.visits.filter(
+      (v) => !deleted.has(v.prescriptionId) && !localIds.has(v.id) && !localKeys.has(visitKey(v)),
+    );
     const shownServerIds = new Set(serverVisits.map((v) => v.id));
     const addedKeys = new Set([...state.visits, ...serverVisits].map(visitKey));
     // 다시 올린 처방이 예시 기록과 같은 날·같은 병원이면 예시 기록 대신 새 기록을 보여요.
@@ -311,11 +338,10 @@ export function RecordsProvider({ children }) {
     ].filter((c) => !removed.has(c.childId));
     // 저장된 가이드 — 이번에 올린 처방으로 만든 가이드 + 서버 확정 처방의 가이드 + 예시 가이드
     const visibleIds = new Set(allVisits.map((v) => v.id));
-    // 같은 처방(visitId)의 가이드는 하나만 — 이번에 확인한 것 > 서버 기록 > 예시. 서버 가이드가 있으면 내용을 덮어써요.
-    const seenVisits = new Set();
-    const allGuides = [...state.guides, ...server.guides, ...sampleGuides]
-      .filter((g) => visibleIds.has(g.visitId) && !seenVisits.has(g.visitId) && seenVisits.add(g.visitId))
-      .map((g) => withServerGuide(g, server.guideContent?.[g.visitId]))
+    // 이번 방문에서 받은 가이드와 같은 처방(같은 id)의 서버 가이드는 겹쳐 보이지 않아요.
+    const localGuideIds = new Set(state.guides.map((g) => g.id));
+    const allGuides = [...state.guides, ...server.guides.filter((g) => !localGuideIds.has(g.id)), ...sampleGuides]
+      .filter((g) => visibleIds.has(g.visitId))
       .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
     const isGiven = (key, course) => (key in state.doses ? state.doses[key] : seeded(key, course));
 
@@ -360,9 +386,15 @@ export function RecordsProvider({ children }) {
       /** 아이의 건강기록, 최근 날짜부터 */
       visitsOf: (childId) =>
         allVisits.filter((v) => v.childId === childId).sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0)),
-      /** 처방전 확인이 끝났을 때 — 병원기록과 복약 일정을 자동으로 남겨요. 같은 처방을 다시 올리면 덮어써요. */
+      /**
+       * 처방전 확인이 끝났을 때 — 병원기록과 복약 일정을 자동으로 남겨요. 같은 처방을 다시 올리면 덮어써요.
+       * 서버에 올린 처방(prescriptionId)은 가이드를 서버가 만들어요. 그래서 여기서는 가이드를 짐작해 만들지 않고
+       * 가이드가 오면 saveServerGuide로 넣어요. 예시 처방(서버 없음)만 약 목록으로 가이드를 만들어요.
+       */
       recordPrescription: ({ prescriptionId, childId, date, hospital, title, meds }) => {
-        const { visit, course, guide } = buildPrescriptionRecord({ prescriptionId, childId, date, hospital, title, meds });
+        const record = buildPrescriptionRecord({ prescriptionId, childId, date, hospital, title, meds });
+        const { visit, course } = record;
+        const guide = prescriptionId ? null : record.guide;
         const { id } = visit;
         setState((prev) => {
           const replaced = prev.visits.filter((v) => v.id === id || visitKey(v) === visitKey(visit)).map((v) => v.id);
@@ -370,17 +402,49 @@ export function RecordsProvider({ children }) {
             ...prev,
             visits: [visit, ...prev.visits.filter((v) => !replaced.includes(v.id))],
             courses: [...(course ? [course] : []), ...prev.courses.filter((c) => !replaced.includes(c.visitId))],
-            guides: [guide, ...prev.guides.filter((g) => !replaced.includes(g.visitId))],
+            guides: [...(guide ? [guide] : []), ...prev.guides.filter((g) => !replaced.includes(g.visitId) && g.visitId !== id)],
             // 새 처방의 알림은 가이드를 만든 지금부터 시작해요.
             alarmSince: { ...prev.alarmSince, [id]: Date.now() },
           };
         });
         return { visit, guide };
       },
+      /**
+       * 서버가 만든 가이드(명세 8번 응답)를 그 처방의 건강기록에 붙여요. 돌려주는 값은 가이드 id(g rx{번호})예요.
+       * recordPrescription으로 건강기록을 먼저 남긴 다음에 불러요.
+       */
+      saveServerGuide: (prescriptionId, guideResponse) => {
+        const visitId = `rx${prescriptionId}`;
+        setState((prev) => {
+          const visit = prev.visits.find((v) => v.id === visitId);
+          if (!visit) return prev;
+          const guide = guideFromServer(visit, guideResponse);
+          return { ...prev, guides: [guide, ...prev.guides.filter((g) => g.id !== guide.id)] };
+        });
+        return `g${visitId}`;
+      },
       /** 처방전 없이 다녀온 진료(예방접종, 검진 등)를 직접 남겨요. */
       addVisit: (visit) =>
         setState((prev) => ({ ...prev, visits: [{ id: `u${Date.now()}`, source: 'manual', ...visit }, ...prev.visits] })),
       removeVisit: (id) => setState((prev) => ({ ...prev, visits: prev.visits.filter((v) => v.id !== id) })),
+      /**
+       * 서버에 올린 처방을 지워요(9절 DELETE). 성공하면 그 처방의 건강기록·복약 일정·가이드를 화면에서도 지워요.
+       * 이미 지워진 처방(404)도 지운 것으로 봐요. 그 밖의 실패는 PrescriptionRecordsError를 그대로 던져요.
+       */
+      deletePrescription: async (visit) => {
+        try {
+          await deletePrescription(visit.prescriptionId);
+        } catch (error) {
+          if (error.status !== 404) throw error;
+        }
+        setState((prev) => ({
+          ...prev,
+          visits: prev.visits.filter((v) => v.id !== visit.id),
+          courses: prev.courses.filter((c) => c.visitId !== visit.id),
+          guides: prev.guides.filter((g) => g.visitId !== visit.id),
+          deletedPrescriptionIds: [...prev.deletedPrescriptionIds, visit.prescriptionId],
+        }));
+      },
       /** 아이를 삭제할 때 — 그 아이의 복약 체크·건강기록·복약 일정을 모두 지워요. */
       forgetChild: (childId) =>
         // ...prev로 알림 설정(alarmOff·alarmSince·alarmTimes)처럼 여기서 안 건드리는 값도 그대로 남겨요.

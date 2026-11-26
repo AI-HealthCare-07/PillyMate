@@ -170,7 +170,9 @@ function medFacts(m, schedule, asNeededText, visitMeds) {
     if (hits.length !== 1) continue;
     slots.push(slot);
     dose ||= hits[0][1] ?? '';
-    if (!days && hits[0][2]) days = `${hits[0][2]}일`;
+    // 기간은 화면에서 만든 일정이면 숫자(5), 서버 가이드 일정이면 이미 '5일'이에요. 숫자일 때만 '일'을 붙여요.
+    const itemDays = hits[0][2];
+    if (!days && itemDays) days = /^\d+$/.test(String(itemDays)) ? `${itemDays}일` : String(itemDays);
   }
   const visitDays = visitMeds?.find((v) => v.name === m.name || m.name.startsWith(`${v.name} `))?.days ?? '';
   const structured = 'dose' in m;

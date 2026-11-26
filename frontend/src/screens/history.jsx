@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Check, ChevronLeft, ChevronRight, Minus, Pill, Plus, ScanLine, Trash2 } from 'lucide-react';
+import { AlertDialog } from '../components/ui/AlertDialog.jsx';
 import { Button } from '../components/ui/Button.jsx';
 import { Field } from '../components/ui/Field.jsx';
 import { Panel, Segmented, Tag } from '../components/ui/misc.jsx';
@@ -224,6 +225,8 @@ function MedCalendar({ childId }) {
 function HealthLog({ childId, go }) {
   const { visitsOf, addVisit, removeVisit } = useRecords();
   const [adding, setAdding] = useState(false);
+  // 지울지 묻는 중인 서버 처방 기록. 지우면 되돌릴 수 없어서 한 번 더 물어요.
+  const [deleting, setDeleting] = useState(null);
   const list = visitsOf(childId);
 
   return (
@@ -291,31 +294,14 @@ function HealthLog({ childId, go }) {
                     <p className="text-13 text-faint">처방받은 약 없음</p>
                   )}
                   {v.note && <p className="text-14 text-muted">{v.note}</p>}
-                  {/* 복약 가이드는 가이드 탭에서 봐요. 여기선 아직 확인 안 한 처방만 확인하러 갈 수 있어요. */}
-                  {v.source === 'ocr' ? (
-                    v.status && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          draftFromVisit(v);
-                          go('confirm');
-                        }}
-                        className="-my-2 -ml-1 flex min-h-11 items-center gap-0.5 self-start rounded-md px-1 text-14 font-semibold text-brand hover:underline"
-                      >
-                        처방 확인하기<ChevronRight size={16} aria-hidden />
-                      </button>
-                    )
-                  ) : (
-                    v.source === 'manual' && !v.id.startsWith('v') && (
-                      <button
-                        type="button"
-                        onClick={() => removeVisit(v.id)}
-                        className="-my-2 -ml-1 flex min-h-11 items-center gap-1 self-start rounded-md px-1 text-13 font-medium text-muted hover:text-danger"
-                      >
-                        <Trash2 size={14} aria-hidden />지우기
-                      </button>
-                    )
-                  )}
+                  <VisitActions
+                    visit={v}
+                    onConfirm={() => {
+                      draftFromVisit(v);
+                      go('confirm');
+                    }}
+                    onRemove={() => (v.prescriptionId ? setDeleting(v) : removeVisit(v.id))}
+                  />
                 </Panel>
               </div>
             </li>
@@ -323,7 +309,93 @@ function HealthLog({ childId, go }) {
         })}
       </ol>
       </div>
+      <DeletePrescriptionDialog visit={deleting} onClose={() => setDeleting(null)} />
     </div>
+  );
+}
+
+/**
+ * 건강기록 카드 아래 버튼.
+ * - 확인 전 처방: 처방 확인하기 (복약 가이드는 가이드 탭에서 봐요)
+ * - 서버에 올린 처방: 지우기 (서버에서 지워요)
+ * - 직접 남긴 기록: 지우기 (이번 방문에서만 있는 기록이라 바로 지워요). 예시 기록(v…)은 못 지워요.
+ */
+function VisitActions({ visit: v, onConfirm, onRemove }) {
+  const canConfirm = v.source === 'ocr' && Boolean(v.status);
+  const canRemove = Boolean(v.prescriptionId) || (v.source === 'manual' && !v.id.startsWith('v'));
+  if (!canConfirm && !canRemove) return null;
+
+  return (
+    <div className="-my-2 flex items-center gap-3">
+      {canConfirm && (
+        <button
+          type="button"
+          onClick={onConfirm}
+          className="-ml-1 flex min-h-11 items-center gap-0.5 rounded-md px-1 text-14 font-semibold text-brand hover:underline"
+        >
+          처방 확인하기<ChevronRight size={16} aria-hidden />
+        </button>
+      )}
+      {canRemove && (
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label={`${dateParts(v.date).month}월 ${dateParts(v.date).day}일 ${v.hospital} 기록 지우기`}
+          className={`flex min-h-11 items-center gap-1 rounded-md px-1 text-13 font-medium text-muted hover:text-danger ${canConfirm ? '-mr-1 ml-auto' : '-ml-1'}`}
+        >
+          <Trash2 size={14} aria-hidden />지우기
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** 서버 처방 기록 지우기 확인 — 지우면 약·복약 일정·가이드도 함께 사라지고 되돌릴 수 없어요. */
+function DeletePrescriptionDialog({ visit, onClose }) {
+  const { deletePrescription } = useRecords();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  if (!visit) return null;
+
+  const { month, day } = dateParts(visit.date);
+  const close = () => {
+    setError('');
+    onClose();
+  };
+  const confirm = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      await deletePrescription(visit);
+      close();
+    } catch (e) {
+      setError(e.message || '처방 기록을 지우지 못했어요. 잠시 후 다시 시도해 주세요.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <AlertDialog
+      open
+      title="이 처방 기록을 지울까요?"
+      description={`${month}월 ${day}일 ${visit.hospital} 처방이에요. 약 목록, 복약 일정, 복약 가이드도 함께 지워지고 되돌릴 수 없어요.`}
+    >
+      {error && <p role="alert" className="text-13 text-danger">{error}</p>}
+      <div className="flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={confirm}
+          disabled={busy}
+          className="inline-flex h-13 w-full items-center justify-center rounded-lg bg-danger px-5 text-16 font-semibold text-white transition-opacity disabled:opacity-60"
+        >
+          {busy ? '지우는 중…' : '지우기'}
+        </button>
+        <Button variant="secondary" className="w-full" onClick={close} disabled={busy}>
+          취소
+        </Button>
+      </div>
+    </AlertDialog>
   );
 }
 

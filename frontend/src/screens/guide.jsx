@@ -5,9 +5,9 @@ import { Button } from '../components/ui/Button.jsx';
 import { AppShell, Header } from '../components/ui/layout.jsx';
 import { AlarmTimeModal } from '../components/rx/AlarmTimeModal.jsx';
 import { AlarmBar, DangerSignals, Disclaimer, GuideSummary, HowTo, LifeTips, Schedule } from '../components/rx/guide.jsx';
+import { createGuide } from '../api/prescriptionGuide.js';
 import { getPrescriptionDraft, setPrescriptionDraft } from './fe2Draft.js';
-import { createGuide, getGuide } from '../api/prescriptionFlow.js';
-import { alarmSlots, hhmm, todayKey, useRecords, withServerGuide } from '../state/records.jsx';
+import { alarmSlots, hhmm, todayKey, useRecords } from '../state/records.jsx';
 import { useSelectedChild } from '../state/selectedChild.jsx';
 import { BackLink } from './confirm.jsx';
 
@@ -18,28 +18,6 @@ import { BackLink } from './confirm.jsx';
  * 모바일: 한 단 (처방·알림 카드 → 하루 복약 일정 → 위험 신호 → 복용법 → 생활 습관 → 면책)
  * 데스크톱: 본문 672px + 오른쪽 단(위험 신호, 알림, 처방 다시 보기)
  */
-
-/** 건강기록 id('rx305') → 서버 처방 id(305). 예시 기록('p…', 'v…')이면 null */
-const prescriptionIdOf = (visitId) => (/^rx\d+$/.test(visitId ?? '') ? Number(visitId.slice(2)) : null);
-
-/** 서버 가이드 불러오기 — 방금 만든 것은 임시 데이터에서, 없으면(가이드 탭에서 연 경우 등) GET으로 */
-function useServerGuide(prescriptionId) {
-  const [server, setServer] = useState(() => {
-    const draft = getPrescriptionDraft();
-    return prescriptionId && draft?.prescriptionId === prescriptionId ? draft.serverGuide ?? null : null;
-  });
-  useEffect(() => {
-    if (!prescriptionId || server) return undefined;
-    let cancelled = false;
-    getGuide(prescriptionId)
-      .then((res) => !cancelled && setServer(res.guide_content))
-      .catch(() => {}); // 404(아직 없음)·연결 실패면 화면 기록 가이드를 그대로 보여요
-    return () => {
-      cancelled = true;
-    };
-  }, [prescriptionId, server]);
-  return server;
-}
 
 export function GuideScreen({ go, back, onTab }) {
   const { state } = useLocation();
@@ -53,9 +31,7 @@ export function GuideScreen({ go, back, onTab }) {
     return () => window.removeEventListener('popstate', onPop);
   }, [navigate]);
   const { childList } = useSelectedChild();
-  const localGuide = guideById(state?.guideId ?? getPrescriptionDraft()?.guideId);
-  const serverGuide = useServerGuide(prescriptionIdOf(localGuide?.visitId));
-  const guide = localGuide && withServerGuide(localGuide, serverGuide);
+  const guide = guideById(state?.guideId ?? getPrescriptionDraft()?.guideId);
   const child = guide && childList.find((c) => c.id === guide.childId);
   // 찾을 가이드가 없으면(주소로 바로 들어온 경우 등) 가이드 목록으로 보내요.
   if (!guide || !child) return <Navigate to="/guides" replace />;
@@ -122,28 +98,27 @@ const Sk = ({ className }) => <div className={`animate-pulse rounded-md bg-sunk 
 
 /**
  * S-05 만드는 중 — 실제 가이드와 같은 모양의 뼈대.
- * 서버 처방이면 가이드 생성 API(POST /prescriptions/{id}/guide, 약 20초)를 부르고, 끝나면 가이드로 넘어가요.
- * 예시 데이터(처방 id 없음)는 2.5초 뒤 넘어가요.
+ * 서버에 올린 처방은 가이드 만들기 API(8번)를 불러서, 받은 가이드를 저장하고 가이드 화면으로 가요. 실패하면 실패 화면으로 가요.
+ * 예시 처방(서버 없음)은 확인 화면에서 만든 가이드로 2.5초 뒤 넘어가요.
  */
 export function GuideLoadingScreen({ go, back, onTab }) {
   const draft = getPrescriptionDraft();
+  const { saveServerGuide } = useRecords();
   const { childList } = useSelectedChild();
   const childName = childList.find((c) => c.id === draft?.childId)?.name ?? '아이';
   const prescriptionId = draft?.prescriptionId;
-  const guideId = draft?.guideId;
   useEffect(() => {
-    const toGuide = () => go('guide', { guideId }, { replace: true });
     if (!prescriptionId) {
-      const t = setTimeout(toGuide, 2500);
+      const t = setTimeout(() => go('guide', { guideId: draft?.guideId }, { replace: true }), 2500);
       return () => clearTimeout(t);
     }
     let cancelled = false;
-    // 서버는 같은 처방으로 다시 불러도 새로 만들지 않고 기존 가이드를 돌려줘요(개발 모드에서 두 번 불려도 안전).
     createGuide(prescriptionId)
-      .then((res) => {
+      .then((response) => {
         if (cancelled) return;
-        setPrescriptionDraft({ ...getPrescriptionDraft(), serverGuide: res.guide_content });
-        toGuide();
+        const guideId = saveServerGuide(prescriptionId, response);
+        setPrescriptionDraft({ ...getPrescriptionDraft(), guideId });
+        go('guide', { guideId }, { replace: true });
       })
       .catch(() => {
         if (!cancelled) go('guide-error', undefined, { replace: true });
@@ -151,7 +126,9 @@ export function GuideLoadingScreen({ go, back, onTab }) {
     return () => {
       cancelled = true;
     };
-  }, [go, prescriptionId, guideId]);
+    // 화면에 들어올 때 한 번만 만들어요. 같은 처방을 두 번 부르면 createGuide가 한 번으로 합쳐요.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prescriptionId]);
   return (
     <AppShell tab="history" onTab={onTab} showTabs={false} width="reading" header={<Header title="" onBack={() => back('confirm')} />}>
       <div className="flex flex-1 flex-col gap-8 px-5 pb-8 pt-1 lg:px-0 lg:pb-12 lg:pt-4" aria-busy="true" aria-live="polite">
@@ -191,7 +168,7 @@ export function GuideErrorScreen({ go, back, onTab }) {
           <AlertTriangle size={28} strokeWidth={2} aria-hidden />
         </span>
         <h1 className="text-22 font-bold lg:text-28">가이드를 만들지 못했어요</h1>
-        <p className="max-w-[420px] text-15 text-muted">응답이 너무 오래 걸려 중간에 멈췄어요. 확인한 처방 내용은 저장돼 있으니 다시 만들면 돼요.</p>
+        <p className="max-w-[420px] text-15 text-muted">잠시 문제가 생겨 가이드를 만들지 못했어요. 확인한 처방 내용은 저장돼 있으니 다시 만들면 돼요.</p>
       </div>
     </AppShell>
   );

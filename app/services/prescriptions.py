@@ -84,11 +84,9 @@ def missing_fields(request: PrescriptionConfirmRequest) -> list[str]:
     if not (request.diagnosis_user_input or "").strip():
         missing.append("diagnosis_user_input")
     for i, m in enumerate(request.medications):
-        need = ["name", "route", "dosage_form"]
-        if m.route != Route.EXTERNAL:  # 외용제는 '적당량'이라 양·단위가 없을 수 있어요 (NFR-SAFE-004)
-            need += ["dose_per_time", "unit"]
-        need += ["max_daily_count"] if m.as_needed else ["daily_count", "total_days"]  # 필요시 약은 기간 없음
-        for key in need:
+        # 명세 7번: 약마다 이름·경로·제형만 필수다. 경로가 있어야 외용제에 '한 번에 바를 양'을 안내하지 않는다.
+        # 1회 양·단위·하루 횟수·기간은 OCR이 못 읽은 채로 보호자가 넘어갈 수 있어서 비워도 확정한다(가이드는 빈 칸을 '—'로 보여 준다).
+        for key in ("name", "route", "dosage_form"):
             value = getattr(m, key)
             if value is None or (isinstance(value, str) and not value.strip()):
                 missing.append(f"medications[{i}].{key}")

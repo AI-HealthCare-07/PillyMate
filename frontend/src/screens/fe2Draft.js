@@ -33,7 +33,12 @@ export function draftFromVisit(visit) {
     visitId: visit.id,
     prescriptionId: visit.prescriptionId ?? null,
     sourceType: visit.sourceType,
-    ocr: { hospital: visit.hospital, date: visit.prescriptionDate === undefined ? visit.date : visit.prescriptionDate, disease },
+    ocr: {
+      hospital: visit.hospital,
+      date: visit.prescriptionDate === undefined ? visit.date : visit.prescriptionDate,
+      disease,
+      diagnosisCodes: visit.diagnosisCodes ?? '',
+    },
     ocrMeds: ocrMeds.map((m) => ({ ...m })),
     guideReady: false,
   });
