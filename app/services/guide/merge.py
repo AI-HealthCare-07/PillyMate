@@ -122,7 +122,8 @@ INGREDIENT_RULES = [
     ("세파클러", "cefaclor"),  # [성분명] 세파클러 · 항생제 (세파클러건조시럽처럼 성분명이 곧 약 이름)
     ("클래리스로마이신", "clarithromycin"),  # [성분명] 클래리스로마이신 · 항생제
     ("클래리시드", "clarithromycin"),  # [상품명] 클래리시드건조시럽 = 클래리스로마이신
-    ("클라불란산", "amoxicillin/clavulanate"),  # [성분명] 클라불란산이 이름에 있으면 아목시실린·클라불란산 복합제 · 항생제
+    # [성분명] 클라불란산이 이름에 있으면 아목시실린·클라불란산 복합제 · 항생제
+    ("클라불란산", "amoxicillin/clavulanate"),
     ("오구멘틴", "amoxicillin/clavulanate"),  # [상품명] 오구멘틴 = 아목시실린·클라불란산 복합제
     ("오구엔틴", "amoxicillin/clavulanate"),  # OCR 오타 ('오구멘틴'을 잘못 읽은 것)
     ("아목시실린", "amoxicillin"),  # [성분명] 아목시실린 단독 · 항생제 (위 셋에 안 걸릴 때만)
