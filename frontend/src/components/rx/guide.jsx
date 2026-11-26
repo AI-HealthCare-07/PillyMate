@@ -181,13 +181,13 @@ function medFacts(m, schedule, asNeededText, visitMeds) {
     dose: structured ? m.dose : dose,
     perDay: structured ? m.perDay : slots.length ? `${slots.length}번` : '',
     days: structured ? m.days : days || visitDays,
-    // 먹는 때 지시: 처방전 값이 있으면 그 값, 없으면 일정에 들어간 때(아침·점심…)
+    // 용법: 처방전 값이 있으면 그 값, 없으면 일정에 들어간 때(아침·점심…)
     timing: structured ? m.timing : slots.join('·'),
     asNeeded,
   };
 }
 
-/** 약별 복용법 — 약 이름, 1회 양·하루·기간을 같은 칸에 맞추고, 먹는 때·필요할 때는 따로 표시. 아래에 가이드 설명과 주의사항 */
+/** 약별 복용법 — 약 이름, 1회 양·하루·기간을 같은 칸에 맞추고, 용법·필요할 때는 따로 표시. 아래에 가이드 설명과 주의사항 */
 export function HowTo({ items, schedule = [], asNeeded, visitMeds }) {
   return (
     <section className="flex flex-col gap-3">
@@ -208,7 +208,7 @@ export function HowTo({ items, schedule = [], asNeeded, visitMeds }) {
                       )}
                       {f.timing && (
                         <span className="rounded-pill bg-brand-soft px-2.5 py-0.5 text-12 font-semibold text-brand">
-                          <span className="sr-only">먹는 때: </span>{f.timing}
+                          <span className="sr-only">용법: </span>{f.timing}
                         </span>
                       )}
                     </p>

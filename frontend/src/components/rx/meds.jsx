@@ -4,9 +4,9 @@ import { Button, IconButton } from '../ui/Button.jsx';
 import { Field, SelectField } from '../ui/Field.jsx';
 import { Highlight, LowValue } from './Highlight.jsx';
 import { medFields } from '../../data/sample.js';
-import { TAKING_TIME_OPTIONS, toTakingTimeOption } from '../../data/takingTimeOptions.js';
+import { USAGE_MAX_LENGTH, USAGE_OPTIONS, initialUsage, usageMode } from '../../data/usageOptions.js';
 import { isAsNeeded } from '../../state/records.jsx';
-import { cardDoseUnit, withDoseUnit } from '../../api/prescriptionConfirm.js';
+import { TOPICAL_DOSE_DEFAULT, cardDoseUnit, isTopical, withDoseUnit } from '../../api/prescriptionConfirm.js';
 
 /** 새로 추가하는 약의 빈 값 */
 export const emptyMed = () => ({
@@ -16,20 +16,41 @@ export const emptyMed = () => ({
   ...Object.fromEntries(medFields.map(([k]) => [k, { value: '' }])),
 });
 
+/** 바르는 약의 '바르는 양' 드롭다운 — 기본값 하나와 직접 입력 */
+const TOPICAL_DOSE_OPTIONS = [TOPICAL_DOSE_DEFAULT];
+const TOPICAL_DOSE_MAX_LENGTH = 50;
+
+/** 칸 이름 — 바르는 약은 1회 양 대신 '바르는 양'이라고 불러요. */
+const fieldLabel = (med, k, label) => (k === 'dose' && isTopical(med) ? '바르는 양' : label);
+
 /**
- * 읽은 값을 보호자가 손대지 않아도 되게 다듬어요 — 처음 불러올 때와 저장할 때 써요.
- * - 1회 양이 숫자뿐이면('5') OCR 단위나 약 이름·제형으로 짐작한 단위를 붙여요('5mL').
- * - 먹는 때는 드롭다운의 세 가지(식전 30분·식후 30분·필요시) 중 가장 가까운 것으로 바꿔요.
+ * 처음 불러올 때와 보호자가 저장할 때 1회 양을 다듬어요.
+ * - 먹는 약: 숫자뿐이면('5') OCR 단위나 약 이름·제형으로 짐작한 단위를 붙여요('5mL').
+ * - 바르는 약: 비어 있으면 '적당량(얇게)'으로 채워요. 숫자 양은 안내하지 않아요.
  */
 export function fillGuessedFields(med) {
   const doseText = med.dose?.value ?? '';
+  if (isTopical(med)) {
+    return doseText.trim() ? med : { ...med, dose: { ...med.dose, value: TOPICAL_DOSE_DEFAULT, mode: 'select' } };
+  }
   const dose = withDoseUnit(doseText, cardDoseUnit(med));
-  const timing = toTakingTimeOption(med.timing?.value, isAsNeeded(med));
-  return {
-    ...med,
-    dose: dose === doseText ? med.dose : { ...med.dose, value: dose },
-    timing: timing === (med.timing?.value ?? '') ? med.timing : { ...med.timing, value: timing },
-  };
+  return dose === doseText ? med : { ...med, dose: { ...med.dose, value: dose } };
+}
+
+/**
+ * OCR로 읽은 약 카드를 확인 화면에 처음 올릴 때 — 1회 양 단위를 채우고, 용법은 문서 종류에 맞는 입력 방식으로 둬요.
+ * 처방전은 읽은 용법 글 그대로(직접 입력), 약봉투는 드롭다운 값(식전 30분·식후 30분·필요시)이 기본이에요.
+ * 바르는 약은 OCR이 읽은 숫자 양('1', '1g')이나 '적당량'을 '적당량(얇게)'으로 바꾸고, 그 밖의 글은 직접 입력으로 남겨요.
+ */
+export function prepareOcrMed(med, sourceType) {
+  const usage = initialUsage(med.timing?.value, { sourceType, asNeeded: isAsNeeded(med) });
+  const timing = { ...med.timing, value: usage.value, mode: usage.mode };
+  if (isTopical(med)) {
+    const text = String(med.dose?.value ?? '').trim();
+    const dose = !text || /^\d|적당/.test(text) ? { value: TOPICAL_DOSE_DEFAULT, mode: 'select' } : { value: text, mode: 'custom' };
+    return { ...med, dose: { ...med.dose, ...dose }, timing };
+  }
+  return { ...fillGuessedFields(med), timing };
 }
 
 /** 비어 있는 칸인지 — 필요할 때 먹는 약은 정해진 기간이 없어서 비어 있어도 돼요. 비어 있어도 가이드는 만들 수 있어요. */
@@ -54,12 +75,63 @@ function MedView({ med, onEdit, editRef }) {
       <dl className="grid grid-cols-2 gap-x-4 gap-y-3.5 pr-2 sm:grid-cols-4">
         {medFields.map(([k, label]) => (
           <div key={k} className="flex min-w-0 flex-col gap-0.5">
-            <dt className="text-13 text-muted">{label}</dt>
+            <dt className="text-13 text-muted">{fieldLabel(med, k, label)}</dt>
             <dd><Value v={med[k]} missing={isMissing(med, k)} /></dd>
           </div>
         ))}
       </dl>
     </>
+  );
+}
+
+const CUSTOM = '직접 입력'; // 드롭다운 맨 아래 항목 — 고르면 글 입력칸이 나와요
+const INPUT_BOX = 'h-13 w-full rounded-md border border-edge/50 bg-surface px-4 text-16 text-ink placeholder:text-faint hover:border-edge/70 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand-soft';
+
+/**
+ * 드롭다운 + 직접 입력 — 용법(식전 30분·식후 30분·필요시)과 바르는 양(적당량(얇게))에 써요.
+ * '직접 입력'을 고르면 아래에 글 입력칸이 나와요. 드롭다운 값에서 바꾸면 그 글을 입력칸에 넣어 둬서 조금만 고칠 수 있어요.
+ */
+function ChoiceField({ label, name, value, mode, options, onChange, helper, maxLength, placeholder }) {
+  const inputRef = useRef(null);
+  const switchedToCustom = useRef(false);
+  useEffect(() => {
+    if (mode === 'custom' && switchedToCustom.current) inputRef.current?.focus();
+    switchedToCustom.current = false;
+  }, [mode]);
+  const pick = (e) => {
+    const picked = e.target.value;
+    if (picked === CUSTOM) {
+      switchedToCustom.current = true;
+      onChange({ value, mode: 'custom' });
+    } else {
+      onChange({ value: picked, mode: 'select' });
+    }
+  };
+  return (
+    <div className={`flex flex-col gap-2 ${mode === 'custom' ? 'col-span-2' : ''}`}>
+      <SelectField
+        label={label}
+        name={name}
+        value={mode === 'custom' ? CUSTOM : value}
+        onChange={pick}
+        options={[...options, CUSTOM]}
+        helper={mode === 'custom' ? undefined : helper}
+      />
+      {mode === 'custom' && (
+        <>
+          <input
+            ref={inputRef}
+            aria-label={`${label} 직접 입력`}
+            value={value}
+            onChange={(e) => onChange({ value: e.target.value, mode: 'custom' })}
+            maxLength={maxLength}
+            placeholder={placeholder}
+            className={INPUT_BOX}
+          />
+          {helper && <p className="text-13 text-muted">{helper}</p>}
+        </>
+      )}
+    </div>
   );
 }
 
@@ -69,10 +141,19 @@ function MedEdit({ med, onSave, onCancel, onDelete }) {
     name: med.name,
     ...Object.fromEntries(medFields.map(([k]) => [k, med[k].value])),
   }));
+  const [usage, setUsage] = useState(() => ({ value: med.timing.value, mode: usageMode(med.timing) }));
+  // 바르는 양 — 지금은 먹는 약이어도 이름을 '○○연고'로 고치면 바로 쓸 수 있게 기본값을 들고 있어요.
+  const [amount, setAmount] = useState(() =>
+    isTopical(med) && med.dose.value
+      ? { value: med.dose.value, mode: med.dose.mode ?? (med.dose.value === TOPICAL_DOSE_DEFAULT ? 'select' : 'custom') }
+      : { value: TOPICAL_DOSE_DEFAULT, mode: 'select' },
+  );
   const [error, setError] = useState('');
   const formRef = useRef(null);
-  // 고치는 중인 약 이름으로 단위를 다시 짐작해요(새로 추가하는 약은 이름을 적어야 알 수 있어요).
-  const guessedUnit = cardDoseUnit({ ...med, name: draft.name });
+  // 고치는 중인 약 이름으로 단위와 바르는 약인지를 다시 짐작해요(새로 추가하는 약은 이름을 적어야 알 수 있어요).
+  const editing = { ...med, name: draft.name };
+  const guessedUnit = cardDoseUnit(editing);
+  const topical = isTopical(editing);
 
   useEffect(() => {
     formRef.current?.querySelector('input')?.focus();
@@ -96,6 +177,8 @@ function MedEdit({ med, onSave, onCancel, onDelete }) {
       name,
       isNew: false,
       ...Object.fromEntries(medFields.map(([k]) => [k, { value: draft[k].trim() }])),
+      timing: { value: usage.value.trim(), mode: usage.mode },
+      ...(topical ? { dose: { value: amount.value.trim(), mode: amount.mode } } : {}),
     });
   };
 
@@ -104,14 +187,30 @@ function MedEdit({ med, onSave, onCancel, onDelete }) {
       <Field label="약 이름" value={draft.name} onChange={set('name')} error={error} placeholder="예: 아목시실린 건조시럽" />
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {medFields.map(([k, label]) => (k === 'timing' ? (
-          <SelectField
+          <ChoiceField
             key={k}
             label={label}
             name={k}
-            value={draft[k]}
-            onChange={set(k)}
-            options={TAKING_TIME_OPTIONS}
+            value={usage.value}
+            mode={usage.mode}
+            options={USAGE_OPTIONS}
+            onChange={setUsage}
+            maxLength={USAGE_MAX_LENGTH}
+            placeholder="예: 1일 3회 식후 즉시, 자기 전"
             helper={med[k].low ? '흐릿하게 읽혔어요' : undefined}
+          />
+        ) : k === 'dose' && topical ? (
+          <ChoiceField
+            key={k}
+            label="바르는 양"
+            name={k}
+            value={amount.value}
+            mode={amount.mode}
+            options={TOPICAL_DOSE_OPTIONS}
+            onChange={setAmount}
+            maxLength={TOPICAL_DOSE_MAX_LENGTH}
+            placeholder="예: 손가락 한 마디만큼"
+            helper="바르는 약은 양을 숫자로 적지 않아도 돼요"
           />
         ) : (
           <Field

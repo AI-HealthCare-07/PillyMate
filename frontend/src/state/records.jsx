@@ -63,7 +63,7 @@ export function groupBySlot(doses) {
 const SLOTS_BY_COUNT = { 1: ['아침'], 2: ['아침', '저녁'], 3: ['아침', '점심', '저녁'], 4: ['아침', '점심', '저녁', '자기 전'] };
 const SLOT_ORDER = ['아침', '점심', '저녁', '자기 전'];
 const firstNumber = (text) => Number(String(text ?? '').match(/\d+/)?.[0] ?? 0);
-/** 열날 때·필요할 때 먹는 약인지 — 정해진 때와 기간이 없어요. 먹는 때를 '필요시'로 고른 약도 여기에 들어요. */
+/** 열날 때·필요할 때 먹는 약인지 — 정해진 때와 기간이 없어요. 용법을 '필요시'로 고른 약도 여기에 들어요. */
 export const isAsNeeded = (m) => /열|필요|아플|통증/.test(`${m.perDay?.value ?? ''} ${m.days?.value ?? ''} ${m.timing?.value ?? ''}`);
 
 /**
@@ -100,7 +100,7 @@ function guideFromMeds({ meds, ...base }) {
       name: m.name,
       how: [v(m.dose) && `한 번에 ${v(m.dose)}`, v(m.perDay) && (/^\d/.test(v(m.perDay)) ? `하루 ${v(m.perDay)}` : v(m.perDay)), v(m.timing)].filter(Boolean).join(', ') + ' 먹여요.',
       note: v(m.days) ? `복용 기간: ${v(m.days)}` : '',
-      // 약별 복용법 표에 쓰는 처방전 값 그대로(1회 양·하루 횟수·기간·먹는 때). 빈 값은 화면에서 '—'로 보여요.
+      // 약별 복용법 표에 쓰는 처방전 값 그대로(1회 양·하루 횟수·기간·용법). 빈 값은 화면에서 '—'로 보여요.
       dose: v(m.dose), perDay: v(m.perDay), days: v(m.days), timing: v(m.timing), asNeeded: isAsNeeded(m),
     })),
     life: [],
