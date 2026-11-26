@@ -30,7 +30,14 @@ def offline_generate_guide(child: dict, prescription: dict, medications: list[di
 
 class PrescriptionApiBase(TestCase):
     async def login(self, client: AsyncClient, email: str) -> dict[str, str]:
-        signup = {"email": email, "password": PASSWORD, "name": "김보호", "birth_date": "1990-05-14"}
+        signup = {
+            "email": email,
+            "password": PASSWORD,
+            "name": "김보호",
+            "birth_date": "1990-05-14",
+            "gender": "FEMALE",
+            "phone_number": "010-1234-5678",
+        }
         await client.post("/api/v1/auth/signup", json=signup)
         res = await client.post("/api/v1/auth/login", json={"email": email, "password": PASSWORD})
         return {"Authorization": f"Bearer {res.json()['access_token']}"}
