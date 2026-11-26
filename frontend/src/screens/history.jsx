@@ -42,13 +42,15 @@ export function HistoryScreen({ go, onTab }) {
 
 const WEEK = ['일', '월', '화', '수', '목', '금', '토'];
 
-/** 하루 상태 — 모두 먹임 / 일부 / 빼먹음 / 앞으로 / 없음 */
+/** 하루 상태 — 모두 먹임 / 일부 / 빼먹음 / 앞으로 / 기록 없음 / 없음 */
 function dayStatus(doses, date, today) {
   if (!doses.length) return 'none';
   const n = doses.filter((d) => d.given).length;
   if (n === doses.length) return 'done';
   // 오늘은 하루가 끝나지 않았으니, 다 먹이기 전까진 '먹일 예정'으로 보여요.
   if (date >= today) return 'upcoming';
+  // 지난날인데 체크도 취소도 한 적이 없으면 못 먹인 게 아니라 '기록 없음'이에요.
+  if (!doses.some((d) => d.recorded)) return 'unknown';
   return n ? 'partial' : 'missed';
 }
 
@@ -57,12 +59,14 @@ const DOT = {
   partial: 'bg-warn',
   missed: 'bg-danger',
   upcoming: 'border-[1.5px] border-brand bg-surface',
+  unknown: 'bg-edge',
 };
 const LEGEND = [
   ['done', '다 먹였어요'],
   ['partial', '일부 빼먹었어요'],
   ['missed', '못 먹였어요'],
   ['upcoming', '먹일 예정'],
+  ['unknown', '기록 없음'],
 ];
 
 function MedCalendar({ childId }) {
@@ -175,13 +179,15 @@ function MedCalendar({ childId }) {
           <Panel as="ul" aria-label="이 날 먹일 약">
             {selSlots.map((g, j) => {
               const partial = !g.done && g.given > 0;
+              // 지난 때인데 체크 기록이 하나도 없으면 '안 먹였어요' 대신 '기록 없음'으로 읽어 줘요.
+              const unrecorded = !future && !g.done && !g.doses.some((d) => d.recorded) && selected < today;
               return (
                 <li key={g.slot} className={j ? 'border-t border-line' : ''}>
                   <button
                     type="button"
                     disabled={future}
                     aria-pressed={g.done}
-                    aria-label={`${g.slot} 약 ${g.doses.length}개, ${future ? '먹일 예정' : g.done ? '먹였어요' : partial ? `${g.doses.length}개 중 ${g.given}개 먹였어요` : '안 먹였어요'}`}
+                    aria-label={`${g.slot} 약 ${g.doses.length}개, ${future ? '먹일 예정' : g.done ? '먹였어요' : partial ? `${g.doses.length}개 중 ${g.given}개 먹였어요` : unrecorded ? '기록 없음' : '안 먹였어요'}`}
                     onClick={() => toggleSlot(g)}
                     className="flex min-h-[60px] w-full items-center gap-3.5 px-4 py-3.5 text-left enabled:hover:bg-paper disabled:cursor-default lg:px-5"
                   >
