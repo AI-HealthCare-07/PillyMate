@@ -92,3 +92,33 @@ def test_how_to_life_danger():
     assert all(h["how"] for h in v["howTo"])
     assert 0 < len(v["life"]) <= 8 and len(v["life"]) == len(set(v["life"]))
     assert any(d.startswith("바로 응급실:") for d in v["danger"])
+
+
+def test_how_to_has_table_facts_for_regular_and_as_needed():
+    """약별 복용법 표 칸 — 필요시 약도 1회 양·하루 최대 횟수가 보여야 한다(일정표에 없어서 비던 문제)."""
+    how_to = {h["name"]: h for h in view()["howTo"]}
+    regular = how_to["세파클러건조시럽(내복)/60(1)mL/병"]
+    assert (regular["dose"], regular["perDay"], regular["days"], regular["asNeeded"]) == ("4.2mL", "3번", "5일", False)
+    assert regular["timing"].startswith("아침·점심·저녁")
+    prn = how_to["세토펜현탁액(아세트아미노펜)"]
+    assert (prn["dose"], prn["perDay"], prn["days"], prn["timing"], prn["asNeeded"]) == (
+        "5mL",
+        "최대 4번",
+        "3일",
+        "",
+        True,
+    )
+
+
+def test_old_view_is_rebuilt_from_detail():
+    from app.services.prescriptions import current_view
+
+    new = view()
+    old = {k: v for k, v in new.items() if k != "howTo"} | {
+        "schema_version": "fe-1",
+        "howTo": [{"name": h["name"], "how": h["how"], "note": h["note"]} for h in new["howTo"]],
+    }
+    rebuilt = current_view(old)
+    assert rebuilt["schema_version"] == new["schema_version"]
+    assert all("dose" in h for h in rebuilt["howTo"])
+    assert current_view({"schema_version": "fe-1", "howTo": []}) == {"schema_version": "fe-1", "howTo": []}
