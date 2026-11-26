@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { hasLoginToken } from '../api/children.js';
-import { fetchChildPrescriptions, fetchPrescriptionDetail } from '../api/prescriptionRecords.js';
+import { deletePrescription, fetchChildPrescriptions, fetchPrescriptionDetail } from '../api/prescriptionRecords.js';
 import { toConfirmMed } from '../api/prescriptionRegistration.js';
 import { courses as sampleCourses, guides as sampleGuides, sampleMissed, visits as sampleVisits } from '../data/sample.js';
 import { useSelectedChild } from './selectedChild.jsx';
@@ -239,14 +239,18 @@ const RecordsContext = createContext(null);
  * TODO(API): 처방 확정 API(7번)가 머지되면 확인한 약 목록을 서버에 저장하고, 복약 체크도 서버에 저장.
  */
 export function RecordsProvider({ children }) {
-  const [state, setState] = useState({ doses: {}, visits: [], courses: [], guides: [], alarmOff: [], alarmSince: {}, alarmTimes: {}, removedChildIds: [] });
+  const [state, setState] = useState({ doses: {}, visits: [], courses: [], guides: [], alarmOff: [], alarmSince: {}, alarmTimes: {}, removedChildIds: [], deletedPrescriptionIds: [] });
   const server = useServerPrescriptionRecords();
 
   const value = useMemo(() => {
     // 이번 방문에서 확인한 기록 > 서버 기록 > 예시 기록. 같은 처방(id)이거나 같은 날·같은 병원이면 앞의 것만 보여요.
     const localIds = new Set(state.visits.map((v) => v.id));
     const localKeys = new Set(state.visits.map(visitKey));
-    const serverVisits = server.visits.filter((v) => !localIds.has(v.id) && !localKeys.has(visitKey(v)));
+    // 지운 처방은 서버 기록을 다시 불러오기 전에도 바로 숨겨요.
+    const deleted = new Set(state.deletedPrescriptionIds);
+    const serverVisits = server.visits.filter(
+      (v) => !deleted.has(v.prescriptionId) && !localIds.has(v.id) && !localKeys.has(visitKey(v)),
+    );
     const shownServerIds = new Set(serverVisits.map((v) => v.id));
     const addedKeys = new Set([...state.visits, ...serverVisits].map(visitKey));
     // 다시 올린 처방이 예시 기록과 같은 날·같은 병원이면 예시 기록 대신 새 기록을 보여요.
@@ -326,6 +330,24 @@ export function RecordsProvider({ children }) {
       addVisit: (visit) =>
         setState((prev) => ({ ...prev, visits: [{ id: `u${Date.now()}`, source: 'manual', ...visit }, ...prev.visits] })),
       removeVisit: (id) => setState((prev) => ({ ...prev, visits: prev.visits.filter((v) => v.id !== id) })),
+      /**
+       * 서버에 올린 처방을 지워요(9절 DELETE). 성공하면 그 처방의 건강기록·복약 일정·가이드를 화면에서도 지워요.
+       * 이미 지워진 처방(404)도 지운 것으로 봐요. 그 밖의 실패는 PrescriptionRecordsError를 그대로 던져요.
+       */
+      deletePrescription: async (visit) => {
+        try {
+          await deletePrescription(visit.prescriptionId);
+        } catch (error) {
+          if (error.status !== 404) throw error;
+        }
+        setState((prev) => ({
+          ...prev,
+          visits: prev.visits.filter((v) => v.id !== visit.id),
+          courses: prev.courses.filter((c) => c.visitId !== visit.id),
+          guides: prev.guides.filter((g) => g.visitId !== visit.id),
+          deletedPrescriptionIds: [...prev.deletedPrescriptionIds, visit.prescriptionId],
+        }));
+      },
       /** 아이를 삭제할 때 — 그 아이의 복약 체크·건강기록·복약 일정을 모두 지워요. */
       forgetChild: (childId) =>
         // ...prev로 알림 설정(alarmOff·alarmSince·alarmTimes)처럼 여기서 안 건드리는 값도 그대로 남겨요.
