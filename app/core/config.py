@@ -54,8 +54,10 @@ class Config(BaseSettings):
 
     # 식약처 공공데이터 API (공공데이터포털 일반 인증키 하나로 함께 씀. API마다 활용신청은 따로)
     MFDS_API_KEY: str = ""  # 비밀값: .env 에만 넣는다 (Decoding 키)
-    MFDS_PERMIT_URL: str = "https://apis.data.go.kr/1471000/DrugPrdtPrmsnInfoService08"  # 허가정보: 보험코드·이름 → 주성분
-    MFDS_DUR_URL: str = "https://apis.data.go.kr/1471000/DURPrdlstInfoService03"  # DUR: 연령금기·효능군중복·병용금기 (2차)
+    # 허가정보: 보험코드·이름 → 주성분
+    MFDS_PERMIT_URL: str = "https://apis.data.go.kr/1471000/DrugPrdtPrmsnInfoService08"
+    # DUR: 연령금기·효능군중복·병용금기 (2차)
+    MFDS_DUR_URL: str = "https://apis.data.go.kr/1471000/DURPrdlstInfoService03"
 
     # 데모 로그인(A1): 배포 환경에서 false로 끄면 404. 데모 보호자는 app/scripts/seed_guardians.py로 만든다.
     DEMO_LOGIN_ENABLED: bool = False
