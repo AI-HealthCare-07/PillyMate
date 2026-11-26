@@ -30,9 +30,21 @@ def offline_generate_guide(child: dict, prescription: dict, medications: list[di
 
 class PrescriptionApiBase(TestCase):
     async def login(self, client: AsyncClient, email: str) -> dict[str, str]:
-        signup = {"email": email, "password": PASSWORD, "name": "김보호", "birth_date": "1990-05-14"}
-        await client.post("/api/v1/auth/signup", json=signup)
+        # 전화번호가 중복 불가일 수 있어서 이메일마다 다른 번호를 만들어요 (한 테스트에서 2명 가입하는 경우 대비)
+        phone = f"010{abs(hash(email)) % 10 ** 8:08d}"
+        signup = {
+            "email": email,
+            "password": PASSWORD,
+            "name": "김보호",
+            "birth_date": "1990-05-14",
+            "gender": "FEMALE",
+            "phone_number": f"010{abs(hash(email)) % 10**8:08d}",
+        }
+        joined = await client.post("/api/v1/auth/signup", json=signup)
         res = await client.post("/api/v1/auth/login", json={"email": email, "password": PASSWORD})
+        assert res.status_code == 200, (
+            f"가입 {joined.status_code}: {joined.text}\n로그인 {res.status_code}: {res.text}"
+        )
         return {"Authorization": f"Bearer {res.json()['access_token']}"}
 
     async def prepare(self, client: AsyncClient, email: str = "rx@example.com"):

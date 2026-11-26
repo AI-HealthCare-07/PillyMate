@@ -25,7 +25,7 @@ from app.dtos.prescriptions import (
 )
 from app.models.children import Child
 from app.models.guides import Guide
-from app.models.medications import Medication
+from app.models.medications import Medication, Route
 from app.models.prescriptions import Prescription, PrescriptionStatus
 from app.repositories.prescription_repository import PrescriptionRepository
 from app.services.guide.service import generate_guide
@@ -84,8 +84,10 @@ def missing_fields(request: PrescriptionConfirmRequest) -> list[str]:
     if not (request.diagnosis_user_input or "").strip():
         missing.append("diagnosis_user_input")
     for i, m in enumerate(request.medications):
-        need = ["name", "dose_per_time", "unit", "total_days", "route", "dosage_form"]
-        need.append("max_daily_count" if m.as_needed else "daily_count")
+        need = ["name", "route", "dosage_form"]
+        if m.route != Route.EXTERNAL:  # 외용제는 '적당량'이라 양·단위가 없을 수 있어요 (NFR-SAFE-004)
+            need += ["dose_per_time", "unit"]
+        need += ["max_daily_count"] if m.as_needed else ["daily_count", "total_days"]  # 필요시 약은 기간 없음
         for key in need:
             value = getattr(m, key)
             if value is None or (isinstance(value, str) and not value.strip()):
@@ -216,7 +218,7 @@ class PrescriptionService:
                     "prescription_date": request.prescription_date or p.prescription_date,
                     "hospital_name": request.hospital_name or p.hospital_name,
                     "diagnosis_user_input": (request.diagnosis_user_input or "").strip(),
-                    "symptom_notes": request.symptom_notes,
+                    "symptom_notes": request.symptom_notes if request.symptom_notes is not None else p.symptom_notes,
                     "status": PrescriptionStatus.CONFIRMED,
                 },
             )
