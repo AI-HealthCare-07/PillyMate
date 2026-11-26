@@ -17,6 +17,20 @@ class ChildCreateRequest(BaseModel):
     notes: str | None = None
 
 
+class ChildUpdateRequest(BaseModel):
+    """자녀 정보 수정 (명세 9절 PATCH /children/{child_id}).
+
+    보낸 항목만 바꾼다. weight_kg·allergies·notes는 null(또는 빈 문자열)을 보내면 비운다.
+    name·birth_date는 비울 수 없다. 동의 시각(consent_agreed_at)은 등록 때 값을 그대로 둔다.
+    """
+
+    name: Annotated[str | None, Field(max_length=50)] = None
+    birth_date: date | None = None
+    weight_kg: float | None = None
+    allergies: str | None = None
+    notes: str | None = None
+
+
 class ChildResponse(BaseModel):
     """3번 등록 응답이자 4번 목록의 한 줄.
 
