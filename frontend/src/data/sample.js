@@ -16,7 +16,7 @@ export const medFields = [
   ['dose', '1회 양'],
   ['perDay', '하루'],
   ['days', '기간'],
-  ['timing', '먹는 때'],
+  ['timing', '용법'],
 ];
 
 export const prescription = {

@@ -7,7 +7,7 @@ import { Modal } from '../components/ui/Modal.jsx';
 import { AppShell, Header } from '../components/ui/layout.jsx';
 import { RxPaper } from '../components/rx/RxPaper.jsx';
 import { Highlight, LowConfidenceBanner } from '../components/rx/Highlight.jsx';
-import { MedList, emptyMed, fillGuessedFields, isMissing } from '../components/rx/meds.jsx';
+import { MedList, emptyMed, fillGuessedFields, isMissing, prepareOcrMed } from '../components/rx/meds.jsx';
 import { confirmPrescription, toConfirmItem } from '../api/prescriptionConfirm.js';
 import { suggestDiseaseName } from '../data/diseaseCodes.js';
 import { medFields, meds as sampleMeds, prescription as rx } from '../data/sample.js';
@@ -87,8 +87,8 @@ export function ConfirmScreen({ go, back, onTab }) {
   };
   // TODO(API): OCR 응답의 약 목록을 정규화해 초기 상태로 사용하세요.
   // 현재 목록은 데모 데이터이며 업로드한 이미지에서 읽어낸 결과가 아닙니다.
-  // 숫자만 읽힌 1회 양에는 단위를 붙이고, 먹는 때는 드롭다운 값(식전 30분·식후 30분·필요시)으로 맞춰 둬요.
-  const [meds, setMeds] = useState(() => (draft?.ocrMeds ?? sampleMeds).map(fillGuessedFields));
+  // 숫자만 읽힌 1회 양에는 단위를 붙이고, 용법은 처방전이면 읽은 글 그대로(직접 입력), 약봉투면 드롭다운 값으로 둬요.
+  const [meds, setMeds] = useState(() => (draft?.ocrMeds ?? sampleMeds).map((m) => prepareOcrMed(m, draft?.sourceType)));
   // 병명 — 보호자가 처방 올리기에서 적은 값이 먼저예요. 없으면 처방전 질병분류기호로 병명을 제안해요(보호자가 확인·수정).
   const suggestion = suggestDiseaseName(ocr.diagnosisCodes);
   const typedDisease = (draft?.disease || ocr.disease || '').trim();
@@ -140,7 +140,7 @@ export function ConfirmScreen({ go, back, onTab }) {
       fail('추가 중인 약을 저장하고 약 이름을 확인해 주세요.');
       return;
     }
-    // 1회 양·하루 횟수·기간·먹는 때는 비어 있어도 가이드를 만들어요. 빈 칸은 위 안내와 카드의 노란 표시로만 알려요.
+    // 1회 양·하루 횟수·기간·용법은 비어 있어도 가이드를 만들어요. 빈 칸은 위 안내와 카드의 노란 표시로만 알려요.
     const diseaseName = disease.trim();
     if (!diseaseName) {
       setDiseaseError('병명을 적어 주세요.');
