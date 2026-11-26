@@ -143,6 +143,15 @@ def infer_prescription_unit(name, dosage_form):
         return "mL"
     return DEFAULT_UNIT_BY_FORM.get(dosage_form)
 
+def bag_unit(raw_unit, name, dosage_form):
+    """약봉투의 단위. 읽은 단위가 허용 목록에 없으면(앰플·흡입 등) 짐작하지 않고 None.
+
+    짐작(약 이름의 포장 표기·제형)은 약봉투에 단위가 아예 없을 때만 한다.
+    예: '1앰플씩'을 이름의 '/2mL'로 바꾸면 1앰플(2mL)이 1mL로 보여 양이 달라진다.
+    """
+    if raw_unit and str(raw_unit).strip():
+        return normalize_unit(raw_unit)
+    return infer_prescription_unit(name, dosage_form)
 
 def clean_usage(text):
     """'->식후 30분' 같은 화살표·기호를 떼어 낸다."""
@@ -257,7 +266,7 @@ def format_bag_guide_medication(drug, taking_time):
         insurance_code=None,
         dose_per_time=amount,
         # 약봉투 표에 단위가 없거나 흐릿하면 처방전처럼 약 이름·제형으로 짐작한다.
-        unit=normalize_unit(drug.get("단위")) or infer_prescription_unit(name, dosage_form),
+        unit=bag_unit(drug.get("단위"), name, dosage_form),
         daily_count=drug.get("1일횟수"),
         total_days=drug.get("일수"),
         as_needed=as_needed,
