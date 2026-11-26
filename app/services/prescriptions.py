@@ -29,7 +29,7 @@ from app.models.medications import Medication
 from app.models.prescriptions import Prescription, PrescriptionStatus
 from app.repositories.prescription_repository import PrescriptionRepository
 from app.services.guide.service import generate_guide
-from app.services.guide.view import to_view
+from app.services.guide.view import VIEW_SCHEMA_VERSION, to_view
 
 logger = logging.getLogger(__name__)
 
@@ -168,12 +168,24 @@ def guide_inputs(child: Child, p: Prescription, meds: list[Medication]) -> tuple
     return child_d, prescription_d, meds_d
 
 
+def current_view(content: dict[str, Any]) -> dict[str, Any]:
+    """예전 화면 형식으로 저장된 가이드는 원본(detail)으로 다시 만든다. LLM을 다시 부르지 않고 DB도 바꾸지 않는다."""
+    detail = content.get("detail")
+    if content.get("schema_version") == VIEW_SCHEMA_VERSION or not isinstance(detail, dict):
+        return content
+    try:
+        return to_view(detail)
+    except (KeyError, TypeError, AttributeError):
+        logger.warning("예전 가이드를 새 화면 형식으로 바꾸지 못해 그대로 보냄", exc_info=True)
+        return content
+
+
 def guide_response(guide: Guide) -> GuideResponse:
     return GuideResponse(
         guide_id=guide.id,
         prescription_id=guide.prescription_id,  # type: ignore[attr-defined]
         created_at=guide.created_at,
-        guide_content=guide.guide_content,  # type: ignore[arg-type]
+        guide_content=current_view(guide.guide_content),  # type: ignore[arg-type]
     )
 
 
