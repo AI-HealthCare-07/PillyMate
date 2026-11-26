@@ -3,6 +3,7 @@ import pytest
 from ocr.ocr_result_formatter import (
     display_drug_name,
     format_bag_guide_medication,
+    format_medicine_bag_result,
     format_prescription_medication,
     infer_dosage_form,
     infer_prescription_unit,
@@ -87,6 +88,22 @@ def test_bag_taking_time_applies_only_to_oral_regular_drugs():
     assert external["usage"] == "적당량"
     assert external["dose_per_time"] is None
     assert external["route"] == "EXTERNAL"
+
+
+@pytest.mark.parametrize(
+    ("guide_date", "receipt_date", "expected"),
+    [
+        ("2026-11-12", "2026-11-12", "2026-11-12"),
+        ("2026-11-12", None, "2026-11-12"),
+        (None, "2026-11-03", "2026-11-03"),  # 복약안내 쪽을 못 읽으면 영수증 쪽 조제일자
+        (None, None, None),
+    ],
+)
+def test_bag_prescription_date_is_dispensing_date(guide_date, receipt_date, expected):
+    """약봉투에는 처방일이 없다. 약 받은 날(조제일자)을 prescription_date로 돌려준다."""
+    parsed = {"복약안내": {"조제일자": guide_date}, "영수증": {"조제일자": receipt_date}}
+
+    assert format_medicine_bag_result(parsed)["prescription_date"] == expected
 
 
 @pytest.mark.parametrize(

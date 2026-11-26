@@ -5,7 +5,8 @@ import { Button } from '../components/ui/Button.jsx';
 import { AppShell, Header } from '../components/ui/layout.jsx';
 import { AlarmTimeModal } from '../components/rx/AlarmTimeModal.jsx';
 import { AlarmBar, DangerSignals, Disclaimer, GuideSummary, HowTo, LifeTips, Schedule } from '../components/rx/guide.jsx';
-import { getPrescriptionDraft } from './fe2Draft.js';
+import { createGuide } from '../api/prescriptionGuide.js';
+import { getPrescriptionDraft, setPrescriptionDraft } from './fe2Draft.js';
 import { alarmSlots, hhmm, todayKey, useRecords } from '../state/records.jsx';
 import { useSelectedChild } from '../state/selectedChild.jsx';
 import { BackLink } from './confirm.jsx';
@@ -17,58 +18,6 @@ import { BackLink } from './confirm.jsx';
  * 모바일: 한 단 (처방·알림 카드 → 하루 복약 일정 → 위험 신호 → 복용법 → 생활 습관 → 면책)
  * 데스크톱: 본문 672px + 오른쪽 단(위험 신호, 알림, 처방 다시 보기)
  */
-
-// 복약 가이드 생성 및 조회 API
-async function requestGuide(prescriptionId, method = 'POST') {
-  const token = sessionStorage.getItem('access_token');
-
-  if (!token) {
-    throw new Error('로그인이 필요합니다.');
-  }
-
-  if (!prescriptionId) {
-    throw new Error('처방전 ID가 없습니다.');
-  }
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 90000);
-
-  try {
-    const response = await fetch(
-      `/api/v1/prescriptions/${encodeURIComponent(prescriptionId)}/guide`,
-      {
-        method,
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        signal: controller.signal,
-      }
-    );
-
-    if (response.status === 401) {
-      sessionStorage.removeItem('access_token');
-      throw new Error('로그인이 만료되었습니다.');
-    }
-
-    if (!response.ok) {
-      throw new Error('복약 가이드 요청에 실패했습니다.');
-    }
-
-    const data = await response.json();
-    return data;
-
-  } catch (error) {
-    if (error.name === 'AbortError') {
-      throw new Error('응답 시간이 초과되었습니다.');
-    }
-
-    throw error;
-
-  } finally {
-    clearTimeout(timeout);
-  }
-}
 
 export function GuideScreen({ go, back, onTab }) {
   const { state } = useLocation();
@@ -147,21 +96,45 @@ export function GuideScreen({ go, back, onTab }) {
 
 const Sk = ({ className }) => <div className={`animate-pulse rounded-md bg-sunk ${className}`} />;
 
-/** S-05 만드는 중 — 실제 가이드와 같은 모양의 뼈대. 데모에서는 2.5초 뒤 가이드로 넘어가요 */
+/**
+ * S-05 만드는 중 — 실제 가이드와 같은 모양의 뼈대.
+ * 서버에 올린 처방은 가이드 만들기 API(8번)를 불러서, 받은 가이드를 저장하고 가이드 화면으로 가요. 실패하면 실패 화면으로 가요.
+ * 예시 처방(서버 없음)은 확인 화면에서 만든 가이드로 2.5초 뒤 넘어가요.
+ */
 export function GuideLoadingScreen({ go, back, onTab }) {
   const draft = getPrescriptionDraft();
+  const { saveServerGuide } = useRecords();
   const { childList } = useSelectedChild();
   const childName = childList.find((c) => c.id === draft?.childId)?.name ?? '아이';
+  const prescriptionId = draft?.prescriptionId;
   useEffect(() => {
-    const t = setTimeout(() => go('guide', { guideId: draft?.guideId }, { replace: true }), 2500);
-    return () => clearTimeout(t);
-  }, [go, draft?.guideId]);
+    if (!prescriptionId) {
+      const t = setTimeout(() => go('guide', { guideId: draft?.guideId }, { replace: true }), 2500);
+      return () => clearTimeout(t);
+    }
+    let cancelled = false;
+    createGuide(prescriptionId)
+      .then((response) => {
+        if (cancelled) return;
+        const guideId = saveServerGuide(prescriptionId, response);
+        setPrescriptionDraft({ ...getPrescriptionDraft(), guideId });
+        go('guide', { guideId }, { replace: true });
+      })
+      .catch(() => {
+        if (!cancelled) go('guide-error', undefined, { replace: true });
+      });
+    return () => {
+      cancelled = true;
+    };
+    // 화면에 들어올 때 한 번만 만들어요. 같은 처방을 두 번 부르면 createGuide가 한 번으로 합쳐요.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prescriptionId]);
   return (
     <AppShell tab="history" onTab={onTab} showTabs={false} width="reading" header={<Header title="" onBack={() => back('confirm')} />}>
       <div className="flex flex-1 flex-col gap-8 px-5 pb-8 pt-1 lg:px-0 lg:pb-12 lg:pt-4" aria-busy="true" aria-live="polite">
         <div className="flex flex-col gap-2">
           <h1 className="text-22 font-bold lg:text-28">가이드를 만들고 있어요</h1>
-          <p className="text-15 text-muted">처방과 {childName}의 정보를 정리하는 중이에요. 10초쯤 걸릴 수 있어요.</p>
+          <p className="text-15 text-muted">처방과 {childName}의 정보를 정리하는 중이에요. 20초쯤 걸릴 수 있어요.</p>
         </div>
         <div className="flex flex-col gap-3">
           <Sk className="h-[18px] w-[120px]" />
@@ -195,7 +168,7 @@ export function GuideErrorScreen({ go, back, onTab }) {
           <AlertTriangle size={28} strokeWidth={2} aria-hidden />
         </span>
         <h1 className="text-22 font-bold lg:text-28">가이드를 만들지 못했어요</h1>
-        <p className="max-w-[420px] text-15 text-muted">응답이 너무 오래 걸려 중간에 멈췄어요. 확인한 처방 내용은 저장돼 있으니 다시 만들면 돼요.</p>
+        <p className="max-w-[420px] text-15 text-muted">잠시 문제가 생겨 가이드를 만들지 못했어요. 확인한 처방 내용은 저장돼 있으니 다시 만들면 돼요.</p>
       </div>
     </AppShell>
   );

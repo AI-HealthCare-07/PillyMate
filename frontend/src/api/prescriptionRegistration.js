@@ -78,6 +78,10 @@ export function toConfirmMed(med) {
     medicationId: med.medication_id,
     name: med.name,
     confidence: med.confidence,
+    // 카드에는 보이지 않지만 확정 API(7번)에 보낼 값. 1회 양에 단위를 지우고 고쳐도 원래 단위를 써요.
+    unit: med.unit ?? null,
+    route: med.route ?? null,
+    dosageForm: med.dosage_form ?? null,
     ...Object.fromEntries(
       Object.entries(values).map(([key, value]) => [key, med.low_confidence && value ? { value, low: true } : { value }]),
     ),
@@ -93,9 +97,11 @@ export function draftFieldsFromRegistration(data) {
     ocrConfidence: data.ocr_confidence,
     ocr: {
       hospital: data.hospital_name ?? '병원 이름을 읽지 못했어요',
-      // 약봉투에는 처방일이 없어서 null이에요. 확인 화면에서 약 받은 날을 직접 고르게 해요.
+      // 약봉투는 처방일 대신 조제일자(약 받은 날)가 와요. 못 읽었으면 null이라 확인 화면에서 직접 고르게 해요.
       date: data.prescription_date ?? null,
-      disease: data.diagnosis_user_input || data.diagnosis_extracted || '',
+      // 질병분류기호(J00 등)는 참고용이라 병명으로 바로 쓰지 않아요. 확인 화면에서 표로 병명을 제안해요.
+      disease: data.diagnosis_user_input || '',
+      diagnosisCodes: data.diagnosis_extracted ?? '',
     },
     ocrMeds: data.medications.map(toConfirmMed),
   };

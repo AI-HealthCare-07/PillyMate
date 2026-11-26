@@ -282,19 +282,21 @@ def format_bag_receipt_medication(drug):
 def format_medicine_bag_result(parsed):
     """medicine_bag_parser.parse() 결과 → 명세 형식.
 
-    약봉투에는 처방일·질병분류기호가 없으므로 None이다 (명세 7절).
-    조제일자는 처방일과 다를 수 있어서 prescription_date에 넣지 않는다.
+    약봉투에는 처방일·질병분류기호가 없다. 대신 약 받은 날(조제일자)을 prescription_date로 돌려준다
+    (11/26 결정: 앱은 약봉투의 날짜를 '약 받은 날'로 보여 주고 복약 일정을 이 날부터 시작한다).
+    조제일자는 복약안내 쪽 값을 먼저 쓰고, 못 읽었으면 영수증 쪽 값을 쓴다. 질병분류기호는 None이다.
     """
     guide = parsed.get("복약안내") or {}
+    receipt = parsed.get("영수증") or {}
     taking_time = (parsed.get("복용표시") or {}).get("복용시점")
     guide_drugs = parsed.get("약품") or []
     if guide_drugs:
         medications = [format_bag_guide_medication(drug, taking_time) for drug in guide_drugs]
     else:
-        receipt_drugs = (parsed.get("영수증") or {}).get("약품내역") or []
+        receipt_drugs = receipt.get("약품내역") or []
         medications = [format_bag_receipt_medication(drug) for drug in receipt_drugs]
     return {
-        "prescription_date": None,
+        "prescription_date": guide.get("조제일자") or receipt.get("조제일자"),
         "hospital_name": guide.get("병원"),
         "diagnosis_extracted": None,
         "medications": medications,

@@ -8,6 +8,8 @@ import { AppShell, Header } from '../components/ui/layout.jsx';
 import { RxPaper } from '../components/rx/RxPaper.jsx';
 import { Highlight, LowConfidenceBanner } from '../components/rx/Highlight.jsx';
 import { MedList, emptyMed } from '../components/rx/meds.jsx';
+import { confirmItemProblem, confirmPrescription, toConfirmItem } from '../api/prescriptionConfirm.js';
+import { suggestDiseaseName } from '../data/diseaseCodes.js';
 import { medFields, meds as sampleMeds, prescription as rx } from '../data/sample.js';
 import { getPrescriptionDraft, setPrescriptionDraft } from './fe2Draft.js';
 import { dateParts, isAsNeeded, todayKey, useRecords } from '../state/records.jsx';
@@ -30,6 +32,17 @@ export function BackLink({ children, onClick }) {
       {children}
     </button>
   );
+}
+
+/** 병명 칸 아래 안내 — 어디서 채운 값인지 알려 줘서 보호자가 맞는지 확인하게 해요. */
+function diseaseHelperText({ typed, suggestion, current }) {
+  const codes = suggestion.codes.join(', ');
+  if (typed || !codes) return '진료받을 때 들은 병명을 적어 주세요. 병에 맞는 돌봄 방법을 고를 때 써요.';
+  if (suggestion.name && current === suggestion.name) {
+    return `처방전 질병분류기호(${codes})로 채운 병명이에요. 맞는지 확인하고, 다르면 고쳐 주세요.`;
+  }
+  if (!suggestion.name) return `처방전 질병분류기호는 ${codes}예요. 진료받을 때 들은 병명을 적어 주세요.`;
+  return `처방전 질병분류기호: ${codes}`;
 }
 
 /**
@@ -60,7 +73,7 @@ export function ConfirmScreen({ go, back, onTab }) {
   // 처방전 머리 정보 — OCR 결과가 없으면(주소로 바로 들어온 경우 등) 예시 값을 보여요.
   const ocr = draft?.ocr ?? { hospital: rx.hospital, date: rx.isoDate, disease: rx.disease };
   const words = DOC_WORDS[draft?.sourceType] ?? DOC_WORDS.PRESCRIPTION;
-  // 약봉투에는 처방일이 없어요(서버가 null). 그때는 보호자가 약 받은 날을 골라야 복약 일정을 시작할 수 있어요.
+  // 약봉투는 조제일자를 약 받은 날로 써요. OCR이 날짜를 못 읽었으면(서버가 null) 보호자가 골라야 복약 일정을 시작할 수 있어요.
   const needsDate = !ocr.date;
   const [pickedDate, setPickedDate] = useState('');
   const [dateError, setDateError] = useState('');
@@ -74,6 +87,14 @@ export function ConfirmScreen({ go, back, onTab }) {
   // TODO(API): OCR 응답의 약 목록을 정규화해 초기 상태로 사용하세요.
   // 현재 목록은 데모 데이터이며 업로드한 이미지에서 읽어낸 결과가 아닙니다.
   const [meds, setMeds] = useState(() => draft?.ocrMeds ?? sampleMeds);
+  // 병명 — 보호자가 처방 올리기에서 적은 값이 먼저예요. 없으면 처방전 질병분류기호로 병명을 제안해요(보호자가 확인·수정).
+  const suggestion = suggestDiseaseName(ocr.diagnosisCodes);
+  const typedDisease = (draft?.disease || ocr.disease || '').trim();
+  const [disease, setDisease] = useState(() => typedDisease || suggestion.name);
+  const [diseaseError, setDiseaseError] = useState('');
+  const diseaseHelper = diseaseHelperText({ typed: Boolean(typedDisease), suggestion, current: disease });
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState('');
   const [showOriginal, setShowOriginal] = useState(false);
   const [editingIds, setEditingIds] = useState(() => new Set());
   const onEditingChange = useCallback((id, editing) => {
@@ -95,22 +116,26 @@ export function ConfirmScreen({ go, back, onTab }) {
   const noTimingCount = countNoTiming(meds);
   const saved = meds.filter((m) => !m.isNew);
 
-  const make = () => {
+  // 가이드를 못 만드는 이유는 알림창 대신 버튼 바로 위에 보여요. 앱 안 브라우저처럼 알림창이 안 뜨는 곳에서도 보이게요.
+  const fail = (message) => setFormError(message);
+  const make = async () => {
+    if (saving) return;
+    setFormError('');
     if (editingIds.size > 0) {
-      window.alert('수정 중인 약 정보가 있습니다. 저장하거나 취소한 후 가이드를 만들어 주세요.');
+      fail('수정 중인 약 정보가 있습니다. 저장하거나 취소한 후 가이드를 만들어 주세요.');
       return;
     }
     if (meds.length === 0) {
-      window.alert('확인할 약이 없습니다. 약을 추가한 후 가이드를 만들어 주세요.');
+      fail('확인할 약이 없습니다. 약을 추가한 후 가이드를 만들어 주세요.');
       return;
     }
     if (needsDate && !pickedDate) {
       setDateError(`${words.dateLabel}을 골라 주세요.`);
-      window.alert(`${words.name}에 날짜가 없어요. ${words.dateLabel}을 골라 주세요.`);
+      fail(`${words.name}에서 날짜를 읽지 못했어요. ${words.dateLabel}을 골라 주세요.`);
       return;
     }
     if (meds.some((m) => m.isNew || !m.name.trim())) {
-      window.alert('추가 중인 약을 저장하고 약 이름을 확인해 주세요.');
+      fail('추가 중인 약을 저장하고 약 이름을 확인해 주세요.');
       return;
     }
     // ISSUE-07: 편집 내용은 임시 저장할 수 있지만,
@@ -125,44 +150,76 @@ export function ConfirmScreen({ go, back, onTab }) {
       const fields = isAsNeeded(med) ? requiredFields.filter(([key]) => key !== 'days') : requiredFields;
       for (const [key, label] of fields) {
         if (!String(med[key]?.value ?? '').trim()) {
-          window.alert(
+          fail(
             `「${med.name}」의 ${label} 정보가 없습니다. 연필 버튼을 눌러 적어 주세요. 모르면 ${words.name} 원본을 확인하거나 의료기관·약국에 문의해 주세요. 확인 전에는 가이드를 만들 수 없습니다.`
           );
           return;
         }
       }
     }
-    // TODO(API): 수정한 약 목록과 처방 ID를 BE-2 확정 API에 전송하고
-    // 저장 성공 시에만 가이드 생성 화면으로 이동해야 합니다.
-    // TODO(INTEGRATION): FE-1과 확정 처방 데이터 전달 계약을 합의하세요.
-    // 화면을 다시 열어도 확정한 약 목록을 복원할 수 있도록 임시 저장합니다.
-    // 실제 서버 저장/API 호출은 추후 연동하며, 이 저장은 새로고침 후 유지되지 않습니다.
+    const diseaseName = disease.trim();
+    if (!diseaseName) {
+      setDiseaseError('병명을 적어 주세요.');
+      fail('병명을 적어 주세요. 가이드가 병에 맞는 돌봄 방법을 고를 때 써요.');
+      return;
+    }
+
+    // 서버에 올린 처방이면 확정 API(7번)로 보호자가 고친 약 목록과 병명을 저장해요. 저장에 성공해야 가이드를 만들어요.
+    if (draft?.prescriptionId) {
+      const items = meds.map(toConfirmItem);
+      const problem = items.map(confirmItemProblem).find(Boolean);
+      if (problem) {
+        fail(problem);
+        return;
+      }
+      setSaving(true);
+      try {
+        await confirmPrescription(draft.prescriptionId, {
+          // 처방일은 약봉투처럼 서버에 없을 때만 보내요. 병원 이름은 이 화면에서 고치지 않으니 서버 값을 그대로 둬요.
+          prescription_date: needsDate ? pickedDate : null,
+          hospital_name: null,
+          diagnosis_user_input: diseaseName,
+          symptom_notes: draft.note || null,
+          medications: items,
+        });
+      } catch (error) {
+        setSaving(false);
+        fail(error.message);
+        return;
+      }
+      setSaving(false);
+    }
+
     setPrescriptionDraft({
       ...getPrescriptionDraft(),
+      disease: diseaseName,
       ocrMeds: meds,
       guideReady: true,
     });
-    // 처방전에서 읽은 병원·날짜·병명·약으로 건강기록과 복약 일정을 자동으로 남겨요.
-    // 병명은 보호자가 처방 올리기에서 적은 값이 있으면 그걸, 없으면 처방전에서 읽은 값을 써요.
-    // 만든 가이드의 id를 임시 데이터에 남겨서, 만드는 중 화면 → 가이드 화면이 이 아이의 이 가이드를 보여 줘요.
+    // 확인한 병원·날짜·병명·약으로 건강기록과 복약 일정을 자동으로 남겨요.
+    // 예시 처방(서버 없음)은 여기서 가이드도 만들어요. 서버 처방의 가이드는 만드는 중 화면이 서버에서 받아 와요.
     if (child) {
-      const { guide } = recordPrescription({
+      const { visit, guide } = recordPrescription({
         prescriptionId: draft?.prescriptionId,
         childId: child.id,
         date,
         hospital: ocr.hospital,
-        title: draft?.disease?.trim() || ocr.disease || '진료',
+        title: diseaseName,
         meds,
       });
-      setPrescriptionDraft({ ...getPrescriptionDraft(), childId: child.id, guideId: guide.id });
+      setPrescriptionDraft({ ...getPrescriptionDraft(), childId: child.id, guideId: guide?.id ?? `g${visit.id}` });
     }
     go('guide-loading');
   };
   const retake = () => go('upload');
+  const errorNote = formError && (
+    <p role="alert" className="rounded-lg bg-danger-soft px-3.5 py-3 text-14 text-danger">{formError}</p>
+  );
   const actions = {
     mobile: (
       <>
-        <Button className="w-full" onClick={make}>확인했어요, 가이드 만들기</Button>
+        {errorNote && <div className="lg:hidden">{errorNote}</div>}
+        <Button className="w-full" onClick={make} disabled={saving}>{saving ? '저장하는 중…' : '확인했어요, 가이드 만들기'}</Button>
         <Button variant="secondary" className="w-full" onClick={retake}>다시 찍기</Button>
       </>
     ),
@@ -216,10 +273,21 @@ export function ConfirmScreen({ go, back, onTab }) {
                 value={pickedDate}
                 onChange={(e) => { setPickedDate(e.target.value); setDateError(''); }}
                 max={todayKey()}
-                helper={`${words.name}에는 처방일이 적혀 있지 않아요. 약국에서 약을 받은 날을 골라 주세요. 복약 일정이 이 날부터 시작돼요.`}
+                helper={draft?.sourceType === 'PILL_BAG'
+                  ? '약봉투의 조제일자를 읽지 못했어요. 약봉투에 적힌 조제일자(약 받은 날)를 골라 주세요. 복약 일정이 이 날부터 시작돼요.'
+                  : `${words.name}에서 ${words.dateLabel}을 읽지 못했어요. 날짜를 골라 주세요. 복약 일정이 이 날부터 시작돼요.`}
                 error={dateError}
               />
             )}
+            <Field
+              label="병명"
+              value={disease}
+              onChange={(e) => { setDisease(e.target.value); setDiseaseError(''); }}
+              placeholder="예: 중이염"
+              maxLength={200}
+              helper={diseaseHelper}
+              error={diseaseError}
+            />
 
             {/* 모바일 원본 요약 */}
             <Panel className="flex items-center gap-3 py-3 pl-3 pr-3 lg:hidden">
@@ -234,9 +302,10 @@ export function ConfirmScreen({ go, back, onTab }) {
             <h3 className="mt-1 text-18 font-bold lg:mt-0 lg:text-20">약 {saved.length}개</h3>
             <MedList meds={meds} onChange={updateMed} onAdd={addMed} onRemove={removeMed} onEditingChange={onEditingChange} />
 
+            {errorNote && <div className="hidden lg:block">{errorNote}</div>}
             <div className="hidden justify-end gap-3 border-t border-line pt-6 lg:flex">
               <Button variant="secondary" className="min-w-[140px]" onClick={retake}>다시 찍기</Button>
-              <Button className="min-w-[260px]" onClick={make}>확인했어요, 가이드 만들기</Button>
+              <Button className="min-w-[260px]" onClick={make} disabled={saving}>{saving ? '저장하는 중…' : '확인했어요, 가이드 만들기'}</Button>
             </div>
           </div>
         </div>
