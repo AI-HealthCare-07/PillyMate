@@ -12,6 +12,8 @@ class Guardian(models.Model):
     password_hash = fields.CharField(max_length=255, description="bcrypt 해시")
     name = fields.CharField(max_length=50)
     birth_date = fields.DateField(description="가입 시 만 19세 이상 서버 검증")
+    gender = fields.CharField(max_length=10, null=True, description="MALE | FEMALE (이전 가입자는 NULL)")
+    phone_number = fields.CharField(max_length=20, null=True, description="숫자만 저장 (예: 01012345678)")
     created_at = fields.DatetimeField(auto_now_add=True)
     updated_at = fields.DatetimeField(auto_now=True)
 

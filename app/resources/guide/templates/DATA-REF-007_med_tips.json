@@ -1,0 +1,245 @@
+{
+  "template_id": "DATA-REF-007/med_tips@0.1",
+  "description": "약 계열별로 집에서 챙길 것. 서버가 처방 성분(ingredient)으로 계열을 찾아 그대로 붙인다. 용량·횟수를 바꾸라는 문장은 넣지 않는다.",
+  "review_status": "초안 - 의료진 검수 전",
+  "ingredient_to_class": {
+    "acetaminophen": "antipyretic_apap",
+    "ibuprofen": "antipyretic_ibu",
+    "amoxicillin/clavulanate": "antibiotic",
+    "amoxicillin": "antibiotic",
+    "cefaclor": "antibiotic",
+    "clarithromycin": "antibiotic",
+    "saccharomyces boulardii": "probiotic",
+    "racecadotril": "antidiarrheal",
+    "cetirizine": "antihistamine",
+    "ambroxol": "cough_expectorant",
+    "levodropropizine": "cough_expectorant",
+    "hydrocortisone": "topical_steroid",
+    "desonide": "topical_steroid",
+    "tobramycin": "eye_drop"
+  },
+  "dosage_form_tips": {
+    "liquid": [
+      {
+        "id": "form.liquid.measure",
+        "text": "밥숟가락 대신 약물용 계량컵이나 계량스푼으로 재세요. 쓴 뒤에는 물로 씻어 충분히 말려 두세요.",
+        "source": "MFDS_MANUAL_25",
+        "needs_review": false,
+        "source_check": "revised"
+      },
+      {
+        "id": "form.liquid.separate",
+        "text": "시럽이 두 가지 이상이면 따로따로 재서 먹이세요.",
+        "source": "MFDS_MANUAL_25",
+        "needs_review": false,
+        "source_check": "verified"
+      },
+      {
+        "id": "form.liquid.month",
+        "text": "뚜껑을 열었거나 나눠 담은 시럽은 한 달 넘게 두고 먹이지 마세요.",
+        "source": "MFDS_SYRUP_BRIEF",
+        "needs_review": true,
+        "source_check": "verified"
+      }
+    ]
+  },
+  "classes": {
+    "common": [
+      {
+        "id": "common.missed",
+        "text": "먹이는 걸 잊었는데 다음 먹일 시간이 이미 됐다면 그때 한 번 양만 먹이세요.",
+        "source": "MFDS_SYRUP_BRIEF",
+        "needs_review": false,
+        "source_check": "revised"
+      },
+      {
+        "id": "common.storage",
+        "text": "아이 손이 닿지 않는 곳에 두세요.",
+        "source": "MFDS_MANUAL_25",
+        "needs_review": false,
+        "source_check": "verified"
+      }
+    ],
+    "antibiotic": [
+      {
+        "id": "abx.finish",
+        "text": "증상이 나아 보여도 처방받은 기간 동안 정해진 양을 끝까지 먹이세요.",
+        "source": "KDCA_ABX_FAQ",
+        "needs_review": false,
+        "source_check": "verified"
+      },
+      {
+        "id": "abx.no_share",
+        "text": "남은 항생제를 두었다가 나중에 임의로 먹이지 마세요.",
+        "source": "KDCA_ABX",
+        "needs_review": false,
+        "source_check": "revised"
+      },
+      {
+        "id": "abx.fridge",
+        "text": "물에 타서 만든 항생제 시럽은 냉장 보관하는 경우가 많아요. 약봉투의 보관법을 확인하세요.",
+        "source": "MFDS_MANUAL_25",
+        "needs_review": true,
+        "source_check": "verified"
+      }
+    ],
+    "antipyretic_apap": [
+      {
+        "id": "apap.interval",
+        "text": "아세트아미노펜 해열제는 4~6시간 간격, 하루 5회를 넘기지 마세요.",
+        "source": "KDCA_FEVER",
+        "needs_review": true,
+        "source_check": "verified"
+      },
+      {
+        "id": "apap.dup",
+        "text": "감기로 병원에서 처방받은 약에 해열제 성분이 들어 있는지 확인하세요.",
+        "source": "MFDS_FEVER",
+        "needs_review": false,
+        "source_check": "revised"
+      }
+    ],
+    "antipyretic_ibu": [
+      {
+        "id": "ibu.interval",
+        "text": "이부프로펜 해열제는 6~8시간 간격, 하루 4회를 넘기지 마세요.",
+        "source": "KDCA_FEVER",
+        "needs_review": true,
+        "source_check": "verified"
+      },
+      {
+        "id": "ibu.same_family",
+        "text": "이부프로펜과 덱시부프로펜은 같은 계열이에요. 번갈아 먹이지 마세요.",
+        "source": "MFDS_FEVER",
+        "needs_review": false,
+        "source_check": "revised"
+      }
+    ],
+    "probiotic": [],
+    "antidiarrheal": [
+      {
+        "id": "diar.fluids",
+        "text": "이 약은 수분 보충을 돕는 약이에요. 설사할 때는 경구수액으로 수분을 채우는 게 꼭 필요해요.",
+        "source": "LBL_RACE",
+        "needs_review": false,
+        "source_check": "revised"
+      },
+      {
+        "id": "diar.7days",
+        "text": "이 약은 7일을 넘겨 먹이지 않아요. 증상이 5일 이상 계속되면 꼭 진료를 받으세요.",
+        "source": "LBL_RACE",
+        "needs_review": true,
+        "source_check": "revised"
+      }
+    ],
+    "antihistamine": [
+      {
+        "id": "ah.sleepy",
+        "text": "졸리거나 어지러울 수 있어요. 주의나 집중이 필요한 활동은 조심하게 해 주세요.",
+        "source": "MFDS_GUIDE_186",
+        "needs_review": false,
+        "source_check": "revised"
+      }
+    ],
+    "cough_expectorant": [
+      {
+        "id": "cough.water",
+        "text": "가래가 잘 나오려면 물을 충분히 마시는 게 도움이 돼요.",
+        "source": "KDCA_COLD",
+        "needs_review": false,
+        "source_check": "revised"
+      }
+    ],
+    "topical_steroid": [
+      {
+        "id": "ts.thin",
+        "text": "환부에 얇게 바르고, 붕대 등으로 덮어 밀봉하지 마세요. 피부가 접힌 부위가 밀봉되지 않게 주의하세요.",
+        "source": "MFDS_GUIDE_9",
+        "needs_review": false,
+        "source_check": "revised"
+      }
+    ],
+    "eye_drop": [
+      {
+        "id": "eye.own",
+        "text": "수건과 세면도구는 아이 혼자 쓰게 해 주세요.",
+        "source": "KDCA_EYE",
+        "needs_review": false,
+        "source_check": "revised"
+      }
+    ]
+  },
+  "sources": {
+    "KDCA_ABX": {
+      "title": "질병관리청 국가건강정보포털 「항생제」",
+      "url": "https://health.kdca.go.kr/healthinfo/biz/health/gnrlzHealthInfo/gnrlzHealthInfo/gnrlzHealthInfoView.do?cntnts_sn=6475"
+    },
+    "KDCA_ABX_FAQ": {
+      "title": "질병관리청 「항생제에 흔히 묻는 질문」",
+      "url": "https://kdca.go.kr/gallery.es?act=view&bid=0002&list_no=144960&mid=a20108070000"
+    },
+    "KDCA_COLD": {
+      "title": "질병관리청 국가건강정보포털 「감기」",
+      "url": "https://health.kdca.go.kr/healthinfo/biz/health/gnrlzHealthInfo/gnrlzHealthInfo/gnrlzHealthInfoView.do?cntnts_sn=5423"
+    },
+    "KDCA_EYE": {
+      "title": "질병관리청 국가건강정보포털 「유행각결막염」",
+      "url": "https://health.kdca.go.kr/healthinfo/biz/health/gnrlzHealthInfo/gnrlzHealthInfo/gnrlzHealthInfoView.do?cntnts_sn=5270"
+    },
+    "KDCA_FEVER": {
+      "title": "질병관리청 국가건강정보포털 「소아 발열 대처법」",
+      "url": "https://health.kdca.go.kr/healthinfo/biz/health/gnrlzHealthInfo/gnrlzHealthInfo/gnrlzHealthInfoView.do?cntnts_sn=6951"
+    },
+    "LBL_RACE": {
+      "title": "의약품안전나라 하이드라섹산10mg(라세카도트릴) 허가정보 (품목기준코드 201405412)",
+      "url": "https://nedrug.mfds.go.kr/pbp/CCBBB01/getItemDetail?itemSeq=201405412"
+    },
+    "MFDS_FEVER": {
+      "title": "식약처 컨슈머 뉴스레터 Issue.2 「어린이 해열제 복용 방법은?」 (2026.1.9)",
+      "url": "https://www.mfds.go.kr/brd/m_61/view.do?seq=54388"
+    },
+    "MFDS_GUIDE_186": {
+      "title": "식약처 「소아·청소년에 대한 의약품 적정사용 정보집」(2022.12 개정) 186. Cetirizine (546~547쪽)",
+      "url": "https://www.mfds.go.kr/brd/m_218/view.do?seq=33514"
+    },
+    "MFDS_GUIDE_9": {
+      "title": "식약처 「소아·청소년에 대한 의약품 적정사용 정보집」(2022.12 개정) 9. Desonide (46~47쪽)",
+      "url": "https://www.mfds.go.kr/brd/m_218/view.do?seq=33514"
+    },
+    "MFDS_MANUAL_25": {
+      "title": "식약처 의약품 안전사용 매뉴얼 ㉕ 「환절기, 어린이 감기약 올바르게 먹이세요!」",
+      "url": "https://nedrug.mfds.go.kr/eBook/catImage/182/25.pdf"
+    },
+    "MFDS_SYRUP_BRIEF": {
+      "title": "식약청 「어린이 감기약, 꼭 확인하고 먹이세요」 (정책브리핑 부처 브리핑)",
+      "url": "https://www.korea.kr/briefing/policyBriefingView.do?newsId=148709458"
+    }
+  },
+  "_removed_unverified": [
+    {
+      "id": "pro.with_abx",
+      "text": "항생제와 같이 처방된 정장제예요. 처방받은 횟수대로 먹이세요.",
+      "source": "TODO_SOURCE",
+      "needs_review": false,
+      "source_check": "removed"
+    },
+    {
+      "id": "ts.wash",
+      "text": "바르기 전후로 손을 씻으세요.",
+      "source": "TODO_SOURCE",
+      "needs_review": false,
+      "source_check": "removed"
+    },
+    {
+      "id": "eye.no_touch",
+      "text": "약병 끝이 눈이나 손에 닿지 않게 넣으세요.",
+      "source": "TODO_SOURCE",
+      "needs_review": false,
+      "source_check": "removed"
+    }
+  ],
+  "source_review": {
+    "date": "2026-11-24",
+    "rule": "공식 원문(질병관리청·식약처 등)만 출처로 씀. 원문과 대조 결과는 각 문장의 source_check에 표시. removed는 출처를 찾을 때까지 가이드에 나오지 않음."
+  }
+}

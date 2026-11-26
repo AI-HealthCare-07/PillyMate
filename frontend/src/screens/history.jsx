@@ -27,9 +27,11 @@ export function HistoryScreen({ go, onTab }) {
   const setTab = (next) => setParams(next === 'meds' ? {} : { tab: next }, { replace: true });
 
   return (
-    <AppShell tab="history" onTab={onTab} header={<Header title={child ? `${child.name}의 기록` : '기록'} />}>
-      <Body className="gap-4 pt-1">
-        <Segmented label="기록 종류" value={tab} onChange={setTab} options={TABS} />
+    <AppShell tab="history" onTab={onTab} width="wide" header={<Header title={child ? `${child.name}의 기록` : '기록'} />}>
+      <Body className="gap-5 pt-1 lg:gap-8">
+        <div className="lg:max-w-[360px]">
+          <Segmented label="기록 종류" value={tab} onChange={setTab} options={TABS} />
+        </div>
         {child && (tab === 'meds' ? <MedCalendar childId={child.id} /> : <HealthLog childId={child.id} go={go} />)}
       </Body>
     </AppShell>
@@ -51,8 +53,8 @@ function dayStatus(doses, date, today) {
 }
 
 const DOT = {
-  done: 'bg-brand',
-  partial: 'bg-[#D99A00]',
+  done: 'bg-ok',
+  partial: 'bg-warn',
   missed: 'bg-danger',
   upcoming: 'border-[1.5px] border-brand bg-surface',
 };
@@ -96,28 +98,29 @@ function MedCalendar({ childId }) {
   const courseNames = [...new Set(selDoses.map((d) => `${d.course.title}, ${d.course.hospital}`))];
 
   return (
-    <div className="flex flex-col gap-4">
-      <Panel className="flex flex-col gap-3 px-3 pb-4 pt-3">
-        <div className="flex items-center justify-between">
-          <button type="button" onClick={() => move(-1)} aria-label="이전 주" className="rounded-md p-2 text-muted hover:bg-paper hover:text-ink">
+    <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:items-start lg:gap-x-10">
+      <div className="flex flex-col gap-3 lg:sticky lg:top-6">
+      <Panel className="flex flex-col gap-2 px-2 pb-4 pt-2 min-[390px]:px-3">
+        <div className="flex items-center justify-between gap-1">
+          <button type="button" onClick={() => move(-1)} aria-label="이전 주" className="inline-flex size-11 shrink-0 items-center justify-center rounded-md text-muted hover:bg-paper hover:text-ink">
             <ChevronLeft size={20} aria-hidden />
           </button>
-          <div className="flex items-center gap-2">
-            <h2 className="text-17 font-bold" aria-live="polite">{yearLabel}{range}</h2>
+          <div className="flex min-w-0 flex-wrap items-center justify-center gap-x-1">
+            <h2 className="text-16 font-bold tabular-nums min-[390px]:text-17" aria-live="polite">{yearLabel}{range}</h2>
             {week !== thisWeek && (
-              <button type="button" onClick={goToday} className="rounded-pill border border-line px-2.5 py-1 text-12 font-semibold text-brand hover:bg-paper">
+              <button type="button" onClick={goToday} className="inline-flex h-11 items-center rounded-md px-2.5 text-13 font-semibold text-brand hover:bg-brand-soft">
                 오늘
               </button>
             )}
           </div>
-          <button type="button" onClick={() => move(1)} aria-label="다음 주" className="rounded-md p-2 text-muted hover:bg-paper hover:text-ink">
+          <button type="button" onClick={() => move(1)} aria-label="다음 주" className="inline-flex size-11 shrink-0 items-center justify-center rounded-md text-muted hover:bg-paper hover:text-ink">
             <ChevronRight size={20} aria-hidden />
           </button>
         </div>
 
         <div className="grid grid-cols-7 text-center" role="grid" aria-label={`${range} 복약 달력`}>
           {WEEK.map((w, i) => (
-            <span key={w} className={`pb-1.5 text-12 font-semibold ${i === 0 ? 'text-danger' : 'text-muted'}`}>{w}</span>
+            <span key={w} className={`pb-2 text-12 font-semibold ${i === 0 ? 'text-danger' : 'text-muted'}`}>{w}</span>
           ))}
           {cells.map((date) => {
             const status = dayStatus(dosesOn(childId, date), date, today);
@@ -131,10 +134,10 @@ function MedCalendar({ childId }) {
                 onClick={() => setSelected(date)}
                 aria-pressed={on}
                 aria-label={`${month}월 ${day}일${isToday ? ', 오늘' : ''}${status !== 'none' ? `, ${LEGEND.find(([k]) => k === status)[1]}` : ''}`}
-                className={`flex h-14 flex-col items-center justify-center gap-1 rounded-lg transition-colors ${on ? 'bg-brand-soft' : 'hover:bg-paper'}`}
+                className={`flex h-[60px] flex-col items-center justify-center gap-1.5 rounded-lg transition-colors ${on ? 'bg-brand-soft' : 'hover:bg-paper'}`}
               >
                 <span
-                  className={`flex size-7 items-center justify-center rounded-full text-14 ${
+                  className={`flex size-8 items-center justify-center rounded-full text-15 tabular-nums ${
                     isToday ? 'bg-ink font-bold text-on-brand' : on ? 'font-bold text-brand' : 'font-medium'
                   }`}
                 >
@@ -146,7 +149,7 @@ function MedCalendar({ childId }) {
           })}
         </div>
 
-        <ul className="flex flex-wrap gap-x-3.5 gap-y-1.5 border-t border-line px-1 pt-3">
+        <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-1.5 border-t border-line px-2 pt-3">
           {LEGEND.map(([k, label]) => (
             <li key={k} className="flex items-center gap-1.5 text-12 text-muted">
               <span className={`size-2 rounded-full ${DOT[k]}`} aria-hidden />{label}
@@ -156,15 +159,16 @@ function MedCalendar({ childId }) {
       </Panel>
 
       {weekDoses.length > 0 && (
-        <p className="px-1 text-14 text-muted">
+        <p className="px-1 text-14 text-muted lg:px-0">
           {week === thisWeek ? '이번 주' : '이 주에'} 먹일 약 <span className="font-semibold text-ink">{weekDoses.length}번</span> 중{' '}
           <span className="font-semibold text-brand">{givenCount}번</span> 먹였어요.
         </p>
       )}
+      </div>
 
-      <section className="flex flex-col gap-2.5">
-        <div className="flex flex-col gap-0.5 px-1">
-          <h3 className="text-17 font-bold">{sel.month}월 {sel.day}일 ({sel.weekday}){selected === today && ' · 오늘'}</h3>
+      <section className="flex flex-col gap-3">
+        <div className="flex flex-col gap-0.5 px-1 lg:px-0">
+          <h3 className="text-18 font-bold lg:text-22">{sel.month}월 {sel.day}일 ({sel.weekday}){selected === today && ' · 오늘'}</h3>
           {courseNames.length > 0 && <p className="text-13 text-muted">{courseNames.join(' / ')}</p>}
         </div>
         {selDoses.length ? (
@@ -179,23 +183,23 @@ function MedCalendar({ childId }) {
                     aria-pressed={g.done}
                     aria-label={`${g.slot} 약 ${g.doses.length}개, ${future ? '먹일 예정' : g.done ? '먹였어요' : partial ? `${g.doses.length}개 중 ${g.given}개 먹였어요` : '안 먹였어요'}`}
                     onClick={() => toggleSlot(g)}
-                    className="flex w-full items-center gap-3.5 px-4 py-3 text-left enabled:hover:bg-paper disabled:cursor-default"
+                    className="flex min-h-[60px] w-full items-center gap-3.5 px-4 py-3.5 text-left enabled:hover:bg-paper disabled:cursor-default lg:px-5"
                   >
                     <span className="w-14 shrink-0 self-start pt-0.5 text-14 font-semibold text-brand">{g.slot}</span>
-                    <ul className="flex flex-1 flex-col gap-1.5">
+                    <ul className="flex min-w-0 flex-1 flex-col gap-1.5">
                       {g.doses.map((d) => (
                         <li key={d.key} className={`flex items-baseline justify-between gap-2 ${!future && d.given ? 'text-faint' : ''}`}>
-                          <span className="text-15 font-medium">{d.name}</span>
+                          <span className="min-w-0 text-15 font-medium">{d.name}</span>
                           <span className={`shrink-0 text-13 ${!future && d.given ? '' : 'text-muted'}`}>{d.dose}</span>
                         </li>
                       ))}
                     </ul>
                     {future ? (
-                      <span className="text-13 text-faint">예정</span>
+                      <span className="shrink-0 text-13 text-faint">예정</span>
                     ) : (
                       <span
-                        className={`flex size-7 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
-                          g.done ? 'border-brand bg-brand text-on-brand' : partial ? 'border-brand text-brand' : 'border-line text-transparent'
+                        className={`flex size-8 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
+                          g.done ? 'border-brand bg-brand text-on-brand' : partial ? 'border-brand bg-surface text-brand' : 'border-edge bg-surface text-transparent'
                         }`}
                         aria-hidden
                       >
@@ -208,9 +212,9 @@ function MedCalendar({ childId }) {
             })}
           </Panel>
         ) : (
-          <Panel className="px-4 py-6 text-center text-15 text-muted">이 날은 먹일 약이 없어요.</Panel>
+          <Panel className="px-4 py-8 text-center text-15 text-muted">이 날은 먹일 약이 없어요.</Panel>
         )}
-        {!future && selDoses.length > 0 && <p className="px-1 text-13 text-muted">먹는 때를 누르면 그때 먹을 약을 한 번에 고칠 수 있어요.</p>}
+        {!future && selDoses.length > 0 && <p className="px-1 text-13 text-muted lg:px-0">먹는 때를 누르면 그때 먹을 약을 한 번에 고칠 수 있어요.</p>}
       </section>
     </div>
   );
@@ -226,8 +230,9 @@ function HealthLog({ childId, go }) {
   const list = visitsOf(childId);
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-start gap-3 rounded-lg bg-sunk px-3.5 py-3">
+    <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-x-10">
+      <div className="flex flex-col gap-4 lg:sticky lg:top-6 lg:col-start-2 lg:row-start-1">
+      <div className="flex items-start gap-3 rounded-xl bg-sunk px-4 py-3.5">
         <ScanLine size={20} strokeWidth={1.75} className="mt-0.5 shrink-0 text-brand" aria-hidden />
         <p className="flex-1 text-14">
           처방 올리기에서 처방전을 확인하면 <span className="font-semibold">병원, 날짜, 병명, 약과 며칠분</span>이 여기에 자동으로 남아요.
@@ -246,7 +251,9 @@ function HealthLog({ childId, go }) {
           <Plus size={18} strokeWidth={2} aria-hidden />직접 기록 남기기
         </Button>
       )}
+      </div>
 
+      <div className="flex min-w-0 flex-col lg:col-start-1 lg:row-start-1">
       {list.length === 0 && !adding && (
         <p className="py-10 text-center text-15 text-muted">아직 남긴 건강기록이 없어요.</p>
       )}
@@ -257,27 +264,27 @@ function HealthLog({ childId, go }) {
           const newYear = i === 0 || dateParts(list[i - 1].date).year !== p.year;
           return (
             <li key={v.id} className="flex flex-col">
-              {newYear && <h3 className="px-1 pb-2 pt-1 text-14 font-semibold text-muted">{p.year}년</h3>}
-              <div className="flex gap-3">
+              {newYear && <h3 className={`pb-3 text-14 font-semibold text-muted ${i ? 'pt-3' : ''}`}>{p.year}년</h3>}
+              <div className="flex gap-3 lg:gap-4">
                 {/* 날짜 + 세로 선 */}
                 <div className="flex w-12 shrink-0 flex-col items-center">
                   <span className="text-13 font-semibold text-muted">{p.month}월</span>
-                  <span className="text-20 font-bold leading-tight">{p.day}</span>
+                  <span className="text-20 font-bold leading-tight tabular-nums">{p.day}</span>
                   <span className="text-12 text-muted">{p.weekday}</span>
-                  {i < list.length - 1 && <span className="mt-1.5 w-px flex-1 bg-line" aria-hidden />}
+                  {i < list.length - 1 && <span className="mb-1 mt-2 w-px flex-1 bg-line" aria-hidden />}
                 </div>
-                <Panel className="mb-3 flex flex-1 flex-col gap-2.5 px-4 py-3.5">
+                <Panel className="mb-3 flex min-w-0 flex-1 flex-col gap-3 px-4 py-4 lg:px-5">
                   <div className="flex items-start gap-2">
-                    <div className="flex flex-1 flex-col gap-0.5">
+                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                       <p className="text-16 font-semibold">{v.title}</p>
                       <p className="text-14 text-muted">{v.hospital}</p>
                     </div>
-                    {v.status ? <Tag>{v.status}</Tag> : <Tag tone="faint">{v.source === 'ocr' ? '처방전 자동 기록' : '직접 기록'}</Tag>}
+                    {v.status ? <Tag tone="warn">{v.status}</Tag> : <Tag tone="faint">{v.source === 'ocr' ? '처방전 자동 기록' : '직접 기록'}</Tag>}
                   </div>
                   {v.meds.length > 0 ? (
                     <ul className="flex flex-wrap gap-1.5" aria-label="처방받은 약">
                       {v.meds.map((m) => (
-                        <li key={m.name} className="flex items-center gap-1 rounded-md bg-sunk px-2 py-1 text-13">
+                        <li key={m.name} className="flex items-center gap-1 rounded-md bg-brand-soft px-2 py-1 text-13 text-ink">
                           <Pill size={13} strokeWidth={2} className="text-brand" aria-hidden />{m.name}
                           {m.days && <span className="text-muted">· {m.days}{/^\d+일$/.test(m.days) ? '분' : ''}</span>}
                         </li>
@@ -301,6 +308,7 @@ function HealthLog({ childId, go }) {
           );
         })}
       </ol>
+      </div>
       <DeletePrescriptionDialog visit={deleting} onClose={() => setDeleting(null)} />
     </div>
   );
@@ -318,9 +326,13 @@ function VisitActions({ visit: v, onConfirm, onRemove }) {
   if (!canConfirm && !canRemove) return null;
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="-my-2 flex items-center gap-3">
       {canConfirm && (
-        <button type="button" onClick={onConfirm} className="flex items-center gap-0.5 text-14 font-semibold text-brand">
+        <button
+          type="button"
+          onClick={onConfirm}
+          className="-ml-1 flex min-h-11 items-center gap-0.5 rounded-md px-1 text-14 font-semibold text-brand hover:underline"
+        >
           처방 확인하기<ChevronRight size={16} aria-hidden />
         </button>
       )}
@@ -329,7 +341,7 @@ function VisitActions({ visit: v, onConfirm, onRemove }) {
           type="button"
           onClick={onRemove}
           aria-label={`${dateParts(v.date).month}월 ${dateParts(v.date).day}일 ${v.hospital} 기록 지우기`}
-          className={`flex items-center gap-1 text-13 font-medium text-muted hover:text-danger ${canConfirm ? 'ml-auto' : ''}`}
+          className={`flex min-h-11 items-center gap-1 rounded-md px-1 text-13 font-medium text-muted hover:text-danger ${canConfirm ? '-mr-1 ml-auto' : '-ml-1'}`}
         >
           <Trash2 size={14} aria-hidden />지우기
         </button>
@@ -418,7 +430,7 @@ function VisitForm({ onSave, onCancel }) {
   };
 
   return (
-    <Panel className="flex flex-col gap-4 p-4">
+    <Panel className="flex flex-col gap-4 p-4 lg:p-5">
       <div className="flex flex-col gap-0.5">
         <h3 className="text-17 font-bold">직접 기록 남기기</h3>
         <p className="text-13 text-muted">처방전이 없는 진료(예방접종, 검진 등)를 적어 두세요.</p>
@@ -427,7 +439,7 @@ function VisitForm({ onSave, onCancel }) {
       <Field label="병원" placeholder="예: 튼튼소아청소년과" value={hospital} onChange={(e) => setHospital(e.target.value)} />
       <Field label="진료 이유" placeholder="예: 감기, 예방접종, 정기 검진" value={title} onChange={(e) => setTitle(e.target.value)} />
       <div className="flex flex-col gap-2">
-        <label htmlFor="visit-med" className="text-14 font-medium text-muted">처방받은 약</label>
+        <label htmlFor="visit-med" className="text-14 font-semibold text-ink">처방받은 약</label>
         {meds.length > 0 && (
           <ul className="flex flex-wrap gap-1.5">
             {meds.map((m) => (
@@ -436,7 +448,7 @@ function VisitForm({ onSave, onCancel }) {
                   type="button"
                   onClick={() => setMeds((prev) => prev.filter((x) => x !== m))}
                   aria-label={`${m} 빼기`}
-                  className="flex items-center gap-1 rounded-md bg-brand-soft px-2 py-1 text-13 font-medium text-brand"
+                  className="flex min-h-11 items-center gap-1.5 rounded-pill bg-brand-soft px-3.5 text-14 font-medium text-brand hover:bg-brand-soft/70"
                 >
                   {m}<span aria-hidden>×</span>
                 </button>
@@ -453,16 +465,16 @@ function VisitForm({ onSave, onCancel }) {
               if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); addMed(); }
             }}
             placeholder="약 이름을 적고 추가"
-            className="h-11 min-w-0 flex-1 rounded-md border border-line bg-surface px-3.5 text-15 placeholder:text-faint focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
+            className="h-13 min-w-0 flex-1 rounded-md border border-edge/50 bg-surface px-4 text-16 placeholder:text-faint hover:border-edge/70 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand-soft"
           />
-          <button type="button" onClick={addMed} disabled={!med.trim()} className="shrink-0 rounded-md border border-line bg-surface px-4 text-14 font-semibold hover:bg-paper disabled:opacity-40">
+          <button type="button" onClick={addMed} disabled={!med.trim()} className="h-13 shrink-0 rounded-md border border-edge/60 bg-surface px-4 text-15 font-semibold hover:bg-paper disabled:cursor-not-allowed disabled:opacity-40">
             추가
           </button>
         </div>
       </div>
       <Field label="메모" multiline placeholder="예: 열 38.5도, 일주일 뒤 다시 오래요" value={note} onChange={(e) => setNote(e.target.value)} />
       {error && <p role="alert" className="text-13 text-danger">{error}</p>}
-      <div className="flex gap-2">
+      <div className="flex gap-2 pt-1">
         <Button variant="secondary" className="flex-1" onClick={onCancel}>취소</Button>
         <Button className="flex-1" onClick={submit}>저장하기</Button>
       </div>

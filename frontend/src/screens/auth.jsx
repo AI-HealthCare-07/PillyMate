@@ -282,68 +282,70 @@ export function LoginScreen({ go }) {
   if (showConsent) {
     return (
       <AppShell showTabs={false} showTopBar={false}>
-        <div className="flex flex-1 flex-col gap-6 px-6 py-12 lg:px-0">
+        <div className="flex flex-1 flex-col gap-6 px-5 py-10 lg:px-0 lg:py-14">
           <Logo size={28} />
 
-          <h1 className="text-28 font-bold">
-            서비스 이용 동의
-          </h1>
+          <div className="flex flex-col gap-2">
+            <h1 className="text-28 font-bold">
+              서비스 이용 동의
+            </h1>
 
-          <p className="text-15 text-muted">
-            PillyMate를 이용하기 위해 필수 약관에 동의해 주세요.
-          </p>
+            <p className="text-15 text-muted">
+              PillyMate를 이용하기 위해 필수 약관에 동의해 주세요.
+            </p>
+          </div>
 
-          <label className="flex items-center gap-3 rounded-lg border border-line bg-surface p-4">
+          <label className="flex min-h-14 cursor-pointer items-center gap-3 rounded-xl border border-brand/30 bg-brand-soft px-4 py-3">
             <input
               type="checkbox"
-              className="h-5 w-5 accent-[#10594f]"
+              className="size-5 shrink-0 accent-brand"
               checked={allAgreed}
               onChange={e => {
                 setTermsAgreed(e.target.checked);
                 setPrivacyAgreed(e.target.checked);
               }}
             />
-            <span className="font-bold">전체 동의하기</span>
+            <span className="text-16 font-bold text-brand">전체 동의하기</span>
           </label>
 
-          <div className="flex flex-col gap-4 rounded-lg border border-line p-4">
-            <label className="flex items-start gap-3">
+          <div className="flex flex-col gap-4 rounded-xl border border-line bg-surface p-4">
+            <label className="flex min-h-11 cursor-pointer items-center gap-3">
               <input
                 type="checkbox"
-                className="h-5 w-5 accent-[#10594f]"
+                className="size-5 shrink-0 accent-brand"
                 checked={termsAgreed}
                 onChange={e => setTermsAgreed(e.target.checked)}
               />
-              <span>[필수] 서비스 이용약관 동의</span>
+              <span className="text-15 font-medium">[필수] 서비스 이용약관 동의</span>
             </label>
 
             <details className="text-14 text-muted">
-              <summary className="cursor-pointer">
+              <summary className="flex min-h-11 cursor-pointer items-center font-medium text-terra-ink">
                 서비스 이용약관 안내
               </summary>
-              <p className="mt-3">
+              <p className="mt-1 rounded-lg bg-paper p-3 leading-relaxed">
                 PillyMate는 처방전과 복약 정보를 관리하는
                 서비스입니다. 복약 가이드는 참고용이며
                 의료진의 진료나 처방을 대신하지 않습니다.
               </p>
             </details>
 
-            <label className="flex items-start gap-3 border-t border-line pt-4">
+            <label className="flex min-h-11 cursor-pointer items-center gap-3 border-t border-line pt-4">
               <input
                 type="checkbox"
-                className="h-5 w-5 accent-[#10594f]"
+                className="size-5 shrink-0 accent-brand"
                 checked={privacyAgreed}
                 onChange={e => setPrivacyAgreed(e.target.checked)}
               />
-              <span>[필수] 개인정보 수집·이용 동의</span>
+              <span className="text-15 font-medium">[필수] 개인정보 수집·이용 동의</span>
             </label>
 
             <details className="text-14 text-muted">
-              <summary className="cursor-pointer">
+              <summary className="flex min-h-11 cursor-pointer items-center font-medium text-terra-ink">
                 개인정보 수집·이용 내용 보기
               </summary>
 
-              <div className="mt-3 flex flex-col gap-3">
+              <div className="mt-1 flex flex-col gap-3 rounded-lg bg-paper p-3 leading-relaxed">
                 <p>
                   수집 항목: 이메일, 비밀번호, 이름,
                   성별, 생년월일, 휴대폰 번호
@@ -365,27 +367,29 @@ export function LoginScreen({ go }) {
             </details>
           </div>
 
-          <Button
-            type="button"
-            className="w-full"
-            disabled={!allAgreed}
-            onClick={continueSignup}
-          >
-            동의하고 계속하기
-          </Button>
+          <div className="flex flex-col gap-2">
+            <Button
+              type="button"
+              className="w-full"
+              disabled={!allAgreed}
+              onClick={continueSignup}
+            >
+              동의하고 계속하기
+            </Button>
 
-          <Button
-            type="button"
-            variant="secondary"
-            className="w-full"
-            onClick={() => {
-              setShowConsent(false);
-              setTermsAgreed(false);
-              setPrivacyAgreed(false);
-            }}
-          >
-            로그인으로 돌아가기
-          </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full"
+              onClick={() => {
+                setShowConsent(false);
+                setTermsAgreed(false);
+                setPrivacyAgreed(false);
+              }}
+            >
+              로그인으로 돌아가기
+            </Button>
+          </div>
         </div>
       </AppShell>
     );
@@ -397,171 +401,176 @@ export function LoginScreen({ go }) {
       showTabs={false}
       showTopBar={false}
       actions={actions}
+      width="wide"
     >
-      <form
-        id="auth-form"
-        noValidate
-        className="flex flex-1 flex-col gap-9 px-6 pb-6 pt-12 lg:justify-center lg:px-0"
-        onSubmit={handleSubmit}
-      >
-        <Logo size={28} />
+      <div className="flex flex-1 flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,440px)] lg:items-start lg:gap-16 lg:py-12 xl:gap-24">
+        <section className="flex flex-col gap-8 px-5 pt-10 lg:sticky lg:top-12 lg:min-h-[min(640px,calc(100dvh-96px))] lg:justify-between lg:rounded-2xl lg:bg-brand-soft lg:p-12">
+          <Logo size={28} />
 
-        <div className="flex flex-col gap-3">
-          {isSignup ? (
-            <>
-              <h1 className="text-28 font-bold">
-                회원가입
-              </h1>
+          <div className="flex flex-col gap-3 lg:max-w-[440px] lg:gap-4">
+            {isSignup ? (
+              <>
+                <h1 className="text-28 font-bold lg:text-32 lg:text-brand">
+                  회원가입
+                </h1>
 
-              <p className="text-15 text-muted">
-                PillyMate와 함께 아이의 복약을 관리해 보세요.
-              </p>
-            </>
-          ) : (
-            <>
-              <h1 className="text-28 font-bold">
-                처방전 한 장이면<br />
-                아이 약 먹이는 법이<br />
-                정리돼요
-              </h1>
+                <p className="text-15 text-muted lg:text-16 lg:text-ok">
+                  PillyMate와 함께 아이의 복약을 관리해 보세요.
+                </p>
+              </>
+            ) : (
+              <>
+                <h1 className="text-28 font-bold lg:text-32 lg:text-brand">
+                  처방전 한 장이면<br />
+                  아이 약 먹이는 법이<br />
+                  정리돼요
+                </h1>
 
-              <p className="text-15 text-muted">
-                사진을 올리면 약 이름과 양을 읽고,
-                보호자가 확인한 내용으로 복약 가이드를 만들어요.
-              </p>
-            </>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-4">
-
-          <div className="flex items-end gap-2">
-            <div className="min-w-0 flex-1">
-          <Field
-            label="이메일"
-            type="email"
-            autoComplete="email"
-            placeholder="parent@example.com"
-            value={email}
-            disabled={loading}
-            onChange={e => setEmail(e.target.value)}
-          />
-            </div>
-
-            {isSignup && (
-              <Button
-                type="button"
-                variant="secondary"
-                className="shrink-0"
-                disabled={loading}
-                onClick={() => {
-                  setError('이메일 중복 확인 API 연동 준비 중입니다.');
-                }}
-              >
-                중복 확인
-              </Button>
+                <p className="text-15 text-muted lg:text-16 lg:text-ok">
+                  사진을 올리면 약 이름과 양을 읽고,
+                  보호자가 확인한 내용으로 복약 가이드를 만들어요.
+                </p>
+              </>
             )}
           </div>
+        </section>
 
-          <Field
-            label="비밀번호"
-            type="password"
-            autoComplete={
-              isSignup ? 'new-password' : 'current-password'
-            }
-            helper={
-              isSignup
-                ? '8자 이상, 대문자·소문자·숫자·특수문자를 포함해 주세요.'
-                : '8자 이상 입력해 주세요.'
-            }
-            value={password}
-            disabled={loading}
-            onChange={e => setPassword(e.target.value)}
-          />
+        <form
+          id="auth-form"
+          noValidate
+          className="flex flex-1 flex-col gap-8 px-5 pb-8 pt-8 lg:self-center lg:px-0 lg:py-12"
+          onSubmit={handleSubmit}
+        >
+          <div className="flex flex-col gap-5">
 
-          {isSignup && (
-            <>
-              <Field
-                label="이름"
-                placeholder="이름을 입력해 주세요"
-                value={name}
-                maxLength={20}
-                disabled={loading}
-                onChange={e => setName(e.target.value)}
-              />
+            <div className="flex items-end gap-2">
+              <div className="min-w-0 flex-1">
+                <Field
+                  label="이메일"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="parent@example.com"
+                  value={email}
+                  disabled={loading}
+                  onChange={e => setEmail(e.target.value)}
+                />
+              </div>
 
-              <fieldset className="flex flex-col gap-2">
-                <legend className="text-14 font-medium text-muted">
-                  성별
-                </legend>
+              {isSignup && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="shrink-0"
+                  disabled={loading}
+                  onClick={() => {
+                    setError('이메일 중복 확인 API 연동 준비 중입니다.');
+                  }}
+                >
+                  중복 확인
+                </Button>
+              )}
+            </div>
 
-                <div className="flex gap-2">
-                  <Button
-                    variant={
-                      gender === 'MALE' ? 'primary' : 'secondary'
-                    }
-                    className="flex-1"
+            <Field
+              label="비밀번호"
+              type="password"
+              autoComplete={
+                isSignup ? 'new-password' : 'current-password'
+              }
+              helper={
+                isSignup
+                  ? '8자 이상, 대문자·소문자·숫자·특수문자를 포함해 주세요.'
+                  : '8자 이상 입력해 주세요.'
+              }
+              value={password}
+              disabled={loading}
+              onChange={e => setPassword(e.target.value)}
+            />
+
+            {isSignup && (
+              <div className="flex flex-col gap-5 border-t border-line pt-5">
+                <Field
+                  label="이름"
+                  placeholder="이름을 입력해 주세요"
+                  value={name}
+                  maxLength={20}
+                  disabled={loading}
+                  onChange={e => setName(e.target.value)}
+                />
+
+                <fieldset className="flex flex-col">
+                  <legend className="mb-2 text-14 font-semibold text-ink">
+                    성별
+                  </legend>
+
+                  <div className="flex gap-2">
+                    <Button
+                      variant={
+                        gender === 'MALE' ? 'primary' : 'secondary'
+                      }
+                      className="flex-1"
+                      disabled={loading}
+                      aria-pressed={gender === 'MALE'}
+                      onClick={() => setGender('MALE')}
+                    >
+                      남성
+                    </Button>
+
+                    <Button
+                      variant={
+                        gender === 'FEMALE' ? 'primary' : 'secondary'
+                      }
+                      className="flex-1"
+                      disabled={loading}
+                      aria-pressed={gender === 'FEMALE'}
+                      onClick={() => setGender('FEMALE')}
+                    >
+                      여성
+                    </Button>
+                  </div>
+                </fieldset>
+
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 sm:items-start sm:gap-3">
+                  <Field
+                    label="생년월일"
+                    type="date"
+                    value={birthDate}
                     disabled={loading}
-                    aria-pressed={gender === 'MALE'}
-                    onClick={() => setGender('MALE')}
-                  >
-                    남성
-                  </Button>
+                    onChange={e => setBirthDate(e.target.value)}
+                  />
 
-                  <Button
-                    variant={
-                      gender === 'FEMALE' ? 'primary' : 'secondary'
-                    }
-                    className="flex-1"
+                  <Field
+                    label="휴대폰 번호"
+                    type="tel"
+                    autoComplete="tel"
+                    placeholder="010-1234-5678"
+                    value={phoneNumber}
                     disabled={loading}
-                    aria-pressed={gender === 'FEMALE'}
-                    onClick={() => setGender('FEMALE')}
-                  >
-                    여성
-                  </Button>
+                    onChange={e => setPhoneNumber(e.target.value)}
+                  />
                 </div>
-              </fieldset>
+              </div>
+            )}
 
-              <Field
-                label="생년월일"
-                type="date"
-                value={birthDate}
-                disabled={loading}
-                onChange={e => setBirthDate(e.target.value)}
-              />
+            {error && (
+              <p role="alert" className="rounded-lg border border-danger/30 bg-danger-soft px-4 py-3 text-14 font-medium text-danger">
+                {error}
+              </p>
+            )}
 
-              <Field
-                label="휴대폰 번호"
-                type="tel"
-                autoComplete="tel"
-                placeholder="010-1234-5678"
-                value={phoneNumber}
-                disabled={loading}
-                onChange={e => setPhoneNumber(e.target.value)}
-              />
+            {message && (
+              <p role="status" className="rounded-lg bg-brand-soft px-4 py-3 text-14 font-medium text-brand">
+                {message}
+              </p>
+            )}
 
+          </div>
 
-            </>
-          )}
-
-          {error && (
-            <p role="alert" className="text-14 text-danger">
-              {error}
-            </p>
-          )}
-
-          {message && (
-            <p role="status" className="text-14 text-brand">
-              {message}
-            </p>
-          )}
-
-        </div>
-
-        <div className="hidden flex-col gap-2 lg:flex">
-          {renderButtons()}
-        </div>
-      </form>
+          <div className="hidden flex-col gap-2 lg:flex">
+            {renderButtons()}
+          </div>
+        </form>
+      </div>
     </AppShell>
   );
 }

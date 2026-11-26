@@ -11,10 +11,12 @@ class TestSignupAPI(TestCase):
 
         assert response.status_code == status.HTTP_201_CREATED
         body = response.json()
-        assert set(body) == {"guardian_id", "email", "name", "birth_date"}
+        assert set(body) == {"guardian_id", "email", "name", "birth_date", "gender", "phone_number"}
         assert body["email"] == "parent@example.com"
         assert body["name"] == "김보호"
         assert body["birth_date"] == "1990-05-14"
+        assert body["gender"] == "FEMALE"
+        assert body["phone_number"] == "01012345678"  # 숫자만 저장
 
         guardian = await Guardian.get(id=body["guardian_id"])
         assert guardian.password_hash != "pilly1234!"  # 해시로 저장
@@ -62,3 +64,28 @@ class TestSignupAPI(TestCase):
         response = await post("/auth/signup", json=signup_payload(email="invalid-email"))
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
         assert isinstance(response.json()["detail"], list)
+
+    async def test_phone_number_formats_are_normalized(self) -> None:
+        for index, raw in enumerate(["010-9876-5432", "01098765432", "+821098765432"]):
+            response = await post(
+                "/auth/signup", json=signup_payload(email=f"phone{index}@example.com", phone_number=raw)
+            )
+            assert response.status_code == status.HTTP_201_CREATED
+            assert response.json()["phone_number"] == "01098765432"
+
+    async def test_invalid_phone_number_returns_422(self) -> None:
+        for raw in ["02-123-4567", "010-123-4567", "abc", ""]:
+            response = await post("/auth/signup", json=signup_payload(phone_number=raw))
+            assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT, raw
+
+    async def test_invalid_gender_returns_422(self) -> None:
+        response = await post("/auth/signup", json=signup_payload(gender="OTHER"))
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+
+    async def test_missing_gender_or_phone_returns_400(self) -> None:
+        for field in ("gender", "phone_number"):
+            payload = signup_payload()
+            del payload[field]
+            response = await post("/auth/signup", json=payload)
+            assert response.status_code == status.HTTP_400_BAD_REQUEST
+            assert response.json() == {"detail": f"필수 항목을 입력해 주세요: {field}"}

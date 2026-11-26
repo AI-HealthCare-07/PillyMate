@@ -78,7 +78,7 @@ export function NotificationMenu({ onNavigate }) {
           type="button"
           onClick={toggle}
           aria-label={count ? `알림 ${count}개` : '알림'}
-          className={`relative inline-flex size-10 items-center justify-center rounded-full transition-colors ${isOpen ? 'bg-brand-soft text-brand' : 'text-ink hover:bg-sunk'}`}
+          className={`relative inline-flex size-11 items-center justify-center rounded-full transition-colors ${isOpen ? 'bg-brand-soft text-brand' : 'text-ink hover:bg-sunk'}`}
           {...props}
         >
           <Bell size={22} strokeWidth={1.75} aria-hidden />
@@ -113,7 +113,7 @@ export function NotificationMenu({ onNavigate }) {
                 </h3>
                 <ul className="flex flex-col gap-1">
                   {items.map((g) => (
-                    <li key={g.id} className="flex gap-3 rounded-lg bg-mark-soft/60 p-3">
+                    <li key={g.id} className="flex gap-3 rounded-lg bg-mark-soft p-3">
                       <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-mark text-mark-ink">
                         <Pill size={18} strokeWidth={2} aria-hidden />
                       </span>
@@ -131,7 +131,7 @@ export function NotificationMenu({ onNavigate }) {
                           type="button"
                           onClick={() => markGiven(g)}
                           aria-label={`${child.name} ${g.slot} 약 먹였어요`}
-                          className="inline-flex items-center gap-1 self-start rounded-md bg-brand px-3 py-1.5 text-13 font-semibold text-on-brand hover:bg-[#0B4A41]"
+                          className="inline-flex min-h-9 items-center gap-1 self-start rounded-md bg-brand px-3 py-1.5 text-13 font-semibold text-on-brand hover:bg-brand-hover"
                         >
                           <Check size={15} strokeWidth={2.5} aria-hidden />먹였어요
                         </button>

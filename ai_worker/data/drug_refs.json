@@ -1,0 +1,488 @@
+{
+  "version": 1,
+  "drugs": [
+    {
+      "key": "비오플250산",
+      "names": [
+        "비오플250산(사카로마이세스보울라르디균)"
+      ],
+      "ingredient": "saccharomyces boulardii",
+      "dosage_forms": [
+        "산제"
+      ],
+      "item_seq": "201006974",
+      "efficacy": "항생제 등으로 깨진 장내 균형을 바로잡아 묽은 변·복부 팽만을 개선하는 정장제예요(효모균).",
+      "cautions": "생후 3개월 미만은 먹이기 전에 의사·약사와 상의해요. 중심정맥 카테터를 쓰거나 면역이 약한 환자는 먹지 않아요. 과당이 들어 있어 유전적 당 불내성이 있으면 먹이지 않아요.",
+      "side_effects": "드물게 배에 가스 참, 변비. 매우 드물게 가려움·두드러기 같은 알레르기",
+      "storage": "습기를 피해 실온(1~30℃) 보관해요.",
+      "source": {
+        "name": "식약처 허가 사용상의 주의사항 (의약품안전나라 첨부, 사용자 제공 PDF)",
+        "url": "https://nedrug.mfds.go.kr/pbp/CCBBB01/getItemDetail?itemSeq=201006974",
+        "checked_at": "2026-11-21"
+      },
+      "status": "done",
+      "match_basis": "product",
+      "review_note": "주의사항 PDF로 대조 — 초안과 일치"
+    },
+    {
+      "key": "토브렉스점안액",
+      "names": [
+        "토브렉스0.3%점안액(토브라마이신)"
+      ],
+      "ingredient": "tobramycin",
+      "dosage_forms": [
+        "점안액"
+      ],
+      "item_seq": "199704517",
+      "efficacy": "세균성 결막염, 다래끼, 안검염, 각막염 같은 눈의 세균 감염을 치료하는 항생제 안약이에요.",
+      "cautions": "이 약이나 아미노글리코사이드계 항생제, 바시트라신에 알레르기가 있었으면 쓰지 않아요. 치료 중에는 콘택트렌즈를 끼지 않아요. 넣은 직후 잠깐 흐려 보일 수 있어요. 필요한 기간만 쓰고, 가려움·두드러기 같은 알레르기가 생기면 중단해요. 넣을 때 약병 입구가 눈이나 눈꺼풀에 닿지 않게 해요.",
+      "side_effects": "눈 불편감, 눈 충혈. 가끔 눈꺼풀 붓기·가려움, 눈 따가움",
+      "storage": "25℃ 이하에서 뚜껑을 꼭 닫아 보관해요.",
+      "source": {
+        "name": "식약처 허가 사용상의 주의사항 (의약품안전나라 첨부, 사용자 제공 PDF)",
+        "url": "https://nedrug.mfds.go.kr/pbp/CCBBB01/getItemDetail?itemSeq=199704517",
+        "checked_at": "2026-11-21"
+      },
+      "status": "done",
+      "match_basis": "product",
+      "review_note": "효능효과 화면, 주의사항 문서, 상세 화면 '재심사, RMP, 보험, 기타정보'의 저장방법(기밀용기, 25℃ 이하)으로 확인 완료"
+    },
+    {
+      "key": "하이드라섹산",
+      "names": [
+        "하이드라섹산10mg(라세카도트릴)",
+        "하이드라섹산30mg(라세카도트릴)"
+      ],
+      "ingredient": "racecadotril",
+      "dosage_forms": [
+        "산제"
+      ],
+      "item_seq": "201405412",
+      "efficacy": "생후 3개월 이상 아이의 급성 설사에서 수분·전해질 보충을 돕는 지사제예요.",
+      "cautions": "생후 3개월 미만에게는 먹이지 않아요. 피나 고름이 섞인 변에 열이 함께 있는 설사, 항생제 때문에 생긴 설사, 오래가는 설사, 계속 토할 때는 쓰지 않아요. 이 약과 함께 경구수액 등으로 수분 보충을 계속하고, 모유 수유 중이면 수유도 계속해요.",
+      "side_effects": "발진, 홍반. 얼굴·입술·눈꺼풀이 붓거나 두드러기, 심한 피부 반응이 생기면 바로 중단하고 진료받아요.",
+      "storage": "실온(1~30℃) 보관해요.",
+      "source": {
+        "name": "식약처 허가 사용상의 주의사항 (의약품안전나라 첨부, 사용자 제공 PDF)",
+        "url": "https://nedrug.mfds.go.kr/pbp/CCBBB01/getItemDetail?itemSeq=201405412",
+        "checked_at": "2026-11-21"
+      },
+      "status": "done",
+      "match_basis": "product",
+      "review_note": "주의사항 PDF(drb_201405412_NB)로 확인. 2026.10 변경은 용법·용량(체중별 포 단위) 쪽이라 이 파일에는 영향 없음. 저장방법은 약학정보원 기준"
+    },
+    {
+      "key": "챔프시럽",
+      "names": [
+        "챔프시럽(아세트아미노펜)"
+      ],
+      "ingredient": "acetaminophen",
+      "dosage_forms": [
+        "시럽"
+      ],
+      "item_seq": "201206715",
+      "efficacy": "감기로 인한 열과 두통·근육통 같은 통증을 줄여 주는 해열진통제예요.",
+      "cautions": "이 약 성분에 과민증이 있거나 소화성궤양, 심한 간·신장·심장 질환, 아스피린 천식이 있으면 먹이지 않아요. 아세트아미노펜이 든 다른 해열제·감기약과 함께 먹이지 않아요. 열이 3일 넘게 계속되면 진료받아요. 허가사항상 만 2세 미만은 의사 지시 없이는 먹이지 않는 약이에요.",
+      "side_effects": "구역, 구토, 식욕부진. 드물게 발진·두드러기",
+      "storage": "실온(1~30℃) 보관, 어린이 손이 닿지 않는 곳에 둬요.",
+      "source": {
+        "name": "식약처 허가 사용상의 주의사항 (의약품안전나라 첨부, 사용자 제공 PDF)",
+        "url": "https://nedrug.mfds.go.kr/pbp/CCBBB01/getItemDetail?itemSeq=201206715",
+        "checked_at": "2026-11-21"
+      },
+      "status": "done",
+      "match_basis": "product",
+      "review_note": "주의사항 PDF로 대조. 원문 '복용하지 말 것'에 만 2세 미만 포함 → 의사 지시 없이 먹이지 않는다로 반영"
+    },
+    {
+      "key": "뮤코브이시럽",
+      "names": [
+        "뮤코브이시럽(암브록솔염산염)"
+      ],
+      "ingredient": "ambroxol",
+      "dosage_forms": [
+        "시럽"
+      ],
+      "item_seq": "200100163",
+      "efficacy": "가래를 묽게 해서 잘 나오게 돕는 거담제예요(급·만성 기관지염).",
+      "cautions": "만 2세 미만에게는 먹이지 않아요. 이 약 성분에 과민반응이 있었거나 심한 간·신장 질환이 있으면 먹이지 않아요.",
+      "side_effects": "구역, 입안 감각 둔해짐, 맛이 달라짐",
+      "storage": "실온(1~30℃) 보관해요.",
+      "source": {
+        "name": "식약처 허가 사용상의 주의사항 (의약품안전나라 첨부, 사용자 제공 PDF)",
+        "url": "https://nedrug.mfds.go.kr/pbp/CCBBB01/getItemDetail?itemSeq=200100163",
+        "checked_at": "2026-11-21"
+      },
+      "status": "done",
+      "match_basis": "product",
+      "review_note": "주의사항 PDF로 대조 — 초안과 일치(만 2세 미만 투여하지 않음, 꼭 필요하면 진료)"
+    },
+    {
+      "key": "어린이부루펜시럽",
+      "names": [
+        "어린이부루펜시럽(이부프로펜)"
+      ],
+      "ingredient": "ibuprofen",
+      "dosage_forms": [
+        "시럽"
+      ],
+      "item_seq": "198601920",
+      "efficacy": "열을 내리고 통증과 염증을 줄여 주는 해열진통소염제(NSAID)예요.",
+      "cautions": "위장관 궤양·출혈, 기관지천식이 있었거나 아스피린 등 소염진통제에 천식·두드러기가 생긴 적이 있으면 먹이지 않아요. 심한 간·신장·심장 질환이 있어도 먹이지 않아요. 다른 소염진통제와 함께 먹이지 않아요. 열이 3일 넘게 계속되면 진료받아요. 허가사항상 만 2세 미만은 의사 지시 없이는 먹이지 않는 약이에요.",
+      "side_effects": "식욕부진, 구역, 구토, 복통, 설사. 발진·검은 변·혈변이 보이면 중단하고 상담해요.",
+      "storage": "빛을 피해 실온(1~30℃) 보관해요.",
+      "source": {
+        "name": "식약처 허가 사용상의 주의사항 (의약품안전나라 첨부, 사용자 제공 PDF)",
+        "url": "https://nedrug.mfds.go.kr/pbp/CCBBB01/getItemDetail?itemSeq=198601920",
+        "checked_at": "2026-11-21"
+      },
+      "status": "done",
+      "match_basis": "product",
+      "review_note": "주의사항 PDF로 대조. 기관지천식 병력 금기와 만 2세 미만(복용하지 말 것 목록) 반영"
+    },
+    {
+      "key": "락티케어에취씨로션",
+      "names": [
+        "락티케어에취씨로션1%(히드로코르티손)"
+      ],
+      "ingredient": "hydrocortisone",
+      "dosage_forms": [
+        "로션"
+      ],
+      "item_seq": "201201043",
+      "efficacy": "습진·피부염, 피부 가려움, 벌레 물린 데 쓰는 약한 스테로이드 로션이에요.",
+      "cautions": "세균·곰팡이·바이러스(수두, 포진 등)로 생긴 피부 감염 부위, 여드름, 입 주위 피부염, 짓무른 상처에는 바르지 않아요. 2세 미만은 의사와 상의해요. 바른 곳을 처방 없이 붕대로 덮지 않아요.",
+      "side_effects": "바른 곳의 세균·곰팡이 감염, 자극감",
+      "storage": "실온(1~30℃) 보관해요. 쓰기 전에 잘 흔들어요.",
+      "source": {
+        "name": "식약처 허가 사용상의 주의사항 (의약품안전나라 첨부, 사용자 제공 PDF)",
+        "url": "https://nedrug.mfds.go.kr/pbp/CCBBB01/getItemDetail?itemSeq=201201043",
+        "checked_at": "2026-11-21"
+      },
+      "status": "done",
+      "match_basis": "product",
+      "review_note": "주의사항 PDF로 대조. 여드름·입 주위 피부염 금기 추가"
+    },
+    {
+      "key": "데소덤크림",
+      "names": [
+        "데소덤크림0.05%(데소나이드)"
+      ],
+      "ingredient": "desonide",
+      "dosage_forms": [
+        "크림"
+      ],
+      "item_seq": "200404621",
+      "efficacy": "스테로이드에 반응하는 피부 질환(습진·피부염 등)의 가려움과 염증을 줄여 주는 약한 스테로이드 크림이에요.",
+      "cautions": "1세 이하 영아에게는 쓰지 않아요. 세균·곰팡이·바이러스(수두, 포진 등) 감염 부위, 상처가 짓무른 곳, 여드름에는 바르지 않고 눈에 닿지 않게 해요. 좋아지면 그만 바르고, 2주 안에 나아지지 않으면 다시 진료받아요. 붕대나 랩으로 덮지 않아요.",
+      "side_effects": "바른 곳이 따끔하거나 화끈거림, 자극감, 가려움, 건조함·각질",
+      "storage": "실온(1~30℃)에 뚜껑을 꼭 닫아 보관하고, 얼리지 않아요.",
+      "source": {
+        "name": "식약처 허가 사용상의 주의사항 (의약품안전나라 첨부, 사용자 제공 PDF)",
+        "url": "https://nedrug.mfds.go.kr/pbp/CCBBB01/getItemDetail?itemSeq=200404621",
+        "checked_at": "2026-11-21"
+      },
+      "status": "done",
+      "match_basis": "product",
+      "review_note": "효능효과·용법 화면, 주의사항 문서, 상세 화면 '재심사, RMP, 보험, 기타정보'의 저장방법(기밀용기, 실온 1~30℃, 냉동 피할 것)으로 확인 완료"
+    },
+    {
+      "key": "유한아세트아미노펜정500밀리그램",
+      "names": [
+        "유한아세트아미노펜정500밀리그램"
+      ],
+      "ingredient": "acetaminophen",
+      "dosage_forms": [
+        "정제"
+      ],
+      "item_seq": "202300437",
+      "efficacy": "감기로 인한 열과 두통·근육통 같은 통증을 줄여 주는 해열진통제예요.",
+      "cautions": "이 약 성분에 과민증이 있거나 소화성궤양, 심한 간·신장·심장 질환, 아스피린 천식이 있으면 먹이지 않아요. 아세트아미노펜이 든 다른 해열제·감기약과 함께 먹이지 않아요. 열이 3일 넘게 계속되면 진료받아요.",
+      "side_effects": "구역, 구토, 식욕부진. 드물게 발진·두드러기",
+      "storage": "실온(1~30℃) 보관, 어린이 손이 닿지 않는 곳에 둬요.",
+      "source": {
+        "name": "식약처 허가 사용상의 주의사항 (의약품안전나라 첨부, 사용자 제공 PDF)",
+        "url": "https://nedrug.mfds.go.kr/pbp/CCBBB01/getItemDetail?itemSeq=202300437",
+        "checked_at": "2026-11-21"
+      },
+      "status": "done",
+      "match_basis": "product",
+      "review_note": "주의사항 PDF(drb_202300437)로 확인. 정제라 2세 관련 문구 없음"
+    },
+    {
+      "key": "세노바액",
+      "names": [
+        "세노바액(세티리진염산염)"
+      ],
+      "ingredient": "cetirizine",
+      "dosage_forms": [
+        "액제"
+      ],
+      "item_seq": "199800470",
+      "efficacy": "콧물·재채기 같은 알레르기 비염, 알레르기 결막염, 두드러기, 피부 가려움을 줄여 주는 항히스타민제예요.",
+      "cautions": "2세 미만에게는 먹이지 않아요. 이 약이나 히드록시진 계열 약에 알레르기가 있었으면 먹이지 않아요. 테오필린, 리토나비어와 함께 먹지 않아요. 졸릴 수 있어요.",
+      "side_effects": "졸림, 피로감, 입마름",
+      "storage": "빛을 피해 실온 보관해요.",
+      "source": {
+        "name": "식약처 허가 사용상의 주의사항 (의약품안전나라 첨부, 사용자 제공 PDF)",
+        "url": "https://nedrug.mfds.go.kr/pbp/CCBBB01/getItemDetail?itemSeq=199800470",
+        "checked_at": "2026-11-21"
+      },
+      "status": "done",
+      "match_basis": "product",
+      "review_note": "주의사항 PDF로 대조. 2세 미만 금기 확인, 히드록시진 계열 알레르기 추가"
+    },
+    {
+      "key": "오구멘틴듀오시럽",
+      "names": [
+        "오구멘틴듀오시럽228mg/5ml(아목시실린`클라불란산칼륨)"
+      ],
+      "ingredient": "amoxicillin/clavulanate",
+      "dosage_forms": [
+        "시럽"
+      ],
+      "item_seq": "200001684",
+      "efficacy": "세균 감염(중이염, 부비동염, 편도염, 기관지염 등)을 치료하는 페니실린계 항생제예요.",
+      "cautions": "페니실린·세팔로스포린 같은 베타락탐계 항생제에 알레르기가 있었거나, 페니실린으로 황달·간 이상이 생긴 적이 있으면 먹이지 않아요. 전염단핵구증(감염성 단핵구증)이 있으면 발진 위험이 있어 먹이지 않아요. 좋아져도 처방 기간 동안 끝까지 먹여요.",
+      "side_effects": "설사, 메스꺼움, 구토. 설사가 심하거나 배가 아프면 중단하고 상담해요.",
+      "storage": "1~25℃에 보관해요. 물에 탄 시럽은 약국 안내대로 보관해요.",
+      "source": {
+        "name": "식약처 허가 사용상의 주의사항 (의약품안전나라 첨부, 사용자 제공 PDF)",
+        "url": "https://nedrug.mfds.go.kr/pbp/CCBBB01/getItemDetail?itemSeq=200001684",
+        "checked_at": "2026-11-21"
+      },
+      "status": "done",
+      "match_basis": "product",
+      "review_note": "주의사항 PDF로 대조. 전염단핵구증 금기 추가"
+    },
+    {
+      "key": "건일레보드로프로피진시럽",
+      "names": [
+        "건일레보드로프로피진시럽"
+      ],
+      "ingredient": "levodropropizine",
+      "dosage_forms": [
+        "시럽"
+      ],
+      "item_seq": "201900300",
+      "efficacy": "기침을 가라앉히는 진해제예요(급·만성 기관지염의 기침).",
+      "cautions": "이 약에 과민반응이 있었거나, 가래가 아주 많은 경우, 기관지 섬모에 이상이 있는 질환(카르타게너증후군 등), 심한 간 질환이 있으면 먹이지 않아요. 만 2세 미만은 신중히 써야 하는 약이에요. 졸릴 수 있어 진정제·졸리는 약을 함께 먹으면 알려요.",
+      "side_effects": "구역, 소화불량, 설사, 피로감, 졸림, 두통, 어지러움",
+      "storage": "실온(1~30℃) 보관해요.",
+      "source": {
+        "name": "식약처 허가 사용상의 주의사항 (의약품안전나라 첨부, 사용자 제공 PDF)",
+        "url": "https://nedrug.mfds.go.kr/pbp/CCBBB01/getItemDetail?itemSeq=201900300",
+        "checked_at": "2026-11-21"
+      },
+      "status": "done",
+      "match_basis": "product",
+      "review_note": "주의사항 PDF(drb_201900300)로 확인. 가래 많은 경우·섬모 이상 금기 추가"
+    },
+    {
+      "key": "알세진정10밀리그램",
+      "names": [
+        "알세진정10밀리그램(세티리진염산염)"
+      ],
+      "ingredient": "cetirizine",
+      "dosage_forms": [
+        "정제"
+      ],
+      "item_seq": "200905403",
+      "efficacy": "콧물·재채기 같은 알레르기 비염, 알레르기 결막염, 두드러기, 피부 가려움을 줄여 주는 항히스타민제예요.",
+      "cautions": "6세 미만에게는 먹이지 않아요(정제). 이 약이나 히드록시진 계열 약에 알레르기가 있었으면 먹이지 않아요. 테오필린, 리토나비어와 함께 먹지 않아요. 졸릴 수 있어요.",
+      "side_effects": "졸림, 피로감, 입마름",
+      "storage": "빛을 피해 실온 보관해요.",
+      "source": {
+        "name": "식약처 허가 사용상의 주의사항 (의약품안전나라 첨부, 사용자 제공 PDF)",
+        "url": "https://nedrug.mfds.go.kr/pbp/CCBBB01/getItemDetail?itemSeq=200905403",
+        "checked_at": "2026-11-21"
+      },
+      "status": "done",
+      "match_basis": "product",
+      "review_note": "주의사항 PDF(drb_200905403)로 확인. ⚠️ 정제는 6세 미만 금기(시럽 세노바액은 2세 미만)"
+    },
+    {
+      "key": "팜젠암브록솔염산염정",
+      "names": [
+        "팜젠암브록솔염산염정30mg"
+      ],
+      "ingredient": "ambroxol",
+      "dosage_forms": [
+        "정제"
+      ],
+      "item_seq": "201401232",
+      "efficacy": "가래를 묽게 해서 잘 나오게 돕는 거담제예요(급·만성 기관지염).",
+      "cautions": "이 약 성분에 과민반응이 있었거나 심한 간·신장 질환이 있으면 먹이지 않아요. 아스파탐이 들어 있어 페닐케톤뇨증이면 먹이지 않아요.",
+      "side_effects": "구역, 입안 감각 둔해짐, 맛이 달라짐",
+      "storage": "실온(1~30℃) 보관해요.",
+      "source": {
+        "name": "식약처 허가 사용상의 주의사항 (의약품안전나라 첨부, 사용자 제공 PDF)",
+        "url": "https://nedrug.mfds.go.kr/pbp/CCBBB01/getItemDetail?itemSeq=201401232",
+        "checked_at": "2026-11-21"
+      },
+      "status": "done",
+      "match_basis": "product",
+      "review_note": "주의사항 PDF(drb_201401232)로 확인. 원문에 2세 관련 문구는 없음(정제)"
+    },
+    {
+      "key": "레브로콜정60밀리그램",
+      "names": [
+        "레브로콜정60밀리그램(레보드로프로피진)"
+      ],
+      "ingredient": "levodropropizine",
+      "dosage_forms": [
+        "정제"
+      ],
+      "item_seq": "200803449",
+      "efficacy": "기침을 가라앉히는 진해제예요(급·만성 기관지염의 기침).",
+      "cautions": "이 약에 과민반응이 있었거나, 가래가 아주 많은 경우, 기관지 섬모에 이상이 있는 질환(카르타게너증후군 등), 심한 간 질환이 있으면 먹이지 않아요. 만 2세 미만은 신중히 써야 하는 약이에요. 졸릴 수 있어 진정제·졸리는 약을 함께 먹으면 알려요.",
+      "side_effects": "구역, 소화불량, 설사, 피로감, 졸림, 두통, 어지러움",
+      "storage": "실온(1~30℃) 보관해요.",
+      "source": {
+        "name": "식약처 허가 사용상의 주의사항 (의약품안전나라 첨부, 사용자 제공 PDF)",
+        "url": "https://nedrug.mfds.go.kr/pbp/CCBBB01/getItemDetail?itemSeq=200803449",
+        "checked_at": "2026-11-21"
+      },
+      "status": "done",
+      "match_basis": "product",
+      "review_note": "주의사항 PDF(drb_200803449)로 확인. 유당 함유"
+    },
+    {
+      "key": "크라맥스정625밀리그램)",
+      "names": [
+        "크라맥스정625밀리그램(아목시실린-클라불란산칼륨(4:1))"
+      ],
+      "ingredient": "amoxicillin/clavulanate",
+      "dosage_forms": [
+        "정제"
+      ],
+      "item_seq": "201904474",
+      "efficacy": "세균 감염(중이염, 부비동염, 편도염, 기관지염 등)을 치료하는 페니실린계 항생제예요.",
+      "cautions": "페니실린·세팔로스포린 같은 베타락탐계 항생제에 알레르기가 있었거나, 페니실린으로 황달·간 이상이 생긴 적이 있으면 먹이지 않아요. 전염단핵구증(감염성 단핵구증)이 있으면 발진 위험이 있어 먹이지 않아요. 좋아져도 처방 기간 동안 끝까지 먹여요.",
+      "side_effects": "설사, 메스꺼움, 구토. 설사가 심하거나 배가 아프면 중단하고 상담해요.",
+      "storage": "1~25℃에 보관해요. 물에 탄 시럽은 약국 안내대로 보관해요.",
+      "source": {
+        "name": "식약처 허가 사용상의 주의사항 (의약품안전나라 첨부, 사용자 제공 PDF)",
+        "url": "https://nedrug.mfds.go.kr/pbp/CCBBB01/getItemDetail?itemSeq=201904474",
+        "checked_at": "2026-11-21"
+      },
+      "status": "done",
+      "match_basis": "product",
+      "review_note": "주의사항 PDF(drb_201904474)로 확인 — 오구멘틴과 같은 금기"
+    },
+    {
+      "key": "경보세파클러건조시럽",
+      "names": [
+        "경보세파클러건조시럽25mg/mL(세파클러수화물)"
+      ],
+      "ingredient": "cefaclor",
+      "dosage_forms": [
+        "건조시럽"
+      ],
+      "item_seq": "200403720",
+      "efficacy": "세균 감염(중이염, 인후두염, 편도염, 기관지염 등)을 치료하는 세팔로스포린계 항생제예요.",
+      "cautions": "이 약으로 쇼크가 있었거나 세팔로스포린계 항생제에 과민반응이 있었으면 먹이지 않아요. 페니실린 알레르기나 천식·두드러기 같은 알레르기 체질이면 꼭 알려요. 좋아져도 처방 기간 동안 끝까지 먹여요.",
+      "side_effects": "설사, 발진, 가려움. 심한 설사나 두드러기·숨가쁨이 생기면 상담해요.",
+      "storage": "빛을 피해 실온 보관해요.",
+      "source": {
+        "name": "식약처 허가 사용상의 주의사항 (의약품안전나라 첨부, 사용자 제공 PDF)",
+        "url": "https://nedrug.mfds.go.kr/pbp/CCBBB01/getItemDetail?itemSeq=200403720",
+        "checked_at": "2026-11-21"
+      },
+      "status": "done",
+      "match_basis": "product",
+      "review_note": "주의사항 PDF(drb_200403720)로 확인. 파일 속 생동성 대조약 이름은 종근당·시클러 — 품목기준코드가 경보 제품인지 상세 화면에서 한 번 확인"
+    },
+    {
+      "key": "엘리델크림",
+      "names": [
+        "엘리델크림1%(피메크로리무스)"
+      ],
+      "ingredient": "pimecrolimus",
+      "dosage_forms": [
+        "크림"
+      ],
+      "item_seq": "200209697",
+      "efficacy": "2세 이상 아이의 가벼운~중간 정도 아토피 피부염에 쓰는 비스테로이드 연고(칼시뉴린 억제제)예요.",
+      "cautions": "2세 미만에게는 쓰지 않아요. 면역이 떨어진 경우에도 쓰지 않아요. 눈·입안 같은 점막과 바이러스 감염(포진 등)이 있는 피부에는 바르지 않고, 눈에 들어가면 닦거나 물로 헹궈요. 아토피 부위에만 바르고, 오래 계속 쓰지 않아요. 바른 곳을 밀폐하지 않아요.",
+      "side_effects": "바른 곳이 화끈거림(가장 흔함), 자극감, 가려움, 홍반. 가끔 모낭염 같은 피부 감염",
+      "storage": "25℃ 이하에서 보관해요.",
+      "source": {
+        "name": "식약처 허가 사용상의 주의사항 (의약품안전나라 첨부, 사용자 제공 PDF)",
+        "url": "https://nedrug.mfds.go.kr/pbp/CCBBB01/getItemDetail?itemSeq=200209697",
+        "checked_at": "2026-11-21"
+      },
+      "status": "done",
+      "match_basis": "product",
+      "review_note": "주의사항 PDF(drb_200209697)로 확인. 저장방법(25℃ 이하)은 약학정보원 기준"
+    },
+    {
+      "key": "광동클래리트로마이신건조시럽",
+      "names": [
+        "광동클래리트로마이신건조시럽125mg/5mL"
+      ],
+      "ingredient": "clarithromycin",
+      "dosage_forms": [
+        "건조시럽"
+      ],
+      "item_seq": "201206325",
+      "efficacy": "세균 감염(중이염, 인두염, 편도염, 부비동염, 기관지염 등)을 치료하는 마크로라이드계 항생제예요.",
+      "cautions": "클래리트로마이신·에리스로마이신 같은 마크로라이드계 항생제에 알레르기가 있었으면 먹이지 않아요. 함께 먹으면 안 되는 약이 많아요(돔페리돈 등) — 다른 약을 먹고 있으면 꼭 알려요. 아스파탐이 들어 있어 페닐케톤뇨증이면 먹이지 않아요. 좋아져도 처방 기간 동안 끝까지 먹여요.",
+      "side_effects": "배가 더부룩함, 구역, 구토, 설사, 발진. 배가 아프고 설사가 잦으면 중단하고 상담해요.",
+      "storage": "냉장 보관하지 말고, 빛을 피해 실온에 보관해요.",
+      "source": {
+        "name": "식약처 허가 사용상의 주의사항 (의약품안전나라 첨부, 사용자 제공 PDF)",
+        "url": "https://nedrug.mfds.go.kr/pbp/CCBBB01/getItemDetail?itemSeq=201206325",
+        "checked_at": "2026-11-21"
+      },
+      "status": "done",
+      "match_basis": "product",
+      "review_note": "주의사항 PDF(drb_201206325_NB)로 확인. '냉장보관하지 않는다·실온·차광'은 13항 보관 및 취급상의 주의 원문"
+    },
+    {
+      "key": "넬슨이부프로펜정200밀리그램",
+      "names": [
+        "넬슨이부프로펜정200밀리그램(이부프로펜)"
+      ],
+      "ingredient": "ibuprofen",
+      "dosage_forms": [
+        "정제"
+      ],
+      "item_seq": "199501735",
+      "efficacy": "열을 내리고 통증과 염증을 줄여 주는 해열진통소염제(NSAID)예요.",
+      "cautions": "위장관 궤양·출혈, 기관지천식이 있었거나 아스피린 등 소염진통제에 천식·두드러기가 생긴 적이 있으면 먹이지 않아요. 심한 간·신장·심장 질환이 있어도 먹이지 않아요. 다른 소염진통제와 함께 먹이지 않아요. 열이 3일 넘게 계속되면 진료받아요.",
+      "side_effects": "식욕부진, 구역, 구토, 복통, 설사. 발진·검은 변·혈변이 보이면 중단하고 상담해요.",
+      "storage": "빛을 피해 실온(1~30℃) 보관해요.",
+      "source": {
+        "name": "식약처 허가 사용상의 주의사항 (의약품안전나라 첨부, 사용자 제공 PDF)",
+        "url": "https://nedrug.mfds.go.kr/pbp/CCBBB01/getItemDetail?itemSeq=199501735",
+        "checked_at": "2026-11-21"
+      },
+      "status": "done",
+      "match_basis": "product",
+      "review_note": "주의사항 PDF(drb_199501735)로 확인. 기관지천식 병력 금기 포함"
+    },
+    {
+      "key": "일양세파클러캡슐250밀리그램",
+      "names": [
+        "일양세파클러캡슐250밀리그램"
+      ],
+      "ingredient": "cefaclor",
+      "dosage_forms": [
+        "캡슐"
+      ],
+      "item_seq": "200401296",
+      "efficacy": "세균 감염(중이염, 인후두염, 편도염, 기관지염 등)을 치료하는 세팔로스포린계 항생제예요.",
+      "cautions": "이 약으로 쇼크가 있었거나 세팔로스포린계 항생제에 과민반응이 있었으면 먹이지 않아요. 페니실린 알레르기나 천식·두드러기 같은 알레르기 체질이면 꼭 알려요. 좋아져도 처방 기간 동안 끝까지 먹여요.",
+      "side_effects": "설사, 발진, 가려움. 심한 설사나 두드러기·숨가쁨이 생기면 상담해요.",
+      "storage": "빛을 피해 실온 보관해요.",
+      "source": {
+        "name": "식약처 허가 사용상의 주의사항 (의약품안전나라 첨부, 사용자 제공 PDF)",
+        "url": "https://nedrug.mfds.go.kr/pbp/CCBBB01/getItemDetail?itemSeq=200401296",
+        "checked_at": "2026-11-21"
+      },
+      "status": "done",
+      "match_basis": "product",
+      "review_note": "주의사항 PDF(drb_200401296)로 확인. 파일 속 생동성 정보는 세프레캡슐 — 품목기준코드가 일양 제품인지 상세 화면에서 한 번 확인"
+    }
+  ]}

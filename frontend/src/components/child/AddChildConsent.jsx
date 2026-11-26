@@ -138,8 +138,8 @@ function ConsentModal({ open, onClose, onAgree }) {
           아래 동의 문구는 법적 검토 전 초안이에요. 내용이 확정되면 바뀔 수 있어요.
         </p>
 
-        <CheckRow checked={all} onChange={setAll} className="rounded-lg border border-line px-3.5 py-3.5">
-          <span className="text-16 font-bold">전체 동의하기</span>
+        <CheckRow checked={all} onChange={setAll} className="min-h-14 rounded-xl border border-brand/30 bg-brand-soft px-4 py-3.5">
+          <span className="text-16 font-bold text-brand">전체 동의하기</span>
         </CheckRow>
 
         <ul className="flex flex-col" aria-label="필수 동의 항목">
@@ -164,7 +164,7 @@ function ConsentModal({ open, onClose, onAgree }) {
                     aria-expanded={isOpen}
                     aria-controls={detailId}
                     onClick={() => setExpanded(isOpen ? null : item.key)}
-                    className="flex shrink-0 items-center gap-0.5 rounded-md px-2 py-2 text-13 font-semibold text-muted hover:bg-paper hover:text-ink"
+                    className="flex min-h-11 shrink-0 items-center gap-0.5 rounded-md px-2 text-13 font-semibold text-terra-ink hover:bg-paper"
                   >
                     자세히 보기
                     <ChevronDown size={15} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} aria-hidden />
@@ -194,7 +194,7 @@ function ConsentModal({ open, onClose, onAgree }) {
           })}
         </ul>
 
-        <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
+        <div className="flex flex-col-reverse gap-2 border-t border-line pt-4 sm:flex-row sm:justify-end">
           <Button variant="secondary" onClick={onClose}>취소</Button>
           <Button disabled={!all} onClick={() => onAgree(checked)}>동의하고 계속하기</Button>
         </div>
@@ -209,7 +209,7 @@ function CheckRow({ checked, onChange, className = '', children }) {
     <label className={`flex cursor-pointer items-center gap-3 ${className}`}>
       <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="peer sr-only" />
       <span
-        className={`flex size-6 shrink-0 items-center justify-center rounded-[6px] border-2 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-brand/40 ${checked ? 'border-brand bg-brand text-on-brand' : 'border-line bg-surface text-transparent'}`}
+        className={`flex size-6 shrink-0 items-center justify-center rounded-[6px] border-2 transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-brand/40 ${checked ? 'border-brand bg-brand text-on-brand' : 'border-edge bg-surface text-transparent'}`}
         aria-hidden
       >
         <Check size={15} strokeWidth={3} />

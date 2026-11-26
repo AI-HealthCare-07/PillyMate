@@ -15,7 +15,12 @@ async def signup(request: SignUpRequest, auth_service: AuthServiceDep) -> SignUp
     """1. 회원가입"""
     guardian = await auth_service.signup(request)
     return SignUpResponse(
-        guardian_id=guardian.id, email=guardian.email, name=guardian.name, birth_date=guardian.birth_date
+        guardian_id=guardian.id,
+        email=guardian.email,
+        name=guardian.name,
+        birth_date=guardian.birth_date,
+        gender=guardian.gender,
+        phone_number=guardian.phone_number,
     )
 
 

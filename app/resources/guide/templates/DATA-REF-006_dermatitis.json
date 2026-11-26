@@ -1,0 +1,145 @@
+{
+  "template_id": "DATA-REF-006/dermatitis@0.1",
+  "disease_group": "dermatitis",
+  "match_user_input": [
+    "아토피",
+    "습진",
+    "접촉성 피부염",
+    "피부염",
+    "두드러기"
+  ],
+  "review_status": "초안 - 의료진 검수 전",
+  "usage_rule": "LLM은 items 중에서 고르고 personal_note만 붙인다. 문장을 새로 만들지 않는다.",
+  "sections": [
+    {
+      "key": "recovery_course",
+      "title": "보통 이렇게 관리해요",
+      "items": [
+        {
+          "id": "derm.course.long",
+          "text": "아토피피부염은 한 번에 낫기보다 다시 나빠지지 않게 꾸준히 관리하는 게 중요해요.",
+          "source": "KDCA_AD_INFO",
+          "needs_review": false,
+          "source_check": "verified"
+        },
+        {
+          "id": "derm.course.moisturize_basic",
+          "text": "보습과 피부 관리를 꾸준히 해 주세요.",
+          "source": "KDCA_AD",
+          "needs_review": false,
+          "source_check": "revised"
+        }
+      ]
+    },
+    {
+      "key": "hygiene",
+      "title": "목욕·보습",
+      "items": [
+        {
+          "id": "derm.bath.warm",
+          "text": "뜨거운 물 대신 미지근한 물로, 목욕은 10분 정도로 짧게 해 주세요.",
+          "source": "KDCA_AD",
+          "needs_review": true,
+          "source_check": "verified"
+        },
+        {
+          "id": "derm.bath.pat",
+          "text": "수건으로 문지르지 말고 톡톡 두드려 물기를 닦아 주세요.",
+          "source": "TODO_SOURCE",
+          "needs_review": false,
+          "source_check": "removed",
+          "disabled": true
+        },
+        {
+          "id": "derm.moist.3min",
+          "text": "목욕 직후에 보습제를 발라 주세요.",
+          "source": "KDCA_AD",
+          "needs_review": true,
+          "source_check": "revised"
+        },
+        {
+          "id": "derm.moist.twice",
+          "text": "보습제는 하루에 적어도 두 번 이상 발라 주세요.",
+          "source": "KDCA_AD",
+          "needs_review": true,
+          "source_check": "verified"
+        },
+        {
+          "id": "derm.order",
+          "text": "처방받은 연고와 보습제를 함께 쓸 때 바르는 순서는 약사에게 확인하세요.",
+          "source": "PILLYMATE_RULE",
+          "needs_review": false,
+          "source_check": "internal"
+        }
+      ]
+    },
+    {
+      "key": "home_environment",
+      "title": "집 안 환경·옷",
+      "items": [
+        {
+          "id": "derm.room",
+          "text": "실내 온도와 습도가 너무 높거나 낮지 않게 유지해 주세요.",
+          "source": "KDCA_AD",
+          "needs_review": false,
+          "source_check": "revised"
+        },
+        {
+          "id": "derm.clothes",
+          "text": "거친 옷감보다 부드러운 옷감의 옷을 입혀 주세요.",
+          "source": "KDCA_AD",
+          "needs_review": false,
+          "source_check": "revised"
+        }
+      ]
+    },
+    {
+      "key": "rest_sleep",
+      "title": "쉬기·잠",
+      "items": [
+        {
+          "id": "derm.scratch",
+          "text": "긁으면 피부가 더 상하고 가려움이 심해져요. 손톱을 짧게 깎아 주세요.",
+          "source": "KDCA_AD",
+          "needs_review": false,
+          "source_check": "revised"
+        }
+      ]
+    }
+  ],
+  "extra_warning_signs": {
+    "see_doctor": []
+  },
+  "sources": {
+    "KDCA_AD": {
+      "title": "질병관리청 국가건강정보포털 이달의 건강정보 「알레르기 예방관리수칙」 중 아토피피부염 예방관리수칙",
+      "url": "https://health.kdca.go.kr/healthinfo/biz/health/ntcnInfo/healthSourc/thtimtCntnts/thtimtCntntsView.do?thtimt_cntnts_sn=25"
+    },
+    "KDCA_AD_INFO": {
+      "title": "질병관리청 국가건강정보포털 「아토피피부염」",
+      "url": "https://health.kdca.go.kr/healthinfo/biz/health/gnrlzHealthInfo/gnrlzHealthInfo/gnrlzHealthInfoView.do?cntnts_sn=6582"
+    },
+    "PILLYMATE_RULE": {
+      "title": "PillyMate 안전 원칙 (모르는 건 약사 확인)",
+      "url": null
+    },
+    "TODO_SOURCE": {
+      "title": "출처 확보 필요 - 출처를 찾기 전에는 가이드에 넣지 않음",
+      "url": null
+    }
+  },
+  "notes": "접촉피부염(L23)은 '원인 물질 피하기' 문장이 필요하지만 출처 확보 전. 실내 습도 수치(45~55%)는 월령·수면 환경에 따라 다르다는 단서가 있어 문장에 숫자를 넣지 않음.",
+  "_removed_unverified": [
+    {
+      "id": "derm.ooze",
+      "text": "가려움과 붉은 기가 계속되거나 진물이 날 때",
+      "source": "TODO_SOURCE",
+      "needs_review": false,
+      "source_check": "removed"
+    }
+  ],
+  "source_review": {
+    "date": "2026-11-24",
+    "rule": "공식 원문(질병관리청·식약처 등)만 출처로 씀. 원문과 대조 결과는 각 문장의 source_check에 표시. removed는 출처를 찾을 때까지 가이드에 나오지 않음."
+  }
+}
