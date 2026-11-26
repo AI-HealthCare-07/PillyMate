@@ -17,6 +17,7 @@ from app.models.medications import Medication
 from app.models.prescriptions import Prescription, PrescriptionStatus
 from app.scripts.seed_prescription import confirm_body_example, create_demo_prescription
 from app.services.guide import service as guide_service
+from app.tests.auth_apis.helpers import signup_payload
 
 PASSWORD = "pilly1234!"
 
@@ -30,18 +31,7 @@ def offline_generate_guide(child: dict, prescription: dict, medications: list[di
 
 class PrescriptionApiBase(TestCase):
     async def login(self, client: AsyncClient, email: str) -> dict[str, str]:
-<<<<<<< HEAD
-        signup = {
-            "email": email,
-            "password": PASSWORD,
-            "name": "김보호",
-            "birth_date": "1990-05-14",
-            "gender": "FEMALE",
-            "phone_number": "010-1234-5678",
-        }
-=======
         signup = signup_payload(email=email, password=PASSWORD)
->>>>>>> 63dcb066dae414e8ac49da342a87494fc0b59d85
         await client.post("/api/v1/auth/signup", json=signup)
         res = await client.post("/api/v1/auth/login", json={"email": email, "password": PASSWORD})
         return {"Authorization": f"Bearer {res.json()['access_token']}"}
