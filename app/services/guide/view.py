@@ -80,7 +80,23 @@ def build_how_to(medications: list[dict]) -> list[dict]:
         check = m.get("pharmacist_check") or {}
         if check.get("needed") and check.get("reason"):
             notes.append(f"약사 확인 필요: {check['reason']}")
-        out.append({"name": m["name"], "how": how.strip(), "note": " ".join(notes)})
+        out.append(
+            {
+                # 예전 화면용 (그대로 둠)
+                "name": m["name"],
+                "how": how.strip(),
+                "note": " ".join(notes),
+                # 약 카드 자세히 보기용 — 화면이 이 값이 있으면 이것을 보여 줘요
+                "purpose": m.get("purpose"),
+                "steps": list(m.get("how_to_give") or []),
+                "cautions": list(m.get("cautions") or []),
+                "sideEffects": list(m.get("common_side_effects") or []),
+                "storage": m.get("storage"),
+                "pharmacistCheck": check.get("reason") if check.get("needed") else None,
+                "form": m.get("dosage_form"),
+                "route": m.get("route"),
+            }
+        )
     return out
 
 
