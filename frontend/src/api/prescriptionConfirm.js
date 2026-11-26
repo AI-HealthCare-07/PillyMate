@@ -5,6 +5,7 @@
  * 서버는 숫자·단위·제형을 따로 받으므로 여기서 나눠요.
  * - 필요할 때 먹는 약: 하루 횟수 대신 하루 최대 횟수('최대 4번')를 보내요. 최대 횟수와 기간은 비워도 돼요.
  * - 제형·경로(route·dosage_form): OCR이 읽은 값을 쓰고, 없으면(보호자가 추가한 약 등) 약 이름·단위로 추정해요.
+ * - 1회 양 단위: 적힌 단위 → OCR 단위 → 약 이름·제형으로 짐작한 단위 순서로 써요.
  */
 
 import { isAsNeeded } from '../state/records.jsx';
@@ -76,13 +77,44 @@ export function inferForm(name, unit) {
   return { dosageForm: FORM_BY_UNIT[unit] ?? 'ETC', route: 'ORAL' };
 }
 
-/** 확인 화면 약 카드 하나 → 확정 요청의 약 하나 (명세 7번 medications[]) */
-/** 단위를 못 읽었을 때 약 이름으로 정할 수 있는 단위 — 붙이는 약은 한 번에 한 장이라 '개'예요. */
-const unitByName = (name) => (/패취|패치|파스/.test(name ?? '') ? '개' : null);
+/* 처방전 약 이름의 포장 단위 표기: '/1포', '/1정', '/100(1)mL/병'. 마지막 표기가 1회 양의 단위예요(ocr/ocr_result_formatter.py와 같은 규칙). */
+const PACKAGE_UNIT = /\/\s*\d+(?:\.\d+)?\s*(?:\(\s*\d+\s*\))?\s*(mL|ml|ML|포|정|캡슐|g|개|방울|관|회|병)/g;
+const UNIT_BY_FORM = { SYRUP: 'mL', DRY_SYRUP: 'mL', TABLET: '정', CAPSULE: '캡슐', POWDER: '포', EYE_DROP: '방울', SUPPOSITORY: '개' };
 
+/**
+ * 1회 양의 단위를 약 이름·제형으로 짐작해요. 보호자가 '5'만 적거나 OCR이 단위를 못 읽어도 '5mL'처럼 채우려고요.
+ * 연고·크림처럼 짐작할 수 없으면 null.
+ */
+export function guessDoseUnit(name, dosageForm = null) {
+  const text = name ?? '';
+  // 안약·귀약은 병 용량('/5mL/병')이 적혀 있어도 한 번에 넣는 양은 방울 수예요.
+  if (dosageForm === 'EYE_DROP' || /점안|안약|눈약|점이|이용액|귀약/.test(text)) return '방울';
+  const packageUnit = [...text.matchAll(PACKAGE_UNIT)].at(-1)?.[1];
+  const fromPackage = packageUnit && (UNITS[packageUnit.toLowerCase()] ?? UNITS[packageUnit]);
+  if (fromPackage) return fromPackage;
+  if (/패취|패치|파스/.test(text)) return '개';
+  if (/ml/i.test(text)) return 'mL';
+  const form = dosageForm && dosageForm !== 'ETC' ? dosageForm : FORM_BY_NAME.find(([pattern]) => pattern.test(text))?.[1];
+  return UNIT_BY_FORM[form] ?? null;
+}
+
+/** 숫자만 적힌 1회 양('5', '0.5', '1/2')에 단위를 붙여요. 이미 단위가 있거나 숫자가 아니면 그대로예요. */
+export function withDoseUnit(doseText, unit) {
+  const value = String(doseText ?? '').trim();
+  if (!unit || !/^\d+(?:\.\d+)?$|^\d+\s*\/\s*\d+$/.test(value)) return value;
+  return `${value}${unit}`;
+}
+
+/** 카드에 단위가 없을 때 쓸 단위 — OCR 단위가 먼저, 없으면 약 이름·제형으로 짐작해요. */
+export const cardDoseUnit = (card) => card.unit ?? guessDoseUnit(card.name, card.dosageForm);
+
+/**
+ * 확인 화면 약 카드 하나 → 확정 요청의 약 하나 (명세 7번 medications[])
+ * 보호자가 비워 둔 칸(1회 양·하루 횟수·기간)은 null로 보내요. 서버는 약 이름·경로·제형만 꼭 받아요(명세 7번).
+ */
 export function toConfirmItem(card) {
   const asNeeded = isAsNeeded(card);
-  const { dose, unit } = parseDose(card.dose?.value, card.unit ?? unitByName(card.name));
+  const { dose, unit } = parseDose(card.dose?.value, cardDoseUnit(card));
   const inferred = inferForm(card.name, unit);
   return {
     medication_id: card.medicationId ?? null,
@@ -90,28 +122,14 @@ export function toConfirmItem(card) {
     dose_per_time: dose,
     unit,
     daily_count: asNeeded ? null : countOf(card.perDay?.value),
-    max_daily_count: asNeeded ? maxCountOf(card.perDay?.value) : null,
+    // 먹는 때를 '필요시'로 바꾼 약은 하루 칸에 '3번'처럼 적혀 있을 수 있어요. 그 숫자를 하루 최대 횟수로 써요.
+    max_daily_count: asNeeded ? maxCountOf(card.perDay?.value) ?? countOf(card.perDay?.value) : null,
     total_days: daysOf(card.days?.value),
     as_needed: asNeeded,
     usage: String(card.timing?.value ?? '').trim() || null,
     route: card.route ?? inferred.route,
     dosage_form: card.dosageForm ?? inferred.dosageForm,
   };
-}
-
-/**
- * 서버에 보내기 전에 막을 문제 — 서버의 400 문구(medications[0].unit 같은 칸 이름)는 보호자가 알아보기 어려워요.
- * 문제가 없으면 null, 있으면 보여 줄 문장.
- */
-export function confirmItemProblem(item) {
-  const name = `「${item.name}」`;
-  if (item.dose_per_time === null) return `${name}의 1회 양을 숫자로 적어 주세요. (예: 5mL, 1포)`;
-  if (!item.unit) return `${name}의 1회 양에 단위(mL, 포, 정, 캡슐 등)를 붙여 주세요.`;
-  // 필요할 때 먹는 약은 하루 최대 횟수·기간이 없어도 돼요(처방전에 안 적힌 경우가 많아요).
-  if (item.as_needed) return null;
-  if (item.daily_count === null) return `${name}의 하루 횟수를 숫자로 적어 주세요. (예: 3번)`;
-  if (item.total_days === null) return `${name}의 복용 기간을 적어 주세요. (예: 5일)`;
-  return null;
 }
 
 /** 확정 요청 — 성공하면 서버의 처방 상세(6번과 같은 형식)를 돌려줘요. */

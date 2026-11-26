@@ -7,8 +7,8 @@ import { Modal } from '../components/ui/Modal.jsx';
 import { AppShell, Header } from '../components/ui/layout.jsx';
 import { RxPaper } from '../components/rx/RxPaper.jsx';
 import { Highlight, LowConfidenceBanner } from '../components/rx/Highlight.jsx';
-import { MedList, emptyMed } from '../components/rx/meds.jsx';
-import { confirmItemProblem, confirmPrescription, toConfirmItem } from '../api/prescriptionConfirm.js';
+import { MedList, emptyMed, fillGuessedFields, isMissing } from '../components/rx/meds.jsx';
+import { confirmPrescription, toConfirmItem } from '../api/prescriptionConfirm.js';
 import { suggestDiseaseName } from '../data/diseaseCodes.js';
 import { medFields, meds as sampleMeds, prescription as rx } from '../data/sample.js';
 import { getPrescriptionDraft, setPrescriptionDraft } from './fe2Draft.js';
@@ -17,7 +17,8 @@ import { useSelectedChild } from '../state/selectedChild.jsx';
 
 const MARKS = [[140, 186, 30], [190, 226, 22]];
 const countLow = (list) => list.reduce((n, m) => n + medFields.filter(([k]) => Boolean(m[k]?.low)).length, 0);
-const countNoTiming = (list) => list.filter((m) => !m.isNew && !String(m.timing?.value ?? '').trim()).length;
+/** 빈 칸이 있는 약 수 — 알려만 주고, 가이드 만들기를 막지는 않아요. */
+const countWithBlank = (list) => list.filter((m) => !m.isNew && medFields.some(([k]) => isMissing(m, k))).length;
 
 /** 처방전·약봉투에 따라 바뀌는 낱말 (조사까지 함께) */
 const DOC_WORDS = {
@@ -86,7 +87,8 @@ export function ConfirmScreen({ go, back, onTab }) {
   };
   // TODO(API): OCR 응답의 약 목록을 정규화해 초기 상태로 사용하세요.
   // 현재 목록은 데모 데이터이며 업로드한 이미지에서 읽어낸 결과가 아닙니다.
-  const [meds, setMeds] = useState(() => draft?.ocrMeds ?? sampleMeds);
+  // 숫자만 읽힌 1회 양에는 단위를 붙이고, 먹는 때는 드롭다운 값(식전 30분·식후 30분·필요시)으로 맞춰 둬요.
+  const [meds, setMeds] = useState(() => (draft?.ocrMeds ?? sampleMeds).map(fillGuessedFields));
   // 병명 — 보호자가 처방 올리기에서 적은 값이 먼저예요. 없으면 처방전 질병분류기호로 병명을 제안해요(보호자가 확인·수정).
   const suggestion = suggestDiseaseName(ocr.diagnosisCodes);
   const typedDisease = (draft?.disease || ocr.disease || '').trim();
@@ -109,11 +111,11 @@ export function ConfirmScreen({ go, back, onTab }) {
   const openOriginal = () => setShowOriginal(true);
   const closeOriginal = useCallback(() => setShowOriginal(false), []);
 
-  const updateMed = (next) => setMeds((list) => list.map((m) => (m.id === next.id ? next : m)));
+  const updateMed = (next) => setMeds((list) => list.map((m) => (m.id === next.id ? fillGuessedFields(next) : m)));
   const removeMed = (id) => setMeds((list) => list.filter((m) => m.id !== id));
   const addMed = () => setMeds((list) => [...list, emptyMed()]);
   const lowCount = countLow(meds);
-  const noTimingCount = countNoTiming(meds);
+  const blankCount = countWithBlank(meds);
   const saved = meds.filter((m) => !m.isNew);
 
   // 가이드를 못 만드는 이유는 알림창 대신 버튼 바로 위에 보여요. 앱 안 브라우저처럼 알림창이 안 뜨는 곳에서도 보이게요.
@@ -138,25 +140,7 @@ export function ConfirmScreen({ go, back, onTab }) {
       fail('추가 중인 약을 저장하고 약 이름을 확인해 주세요.');
       return;
     }
-    // ISSUE-07: 편집 내용은 임시 저장할 수 있지만,
-    // 가이드 생성 전에 핵심 복약 정보가 모두 확인되었는지 검사합니다.
-    const requiredFields = [
-      ['dose', '1회 양'],
-      ['perDay', '하루 횟수'],
-      ['days', '복용 기간'],
-    ];
-    for (const med of meds) {
-      // 열날 때·필요할 때 먹는 약은 정해진 기간이 없어요(복약 달력에도 넣지 않아요). 기간이 비어 있어도 돼요.
-      const fields = isAsNeeded(med) ? requiredFields.filter(([key]) => key !== 'days') : requiredFields;
-      for (const [key, label] of fields) {
-        if (!String(med[key]?.value ?? '').trim()) {
-          fail(
-            `「${med.name}」의 ${label} 정보가 없습니다. 연필 버튼을 눌러 적어 주세요. 모르면 ${words.name} 원본을 확인하거나 의료기관·약국에 문의해 주세요. 확인 전에는 가이드를 만들 수 없습니다.`
-          );
-          return;
-        }
-      }
-    }
+    // 1회 양·하루 횟수·기간·먹는 때는 비어 있어도 가이드를 만들어요. 빈 칸은 위 안내와 카드의 노란 표시로만 알려요.
     const diseaseName = disease.trim();
     if (!diseaseName) {
       setDiseaseError('병명을 적어 주세요.');
@@ -167,11 +151,6 @@ export function ConfirmScreen({ go, back, onTab }) {
     // 서버에 올린 처방이면 확정 API(7번)로 보호자가 고친 약 목록과 병명을 저장해요. 저장에 성공해야 가이드를 만들어요.
     if (draft?.prescriptionId) {
       const items = meds.map(toConfirmItem);
-      const problem = items.map(confirmItemProblem).find(Boolean);
-      if (problem) {
-        fail(problem);
-        return;
-      }
       setSaving(true);
       try {
         await confirmPrescription(draft.prescriptionId, {
@@ -259,11 +238,10 @@ export function ConfirmScreen({ go, back, onTab }) {
 
           <div className="flex min-w-0 flex-col gap-5">
             {lowCount > 0 && <LowConfidenceBanner count={lowCount} />}
-            {noTimingCount > 0 && (
+            {blankCount > 0 && (
               <p role="note" className="rounded-lg bg-sunk px-3.5 py-3 text-14">
-                {noTimingCount}개 약은 먹는 때를 읽지 못했어요.{' '}
-                {draft?.sourceType === 'PILL_BAG' ? '약봉투에 식전·식후 표시가 없거나 흐릿했어요. ' : ''}
-                약국 안내를 보고 연필 버튼을 눌러 적어 주세요.
+                {blankCount}개 약에 읽지 못한 칸이 있어요. 비워 둔 채로 가이드를 만들 수 있고,
+                {' '}{words.name} 원본이나 약국 안내를 보고 연필 버튼으로 채우면 가이드가 더 정확해져요.
               </p>
             )}
             {needsDate && (
