@@ -149,7 +149,7 @@ const UNIT_WORDS = [
   [/^캡슐$/, '캡슐'],
   [/^(g|그램)$/i, 'g'],
   [/^방울$/, '방울'],
-  [/^개$/, '개'],
+  [/^(개|매|장)$/, '개'], // 패치 '1매', 좌약 '1개' — 서버 단위 목록에 '매'가 없어서 '개'로 보내요
 ];
 // 약 이름으로 제형 추측 (서버 값이 없을 때만). 위에 있을수록 먼저 봐요: '건조시럽'이 '시럽'보다 먼저.
 const FORM_WORDS = [
@@ -163,7 +163,14 @@ const FORM_WORDS = [
   [/산$|산\(|가루|과립|세립/, 'POWDER'],
   [/정$|정\(|정\s|츄어블/, 'TABLET'],
 ];
-const EXTERNAL_FORMS = ['OINTMENT', 'CREAM', 'EYE_DROP'];
+const EXTERNAL_FORMS = ['OINTMENT', 'CREAM', 'EYE_DROP', 'SUPPOSITORY'];
+// 이름만 봐도 바르거나 붙이거나 넣는 약 (OCR이 내복으로 잘못 읽어도 이름을 믿어요)
+const EXTERNAL_NAME = /패취|패치|플라스타|첩부|연고|크림|로션|겔|젤|점안|안약|점이|귀약|좌약|좌제|스프레이|분무|흡입/;
+// 단위를 안 적었을 때 제형으로 채우는 기본 단위
+const DEFAULT_UNIT = {
+  SYRUP: 'mL', DRY_SYRUP: 'mL', POWDER: '포', TABLET: '정', CAPSULE: '캡슐',
+  OINTMENT: 'g', CREAM: 'g', EYE_DROP: '방울', SUPPOSITORY: '개',
+};
 
 const numberIn = (text) => {
   const m = String(text ?? '').match(/\d+(?:\.\d+)?/);
@@ -196,15 +203,15 @@ export function toConfirmMedication(med, asNeeded) {
 
   // 제형·내복/외용: OCR 값이 있으면 그대로, 없으면(새로 넣은 약 등) 약 이름으로 추측해요.
   const dosageForm = med.dosageForm ?? guessForm(name);
-  const route = med.route ?? (EXTERNAL_FORMS.includes(dosageForm) ? 'EXTERNAL' : 'ORAL');
-  const external = route === 'EXTERNAL';
+  const external = EXTERNAL_NAME.test(name) || (med.route ?? null) === 'EXTERNAL' || EXTERNAL_FORMS.includes(dosageForm);
+  const route = external ? 'EXTERNAL' : 'ORAL';
 
+  // 단위는 적은 것 → OCR 값 → 제형 기본값 순서로 채워요. 붙이는 약('1')은 '개'로 봐요.
   // 바르는 약·안약은 '적당량'처럼 숫자가 없어도 돼요 (NFR-SAFE-004: 외용제 양은 숫자로 안내하지 않아요).
   const { amount, unit: typedUnit } = parseDose(textOf(med.dose));
-  const unit = amount ? typedUnit ?? med.unit ?? null : null;
+  const unit = amount ? typedUnit ?? med.unit ?? DEFAULT_UNIT[dosageForm] ?? (external ? '개' : null) : null;
   if (!external && (!amount || amount <= 0)) throw new ConfirmInputError(`${label}의 1회 양을 숫자로 적어 주세요. 예: 5mL, 1포`);
   if (!external && !unit) throw new ConfirmInputError(`${label}의 1회 양에 단위를 함께 적어 주세요. 예: 5mL, 1포, 1정`);
-  if (external && amount && !unit) throw new ConfirmInputError(`${label}의 양에 단위를 함께 적거나, 숫자를 지우고 '적당량'으로 적어 주세요.`);
 
   const count = numberIn(textOf(med.perDay));
   const days = numberIn(textOf(med.days));

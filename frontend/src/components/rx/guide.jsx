@@ -1,5 +1,5 @@
 import { useId, useRef, useState } from 'react';
-import { AlertTriangle, Bell, BellOff, Check, Clock, Moon, Sun, Sunrise, Sunset } from 'lucide-react';
+import { AlertTriangle, Bell, BellOff, Check, Clock, Info, Moon, Sun, Sunrise, Sunset } from 'lucide-react';
 import { Avatar, Switch } from '../ui/misc.jsx';
 import { NO_ALARM_SLOTS, dateParts, fromKey, hhmm, todayKey } from '../../state/records.jsx';
 
@@ -220,14 +220,59 @@ export function HowTo({ items, schedule = [], asNeeded, visitMeds }) {
                     </div>
                   ))}
                 </dl>
-                <p className="text-15">{m.how}</p>
-                {m.note && <p className="text-14 text-muted">{m.note}</p>}
+                {m.steps?.length ? <MedDetail m={m} /> : (
+                  <>
+                    <p className="text-15">{m.how}</p>
+                    {m.note && <p className="text-14 text-muted">{m.note}</p>}
+                  </>
+                )}
               </article>
             </li>
           );
         })}
       </ul>
     </section>
+  );
+}
+
+/**
+ * 서버(AI-2) 가이드의 약 설명 — 어떤 약인지, 먹이는(쓰는) 법, 주의할 점, 흔한 부작용, 보관, 약사 확인.
+ * 숫자(양·횟수·기간)는 위 표에만 두고, 여기서는 설명만 보여요.
+ */
+function MedDetail({ m }) {
+  const external = m.route === '외용' || m.route === 'EXTERNAL';
+  const Row = ({ label, children }) => (
+    <div className="flex flex-col gap-1">
+      <p className="text-13 font-semibold text-muted">{label}</p>
+      {children}
+    </div>
+  );
+  const List = ({ items }) => (
+    <ul className="flex flex-col gap-1.5">
+      {items.map((t) => (
+        <li key={t} className="flex items-start gap-2 text-15">
+          <span aria-hidden className="mt-[9px] size-[5px] shrink-0 rounded-full bg-brand" />
+          {t}
+        </li>
+      ))}
+    </ul>
+  );
+  return (
+    <div className="flex flex-col gap-3.5">
+      {m.purpose && <p className="text-15 font-medium">{m.purpose}</p>}
+      {m.pharmacistCheck && (
+        <p className="flex items-start gap-2 rounded-lg bg-mark-soft px-3 py-2.5 text-14 text-terra-ink">
+          <Info size={18} strokeWidth={2} className="mt-0.5 shrink-0" aria-hidden />
+          <span><b>약사에게 확인해 주세요.</b> {m.pharmacistCheck}</span>
+        </p>
+      )}
+      <Row label={external ? '이렇게 써요' : '이렇게 먹여요'}><List items={m.steps} /></Row>
+      {m.cautions?.length > 0 && <Row label="주의할 점"><List items={m.cautions} /></Row>}
+      {m.sideEffects?.length > 0 && (
+        <Row label="흔한 부작용"><p className="text-15">{m.sideEffects.join(', ')}</p></Row>
+      )}
+      {m.storage && <Row label="보관"><p className="text-15">{m.storage}</p></Row>}
+    </div>
   );
 }
 

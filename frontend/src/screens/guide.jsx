@@ -7,7 +7,7 @@ import { AlarmTimeModal } from '../components/rx/AlarmTimeModal.jsx';
 import { AlarmBar, DangerSignals, Disclaimer, GuideSummary, HowTo, LifeTips, Schedule } from '../components/rx/guide.jsx';
 import { getPrescriptionDraft, setPrescriptionDraft } from './fe2Draft.js';
 import { createGuide, getGuide } from '../api/prescriptionFlow.js';
-import { alarmSlots, hhmm, todayKey, useRecords } from '../state/records.jsx';
+import { alarmSlots, hhmm, todayKey, useRecords, withServerGuide } from '../state/records.jsx';
 import { useSelectedChild } from '../state/selectedChild.jsx';
 import { BackLink } from './confirm.jsx';
 
@@ -21,32 +21,6 @@ import { BackLink } from './confirm.jsx';
 
 /** 건강기록 id('rx305') → 서버 처방 id(305). 예시 기록('p…', 'v…')이면 null */
 const prescriptionIdOf = (visitId) => (/^rx\d+$/.test(visitId ?? '') ? Number(visitId.slice(2)) : null);
-
-/**
- * 화면 기록의 가이드(처방 숫자로 만든 것)에 서버 가이드(guide_content)를 덮어써요.
- * - 복용법·생활 습관·위험 신호·필요할 때 먹는 약: 서버(AI-2) 값
- * - 하루 복약 일정(schedule): 화면 기록 값 그대로 — 복약 달력·알림이 이 값을 써요
- * - 복용법 표의 숫자(dose·perDay·days·timing): 화면 기록 값 그대로, 설명(how·note)만 서버 값
- */
-function withServerGuide(guide, server) {
-  if (!server) return guide;
-  const serverHowTo = server.howTo ?? [];
-  const howTo = guide.howTo.length
-    ? guide.howTo.map((item, i) => {
-        const s = serverHowTo.find((h) => h.name === item.name) ?? serverHowTo[i];
-        return s ? { ...item, how: s.how || item.how, note: s.note || item.note } : item;
-      })
-    : serverHowTo;
-  return {
-    ...guide,
-    asNeeded: server.asNeeded || guide.asNeeded,
-    howTo,
-    life: server.life?.length ? server.life : guide.life,
-    danger: server.danger?.length ? server.danger : guide.danger,
-    summary: server.summary ?? guide.summary,
-    serverStatus: server.status ?? null, // 'ok' | 'fallback'
-  };
-}
 
 /** 서버 가이드 불러오기 — 방금 만든 것은 임시 데이터에서, 없으면(가이드 탭에서 연 경우 등) GET으로 */
 function useServerGuide(prescriptionId) {

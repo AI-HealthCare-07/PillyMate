@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { hasLoginToken } from '../api/children.js';
 import { fetchChildPrescriptions, fetchPrescriptionDetail } from '../api/prescriptionRecords.js';
 import { toConfirmMed } from '../api/prescriptionRegistration.js';
+import { getGuide } from '../api/prescriptionFlow.js';
 import { courses as sampleCourses, guides as sampleGuides, sampleMissed, visits as sampleVisits } from '../data/sample.js';
 import { useSelectedChild } from './selectedChild.jsx';
 
@@ -158,7 +159,33 @@ function recordFromServerPrescription(detail) {
   };
 }
 
-const EMPTY_SERVER_RECORDS = { visits: [], courses: [], guides: [] };
+const EMPTY_SERVER_RECORDS = { visits: [], courses: [], guides: [], guideContent: {} };
+
+/**
+ * 화면 기록의 가이드(처방 숫자로 만든 것)에 서버 가이드(AI-2, guide_content)를 덮어써요.
+ * - 복용법 설명(목적·사용법·주의·부작용·보관·약사 확인), 생활 습관, 위험 신호, 필요할 때 먹는 약: 서버 값
+ * - 하루 복약 일정(schedule)과 복용법 표의 숫자(dose·perDay·days·timing): 화면 기록 값 그대로 — 달력·알림이 이 값을 써요
+ * server가 없으면 guide를 그대로 돌려줘요. 두 번 불러도 결과가 같아요.
+ */
+export function withServerGuide(guide, server) {
+  if (!guide || !server) return guide;
+  const serverHowTo = server.howTo ?? [];
+  const howTo = guide.howTo.length
+    ? guide.howTo.map((item, i) => {
+        const s = serverHowTo.find((h) => h.name === item.name) ?? serverHowTo[i];
+        return s ? { ...item, ...s, name: item.name } : item;
+      })
+    : serverHowTo;
+  return {
+    ...guide,
+    asNeeded: server.asNeeded || guide.asNeeded,
+    howTo,
+    life: server.life?.length ? server.life : guide.life,
+    danger: server.danger?.length ? server.danger : guide.danger,
+    summary: server.summary ?? guide.summary,
+    serverStatus: server.status ?? null, // 'ok'(AI가 씀) | 'fallback'(AI 없이 템플릿만)
+  };
+}
 /** 서버 기록을 다시 불러오는 화면 — 들어올 때마다 새 처방이 있는지 봐요. */
 const RECORD_PATHS = ['/home', '/history', '/guides'];
 
@@ -171,12 +198,14 @@ function useServerPrescriptionRecords() {
   const { pathname } = useLocation();
   const [records, setRecords] = useState(EMPTY_SERVER_RECORDS);
   const detailCache = useRef(new Map());
+  const guideCache = useRef(new Map());
   const childIds = childList.map((c) => c.id).join(',');
   const watching = RECORD_PATHS.includes(pathname);
 
   useEffect(() => {
     if (!hasLoginToken() || !childIds) {
       detailCache.current.clear();
+      guideCache.current.clear();
       setRecords(EMPTY_SERVER_RECORDS);
       return undefined;
     }
@@ -197,12 +226,28 @@ function useServerPrescriptionRecords() {
             }
           }),
         );
+        // 가이드를 만든 처방(GUIDE_DONE)은 서버 가이드도 불러와요. 한 번 받은 가이드는 다시 받지 않아요.
+        const guideContent = {};
+        await Promise.all(
+          details
+            .filter((d) => d.status === 'GUIDE_DONE')
+            .map(async (d) => {
+              const id = d.prescription_id;
+              if (!guideCache.current.has(id)) guideCache.current.set(id, getGuide(id).then((res) => res.guide_content));
+              try {
+                guideContent[`rx${id}`] = await guideCache.current.get(id);
+              } catch {
+                guideCache.current.delete(id); // 다음에 다시 시도해요. 그동안은 화면 기록 가이드를 보여요
+              }
+            }),
+        );
         if (cancelled) return;
         const built = details.map(recordFromServerPrescription);
         setRecords({
           visits: built.map((r) => r.visit),
           courses: built.map((r) => r.course).filter(Boolean),
           guides: built.map((r) => r.guide).filter(Boolean),
+          guideContent,
         });
       } catch {
         // 서버에 닿지 않으면 직전 기록을 그대로 보여요. 다음에 화면을 옮길 때 다시 불러요.
@@ -266,7 +311,11 @@ export function RecordsProvider({ children }) {
     ].filter((c) => !removed.has(c.childId));
     // 저장된 가이드 — 이번에 올린 처방으로 만든 가이드 + 서버 확정 처방의 가이드 + 예시 가이드
     const visibleIds = new Set(allVisits.map((v) => v.id));
-    const allGuides = [...state.guides, ...server.guides, ...sampleGuides].filter((g) => visibleIds.has(g.visitId))
+    // 같은 처방(visitId)의 가이드는 하나만 — 이번에 확인한 것 > 서버 기록 > 예시. 서버 가이드가 있으면 내용을 덮어써요.
+    const seenVisits = new Set();
+    const allGuides = [...state.guides, ...server.guides, ...sampleGuides]
+      .filter((g) => visibleIds.has(g.visitId) && !seenVisits.has(g.visitId) && seenVisits.add(g.visitId))
+      .map((g) => withServerGuide(g, server.guideContent?.[g.visitId]))
       .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
     const isGiven = (key, course) => (key in state.doses ? state.doses[key] : seeded(key, course));
 
