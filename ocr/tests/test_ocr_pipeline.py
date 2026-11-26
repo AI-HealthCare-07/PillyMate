@@ -93,7 +93,7 @@ def test_pill_bag_result_matches_api_spec(fake_clova):
     result = run_ocr(JPG_BYTES, "PILL_BAG", credentials=CREDENTIALS)
 
     assert_matches_api_spec(result)
-    assert result["prescription_date"] is None
+    assert result["prescription_date"] == "2026-11-12"  # 약봉투는 조제일자(약 받은 날)
     assert result["diagnosis_extracted"] is None
     assert result["hospital_name"] == "해솔소아청소년과의원"
     assert [(m["name"], m["route"], m["dosage_form"]) for m in result["medications"]] == [
