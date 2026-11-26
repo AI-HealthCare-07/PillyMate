@@ -63,8 +63,8 @@ export function groupBySlot(doses) {
 const SLOTS_BY_COUNT = { 1: ['아침'], 2: ['아침', '저녁'], 3: ['아침', '점심', '저녁'], 4: ['아침', '점심', '저녁', '자기 전'] };
 const SLOT_ORDER = ['아침', '점심', '저녁', '자기 전'];
 const firstNumber = (text) => Number(String(text ?? '').match(/\d+/)?.[0] ?? 0);
-/** 열날 때·필요할 때 먹는 약인지 — 정해진 때와 기간이 없어요. */
-export const isAsNeeded = (m) => /열|필요|아플|통증/.test(`${m.perDay?.value ?? ''} ${m.days?.value ?? ''}`);
+/** 열날 때·필요할 때 먹는 약인지 — 정해진 때와 기간이 없어요. 먹는 때를 '필요시'로 고른 약도 여기에 들어요. */
+export const isAsNeeded = (m) => /열|필요|아플|통증/.test(`${m.perDay?.value ?? ''} ${m.days?.value ?? ''} ${m.timing?.value ?? ''}`);
 
 /**
  * 확인한 약 목록(OCR 결과)으로 복약 일정을 만들어요.

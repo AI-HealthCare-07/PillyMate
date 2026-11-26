@@ -51,7 +51,16 @@ MAX_DAILY_COUNT_PATTERN = re.compile(r"(?:1\s*일|하루)\s*최대\s*\(?\s*(\d+)
 # 마지막 표기가 1회 투약량의 단위다. 관·회·병처럼 허용 목록에 없는 단위가 마지막이면 None이 된다.
 PACKAGE_UNIT_PATTERN = re.compile(r"/\s*\d+(?:\.\d+)?\s*(?:\(\s*\d+\s*\))?\s*(mL|ml|포|정|캡슐|g|개|관|회|병|방울)")
 EAR_DROP_PATTERN = re.compile(r"점이|이용액|귀약")
-DEFAULT_UNIT_BY_FORM = {"SYRUP": "mL", "DRY_SYRUP": "mL", "TABLET": "정", "CAPSULE": "캡슐", "EYE_DROP": "방울"}
+# 가루약은 한 번 먹을 양을 1포씩 나눠 싸 주고, 좌약은 한 번에 1개를 넣는다.
+DEFAULT_UNIT_BY_FORM = {
+    "SYRUP": "mL",
+    "DRY_SYRUP": "mL",
+    "POWDER": "포",
+    "TABLET": "정",
+    "CAPSULE": "캡슐",
+    "EYE_DROP": "방울",
+    "SUPPOSITORY": "개",
+}
 
 
 def main_drug_name(name):
@@ -247,7 +256,8 @@ def format_bag_guide_medication(drug, taking_time):
         name=name,
         insurance_code=None,
         dose_per_time=amount,
-        unit=normalize_unit(drug.get("단위")),
+        # 약봉투 표에 단위가 없거나 흐릿하면 처방전처럼 약 이름·제형으로 짐작한다.
+        unit=normalize_unit(drug.get("단위")) or infer_prescription_unit(name, dosage_form),
         daily_count=drug.get("1일횟수"),
         total_days=drug.get("일수"),
         as_needed=as_needed,

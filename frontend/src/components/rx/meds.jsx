@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { Button, IconButton } from '../ui/Button.jsx';
-import { Field } from '../ui/Field.jsx';
+import { Field, SelectField } from '../ui/Field.jsx';
 import { Highlight, LowValue } from './Highlight.jsx';
 import { medFields } from '../../data/sample.js';
+import { TAKING_TIME_OPTIONS, toTakingTimeOption } from '../../data/takingTimeOptions.js';
 import { isAsNeeded } from '../../state/records.jsx';
+import { cardDoseUnit, withDoseUnit } from '../../api/prescriptionConfirm.js';
 
 /** 새로 추가하는 약의 빈 값 */
 export const emptyMed = () => ({
@@ -14,12 +16,28 @@ export const emptyMed = () => ({
   ...Object.fromEntries(medFields.map(([k]) => [k, { value: '' }])),
 });
 
-/** 이 칸을 채워야 하는지 — 필요할 때 먹는 약은 정해진 기간이 없어서 비어 있어도 돼요. */
-const isMissing = (med, k) => !String(med[k]?.value ?? '').trim() && !(k === 'days' && isAsNeeded(med));
+/**
+ * 읽은 값을 보호자가 손대지 않아도 되게 다듬어요 — 처음 불러올 때와 저장할 때 써요.
+ * - 1회 양이 숫자뿐이면('5') OCR 단위나 약 이름·제형으로 짐작한 단위를 붙여요('5mL').
+ * - 먹는 때는 드롭다운의 세 가지(식전 30분·식후 30분·필요시) 중 가장 가까운 것으로 바꿔요.
+ */
+export function fillGuessedFields(med) {
+  const doseText = med.dose?.value ?? '';
+  const dose = withDoseUnit(doseText, cardDoseUnit(med));
+  const timing = toTakingTimeOption(med.timing?.value, isAsNeeded(med));
+  return {
+    ...med,
+    dose: dose === doseText ? med.dose : { ...med.dose, value: dose },
+    timing: timing === (med.timing?.value ?? '') ? med.timing : { ...med.timing, value: timing },
+  };
+}
+
+/** 비어 있는 칸인지 — 필요할 때 먹는 약은 정해진 기간이 없어서 비어 있어도 돼요. 비어 있어도 가이드는 만들 수 있어요. */
+export const isMissing = (med, k) => !String(med[k]?.value ?? '').trim() && !(k === 'days' && isAsNeeded(med));
 
 function Value({ v, missing }) {
-  // 읽지 못한 칸은 노란 형광펜으로 '입력 필요'를 보여 줘서, 보호자가 연필 버튼으로 채우도록 알려요.
-  if (missing) return <Highlight className="text-14">입력 필요</Highlight>;
+  // 읽지 못한 칸은 노란 형광펜으로 표시해요. 채우지 않아도 가이드는 만들 수 있어요.
+  if (missing) return <Highlight className="text-14">비어 있음</Highlight>;
   if (!v.value) return <span className="text-14 font-medium text-faint">정해진 기간 없음</span>;
   if (v.low) return <LowValue value={v.value} stacked size="text-16" />;
   return <span className="text-16 font-medium">{v.value}</span>;
@@ -53,6 +71,8 @@ function MedEdit({ med, onSave, onCancel, onDelete }) {
   }));
   const [error, setError] = useState('');
   const formRef = useRef(null);
+  // 고치는 중인 약 이름으로 단위를 다시 짐작해요(새로 추가하는 약은 이름을 적어야 알 수 있어요).
+  const guessedUnit = cardDoseUnit({ ...med, name: draft.name });
 
   useEffect(() => {
     formRef.current?.querySelector('input')?.focus();
@@ -83,16 +103,27 @@ function MedEdit({ med, onSave, onCancel, onDelete }) {
     <form ref={formRef} onSubmit={submit} className="flex flex-col gap-4 py-1 pr-2" aria-label={med.isNew ? '새 약 추가' : `${med.name} 고치기`}>
       <Field label="약 이름" value={draft.name} onChange={set('name')} error={error} placeholder="예: 아목시실린 건조시럽" />
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {medFields.map(([k, label]) => (
+        {medFields.map(([k, label]) => (k === 'timing' ? (
+          <SelectField
+            key={k}
+            label={label}
+            name={k}
+            value={draft[k]}
+            onChange={set(k)}
+            options={TAKING_TIME_OPTIONS}
+            helper={med[k].low ? '흐릿하게 읽혔어요' : undefined}
+          />
+        ) : (
           <Field
             key={k}
             label={label}
             name={k}
             value={draft[k]}
             onChange={set(k)}
-            helper={med[k].low ? '흐릿하게 읽혔어요' : undefined}
+            placeholder={k === 'dose' ? '예: 5mL' : undefined}
+            helper={med[k].low ? '흐릿하게 읽혔어요' : k === 'dose' && guessedUnit ? `숫자만 적어도 돼요 (단위 ${guessedUnit})` : undefined}
           />
-        ))}
+        )))}
       </div>
       <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
         {onDelete && (

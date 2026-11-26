@@ -17,7 +17,6 @@ from app.models.medications import Medication
 from app.models.prescriptions import Prescription, PrescriptionStatus
 from app.scripts.seed_prescription import confirm_body_example, create_demo_prescription
 from app.services.guide import service as guide_service
-from app.tests.auth_apis.helpers import signup_payload
 
 PASSWORD = "pilly1234!"
 
@@ -31,7 +30,14 @@ def offline_generate_guide(child: dict, prescription: dict, medications: list[di
 
 class PrescriptionApiBase(TestCase):
     async def login(self, client: AsyncClient, email: str) -> dict[str, str]:
-        signup = signup_payload(email=email, password=PASSWORD)
+        signup = {
+            "email": email,
+            "password": PASSWORD,
+            "name": "김보호",
+            "birth_date": "1990-05-14",
+            "gender": "FEMALE",
+            "phone_number": "010-1234-5678",
+        }
         await client.post("/api/v1/auth/signup", json=signup)
         res = await client.post("/api/v1/auth/login", json={"email": email, "password": PASSWORD})
         return {"Authorization": f"Bearer {res.json()['access_token']}"}
@@ -117,15 +123,26 @@ class TestConfirmApi(PrescriptionApiBase):
         assert res.status_code == status.HTTP_200_OK, res.text
         assert res.json()["medications"][3]["total_days"] is None
 
-    async def test_confirm_regular_medication_without_total_days_400(self):
+    async def test_confirm_regular_medication_with_blank_amounts_is_ok(self):
+        """OCR이 못 읽은 1회 양·단위·하루 횟수·기간은 보호자가 비워 둔 채로 확정할 수 있다 (명세 7번)."""
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             headers, p, meds = await self.prepare(client)
             body = confirm_body_example(meds)
             assert body["medications"][0]["as_needed"] is False
-            body["medications"][0]["total_days"] = None
+            blank = {"dose_per_time": None, "unit": None, "daily_count": None, "total_days": None}
+            body["medications"][0] |= blank
+            res = await client.put(f"/api/v1/prescriptions/{p.id}/confirm", json=body, headers=headers)
+        assert res.status_code == status.HTTP_200_OK, res.text
+        assert {k: res.json()["medications"][0][k] for k in blank} == blank
+
+    async def test_confirm_medication_without_route_400(self):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            headers, p, meds = await self.prepare(client)
+            body = confirm_body_example(meds)
+            body["medications"][0]["route"] = None
             res = await client.put(f"/api/v1/prescriptions/{p.id}/confirm", json=body, headers=headers)
         assert res.status_code == status.HTTP_400_BAD_REQUEST
-        assert "medications[0].total_days" in res.json()["detail"]
+        assert res.json()["detail"] == "필수 항목을 입력해 주세요: medications[0].route"
 
     async def test_confirm_rule_errors_422(self):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:

@@ -88,6 +88,8 @@ ignore = ["UP046", "E501"]
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
 "db/migrations/*" = ["ALL"]
+# 개발용 시험 호출 스크립트는 복잡도 검사(C901) 제외
+"app/scripts/*" = ["C901"]
 
 [tool.ruff.format]
 # 포매터 설정
