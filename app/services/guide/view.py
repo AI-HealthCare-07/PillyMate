@@ -5,6 +5,7 @@
     asNeeded  : "세토펜: 필요할 때 1회 5mL. ..." (없으면 "")                           → Schedule 아래 한 줄
     howTo     : [{"name", "how", "note", ...}]                                         → HowTo
                 기존 화면용: name·how·note
+                약별 복용법 표: dose·perDay·days·timing·asNeeded (없으면 화면이 일정표에서 찾아서 필요시 약이 비었다)
                 카드 윗부분: shortName·purpose·dose·when·keyPoint
                 자세히 보기: steps·cautions·sideEffects·storage·pharmacistCheck·form
     life      : [문장, ...]                                                              → LifeTips
@@ -20,7 +21,8 @@ from typing import Any
 
 from app.services.guide.generator import SLOT_ORDER
 
-VIEW_SCHEMA_VERSION = "fe-1"
+# 화면 형식을 바꾸면 올린다. 저장된 가이드가 예전 버전이면 조회할 때 detail로 다시 만든다(prescriptions.guide_response).
+VIEW_SCHEMA_VERSION = "fe-2"
 MAX_LIFE = 8
 
 
@@ -72,6 +74,20 @@ def build_as_needed(medications: list[dict]) -> str:
     return "\n".join(lines)
 
 
+def how_to_facts(m: dict) -> dict[str, Any]:
+    """약별 복용법 표의 칸(1회 복용량·하루·기간)과 먹는 때. 값이 없으면 ''(화면에서 '—')."""
+    s = m["schedule"]
+    as_needed = s["type"] == "as_needed"
+    dose = "" if m["dose_text"] == "처방전 확인" else _dose(m["dose_text"])
+    if as_needed:
+        per_day = f"최대 {s['max_daily_count']}번" if s.get("max_daily_count") else ""
+        timing = ""  # '필요할 때' 표시가 따로 붙는다
+    else:
+        per_day = f"{s['daily_count']}번" if s.get("daily_count") else ""
+        timing = " ".join(t for t in ("·".join(s.get("slots") or []), s.get("timing") or "") if t)
+    return {"dose": dose, "perDay": per_day, "days": _days(s) or "", "timing": timing, "asNeeded": as_needed}
+
+
 def build_how_to(medications: list[dict]) -> list[dict]:
     out = []
     for m in medications:
@@ -86,6 +102,8 @@ def build_how_to(medications: list[dict]) -> list[dict]:
                 "name": m["name"],
                 "how": how.strip(),
                 "note": " ".join(notes),
+                # 약별 복용법 표: 1회 양·하루·기간·먹는 때·필요시
+                **how_to_facts(m),
                 # 약 카드 자세히 보기용 — 화면이 이 값이 있으면 이것을 보여 줘요
                 "purpose": m.get("purpose"),
                 "steps": list(m.get("how_to_give") or []),

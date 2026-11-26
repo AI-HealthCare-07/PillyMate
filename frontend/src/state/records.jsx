@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { hasLoginToken } from '../api/children.js';
+import { fetchChildAlarms, updatePrescriptionAlarms } from '../api/medicationAlarms.js';
+import { fetchChildDoses, saveDoses } from '../api/medicationDoses.js';
 import { fetchGuide } from '../api/prescriptionGuide.js';
 import { deletePrescription, fetchChildPrescriptions, fetchPrescriptionDetail } from '../api/prescriptionRecords.js';
 import { toConfirmMed } from '../api/prescriptionRegistration.js';
@@ -31,7 +33,7 @@ const doseKey = (childId, date, slot, name) => `${childId}|${date}|${slot}|${nam
 /** 같은 아이가 같은 날 같은 병원에서 받은 처방은 하나로 봐요(다시 올리면 덮어써요). */
 const visitKey = (v) => `${v.childId}|${v.date}|${v.hospital}`;
 
-/** 먹는 때별 복약 알림 시각. TODO(API): 보호자가 정한 복약 시간이 생기면 그 값을 써요. */
+/** 먹는 때별 기본 복약 알림 시각. 보호자가 바꾼 시각은 서버(MEDICATION_ALARM)에 저장돼요. */
 export const SLOT_TIME = { 아침: [8, 0], 점심: [12, 30], 저녁: [18, 30], '자기 전': [21, 0] };
 /** 알림을 보내지 않는 먹는 때 — 자기 전 약은 재우면서 챙기니 따로 알리지 않아요. */
 export const NO_ALARM_SLOTS = ['자기 전'];
@@ -63,7 +65,7 @@ export function groupBySlot(doses) {
 const SLOTS_BY_COUNT = { 1: ['아침'], 2: ['아침', '저녁'], 3: ['아침', '점심', '저녁'], 4: ['아침', '점심', '저녁', '자기 전'] };
 const SLOT_ORDER = ['아침', '점심', '저녁', '자기 전'];
 const firstNumber = (text) => Number(String(text ?? '').match(/\d+/)?.[0] ?? 0);
-/** 열날 때·필요할 때 먹는 약인지 — 정해진 때와 기간이 없어요. 먹는 때를 '필요시'로 고른 약도 여기에 들어요. */
+/** 열날 때·필요할 때 먹는 약인지 — 정해진 때와 기간이 없어요. 용법을 '필요시'로 고른 약도 여기에 들어요. */
 export const isAsNeeded = (m) => /열|필요|아플|통증/.test(`${m.perDay?.value ?? ''} ${m.days?.value ?? ''} ${m.timing?.value ?? ''}`);
 
 /**
@@ -80,7 +82,8 @@ export function scheduleFromMeds(meds) {
     const days = firstNumber(m.days?.value);
     if (!count || !days) continue;
     const slots = count === 1 && /자기\s*전|취침/.test(m.timing?.value ?? '') ? ['자기 전'] : SLOTS_BY_COUNT[count];
-    for (const slot of slots) bySlot.get(slot).push([m.name, m.dose?.value ?? '', days]);
+    // 네 번째 값은 서버 약 번호(복약 체크 저장용). 화면은 [이름, 양, 기간]만 써요.
+    for (const slot of slots) bySlot.get(slot).push([m.name, m.dose?.value ?? '', days, m.medicationId ?? null]);
   }
   return [...bySlot].filter(([, items]) => items.length).map(([slot, items]) => ({ slot, items }));
 }
@@ -100,7 +103,7 @@ function guideFromMeds({ meds, ...base }) {
       name: m.name,
       how: [v(m.dose) && `한 번에 ${v(m.dose)}`, v(m.perDay) && (/^\d/.test(v(m.perDay)) ? `하루 ${v(m.perDay)}` : v(m.perDay)), v(m.timing)].filter(Boolean).join(', ') + ' 먹여요.',
       note: v(m.days) ? `복용 기간: ${v(m.days)}` : '',
-      // 약별 복용법 표에 쓰는 처방전 값 그대로(1회 양·하루 횟수·기간·먹는 때). 빈 값은 화면에서 '—'로 보여요.
+      // 약별 복용법 표에 쓰는 처방전 값 그대로(1회 양·하루 횟수·기간·용법). 빈 값은 화면에서 '—'로 보여요.
       dose: v(m.dose), perDay: v(m.perDay), days: v(m.days), timing: v(m.timing), asNeeded: isAsNeeded(m),
     })),
     life: [],
@@ -184,33 +187,15 @@ function recordFromServerPrescription(detail, guideResponse) {
   };
 }
 
-const EMPTY_SERVER_RECORDS = { visits: [], courses: [], guides: [] };
+const EMPTY_SERVER_RECORDS = { visits: [], courses: [], guides: [], alarms: {}, doses: {} };
 
-/**
- * 화면 기록의 가이드(처방 숫자로 만든 것)에 서버 가이드(AI-2, guide_content)를 덮어써요.
- * - 복용법 설명(목적·사용법·주의·부작용·보관·약사 확인), 생활 습관, 위험 신호, 필요할 때 먹는 약: 서버 값
- * - 하루 복약 일정(schedule)과 복용법 표의 숫자(dose·perDay·days·timing): 화면 기록 값 그대로 — 달력·알림이 이 값을 써요
- * server가 없으면 guide를 그대로 돌려줘요. 두 번 불러도 결과가 같아요.
- */
-export function withServerGuide(guide, server) {
-  if (!guide || !server) return guide;
-  const serverHowTo = server.howTo ?? [];
-  const howTo = guide.howTo.length
-    ? guide.howTo.map((item, i) => {
-        const s = serverHowTo.find((h) => h.name === item.name) ?? serverHowTo[i];
-        return s ? { ...item, ...s, name: item.name } : item;
-      })
-    : serverHowTo;
-  return {
-    ...guide,
-    asNeeded: server.asNeeded || guide.asNeeded,
-    howTo,
-    life: server.life?.length ? server.life : guide.life,
-    danger: server.danger?.length ? server.danger : guide.danger,
-    summary: server.summary ?? guide.summary,
-    serverStatus: server.status ?? null, // 'ok'(AI가 씀) | 'fallback'(AI 없이 템플릿만)
-  };
-}
+/** 서버 알림 설정 하나 → { enabled, times: { 아침: [8, 0] } }. 건강기록 id(rx{번호})로 찾아요. */
+const fromServerAlarm = (a) => ({
+  enabled: a.enabled,
+  times: Object.fromEntries(Object.entries(a.times ?? {}).map(([slot, text]) => [slot, text.split(':').map(Number)])),
+});
+/** 서버에 올린 처방의 건강기록이면 처방 번호, 아니면(예시·이번 방문 기록) null */
+const prescriptionIdOf = (visitId) => Number(String(visitId).match(/^rx(\d+)$/)?.[1]) || null;
 /** 서버 기록을 다시 불러오는 화면 — 들어올 때마다 새 처방이 있는지 봐요. */
 const RECORD_PATHS = ['/home', '/history', '/guides'];
 
@@ -239,6 +224,10 @@ function useServerPrescriptionRecords() {
     let cancelled = false;
     (async () => {
       try {
+        // 알림 설정은 따로 받아요. 실패해도 처방 기록은 보여 주고, 알림은 직전 값(처음이면 기본값)을 써요.
+        const alarmLists = Promise.all(childIds.split(',').map(fetchChildAlarms)).catch(() => null);
+        // 복약 체크 기록도 따로 받아요. 실패하면 직전 기록을 그대로 둬요.
+        const doseLists = Promise.all(childIds.split(',').map(fetchChildDoses)).catch(() => null);
         const lists = await Promise.all(childIds.split(',').map(fetchChildPrescriptions));
         const details = await Promise.all(
           lists.flat().map(async (summary) => {
@@ -265,13 +254,24 @@ function useServerPrescriptionRecords() {
             }
           }),
         );
+        const alarms = await alarmLists;
+        const doseLogs = await doseLists;
         if (cancelled) return;
         const built = details.map((detail, i) => recordFromServerPrescription(detail, guides[i]));
-        setRecords({
+        setRecords((prev) => ({
           visits: built.map((r) => r.visit),
           courses: built.map((r) => r.course).filter(Boolean),
           guides: built.map((r) => r.guide).filter(Boolean),
-        });
+          alarms: alarms ? Object.fromEntries(alarms.flat().map((a) => [`rx${a.prescription_id}`, fromServerAlarm(a)])) : prev.alarms,
+          // 체크 기록 → { '아이|날짜|때|약 이름': 먹였는지 }. 키가 없으면 '기록 없음'이에요.
+          doses: doseLogs
+            ? Object.fromEntries(
+                childIds.split(',').flatMap((childId, i) =>
+                  doseLogs[i].map((d) => [doseKey(childId, d.dose_date, d.slot, d.medication_name), d.is_taken]),
+                ),
+              )
+            : prev.doses,
+        }));
       } catch {
         // 서버에 닿지 않으면 직전 기록을 그대로 보여요. 다음에 화면을 옮길 때 다시 불러요.
       }
@@ -292,7 +292,7 @@ function scheduledOn(courseList, childId, date) {
       c.schedule.flatMap(({ slot, items }) =>
         items
           .filter(([, , days]) => !days || date < shiftDays(c.start, days))
-          .map(([name, dose]) => ({ key: doseKey(childId, date, slot, name), slot, name, dose, course: c })),
+          .map(([name, dose, , medicationId]) => ({ key: doseKey(childId, date, slot, name), date, slot, name, dose, medicationId, course: c })),
       ),
     );
 }
@@ -310,10 +310,11 @@ const RecordsContext = createContext(null);
  * 처방 올리기에서 처방 내용을 확인하면 recordPrescription으로 병원기록과 복약 일정이 자동으로 생겨요.
  * 서버에 올린 처방(명세 6·10번)도 불러와서 함께 보여요. 이번 방문에서 확인한 기록이 같은 처방이면 그쪽을 보여요.
  * 의료 정보라서 브라우저 저장소에는 남기지 않아요(fe2Draft.js와 같은 원칙). 새로고침하면 서버 기록과 예시 데이터로 돌아가요.
- * TODO(API): 처방 확정 API(7번)가 머지되면 확인한 약 목록을 서버에 저장하고, 복약 체크도 서버에 저장.
+ * 서버 처방의 알림 켜기/끄기·시각은 서버에 저장해서 새로고침·재로그인 뒤에도 그대로예요(alarmEnabled·alarmTimes는 저장 직후 값).
+ * 서버 처방의 복약 체크(먹였어요·취소)도 서버(MEDICATION_DOSE_LOG)에 저장해요. 체크 기록이 없는 지난 때는 '기록 없음'이에요.
  */
 export function RecordsProvider({ children }) {
-  const [state, setState] = useState({ doses: {}, visits: [], courses: [], guides: [], alarmOff: [], alarmSince: {}, alarmTimes: {}, removedChildIds: [], deletedPrescriptionIds: [] });
+  const [state, setState] = useState({ doses: {}, visits: [], courses: [], guides: [], alarmEnabled: {}, alarmSince: {}, alarmTimes: {}, removedChildIds: [], deletedPrescriptionIds: [] });
   const server = useServerPrescriptionRecords();
 
   const value = useMemo(() => {
@@ -343,43 +344,131 @@ export function RecordsProvider({ children }) {
     const allGuides = [...state.guides, ...server.guides.filter((g) => !localGuideIds.has(g.id)), ...sampleGuides]
       .filter((g) => visibleIds.has(g.visitId))
       .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
-    const isGiven = (key, course) => (key in state.doses ? state.doses[key] : seeded(key, course));
+    const isGiven = (key, course) =>
+      key in state.doses ? state.doses[key] : key in server.doses ? server.doses[key] : seeded(key, course);
+    // 체크했거나 취소한 기록이 있는지. 예시 처방의 지난 일정은 기록이 있는 것으로 봐요.
+    const isRecorded = (key, course) =>
+      key in state.doses || key in server.doses || (sampleCourseIds.has(course.id) && key.split('|')[1] < todayKey());
+    /** 서버 약 번호 — 일정에 없으면(이번 방문에 확정하며 새로 넣은 약) 서버 일정, 그다음 처방 상세에서 이름으로 찾아요. */
+    const medicationIdOf = async (prescriptionId, dose) => {
+      if (dose.medicationId) return dose.medicationId;
+      const known = server.courses
+        .find((c) => c.visitId === dose.course.visitId)
+        ?.schedule.flatMap((s) => s.items)
+        .find(([name, , , id]) => name === dose.name && id)?.[3];
+      if (known) return known;
+      const detail = await fetchPrescriptionDetail(prescriptionId);
+      return detail.medications.find((m) => m.name === dose.name)?.medication_id ?? null;
+    };
+    /**
+     * 복약 체크·취소 — 화면에 먼저 반영하고, 서버 처방이면 처방·날짜별로 묶어 저장해요.
+     * 저장에 실패하면 그 체크만 이전 상태로 되돌려요(예시 처방·이번 방문 기록은 화면에만 남아요).
+     */
+    const setGiven = (doses, given) => {
+      const before = Object.fromEntries(doses.map((d) => [d.key, state.doses[d.key]]));
+      setState((prev) => ({ ...prev, doses: { ...prev.doses, ...Object.fromEntries(doses.map((d) => [d.key, given])) } }));
+      const groups = new Map();
+      for (const d of doses) {
+        const prescriptionId = prescriptionIdOf(d.course.visitId);
+        if (!prescriptionId) continue;
+        const groupKey = `${prescriptionId}|${d.date}`;
+        if (!groups.has(groupKey)) groups.set(groupKey, { prescriptionId, date: d.date, doses: [] });
+        groups.get(groupKey).doses.push(d);
+      }
+      for (const g of groups.values()) {
+        (async () => {
+          const items = await Promise.all(
+            g.doses.map(async (d) => ({ medication_id: await medicationIdOf(g.prescriptionId, d), slot: d.slot, is_taken: given })),
+          );
+          if (items.some((item) => !item.medication_id)) throw new Error('약 번호를 찾지 못했어요.');
+          await saveDoses(g.prescriptionId, { dose_date: g.date, items });
+        })().catch(() => {
+          setState((prev) => {
+            const next = { ...prev.doses };
+            for (const d of g.doses) {
+              if (before[d.key] === undefined) delete next[d.key];
+              else next[d.key] = before[d.key];
+            }
+            return { ...prev, doses: next };
+          });
+        });
+      }
+    };
+    // 처방 하나의 복용 기간 — 홈·알림(dosesOn)과 같은 기준: 시작일 ≤ 날짜 < 시작일 + 기간
+    const courseOfVisit = (visitId) => allCourses.find((c) => c.visitId === visitId) ?? null;
+    const inCourse = (c, date) => date >= c.start && date < shiftDays(c.start, c.days);
+    const isAlarmOn = (visitId) => state.alarmEnabled[visitId] ?? server.alarms[visitId]?.enabled ?? true;
+    const alarmTimeOf = (visitId, slot) =>
+      state.alarmTimes[visitId]?.[slot] ?? server.alarms[visitId]?.times?.[slot] ?? SLOT_TIME[slot] ?? [9, 0];
+    /**
+     * 알림 설정을 화면에 먼저 반영하고, 서버 처방이면 저장해요. 저장된 값으로 맞추고, 실패하면 되돌린 뒤 오류를 던져요.
+     * local: 화면에 바로 넣을 값 { enabled?, times? } / body: 서버로 보낼 값
+     */
+    const saveAlarm = async (visitId, local, body) => {
+      const before = { enabled: state.alarmEnabled[visitId], times: state.alarmTimes[visitId] };
+      const put = ({ enabled, times }) =>
+        setState((prev) => {
+          const alarmEnabled = { ...prev.alarmEnabled };
+          const alarmTimes = { ...prev.alarmTimes };
+          if (enabled === undefined) delete alarmEnabled[visitId];
+          else alarmEnabled[visitId] = enabled;
+          if (times === undefined) delete alarmTimes[visitId];
+          else alarmTimes[visitId] = times;
+          return { ...prev, alarmEnabled, alarmTimes };
+        });
+      put({ enabled: local.enabled ?? before.enabled, times: local.times ?? before.times });
+      const prescriptionId = prescriptionIdOf(visitId);
+      if (!prescriptionId) return;
+      try {
+        put(fromServerAlarm(await updatePrescriptionAlarms(prescriptionId, body)));
+      } catch (error) {
+        put(before);
+        throw error;
+      }
+    };
 
     return {
       /** 저장된 가이드, 최근 처방부터. childId를 주면 그 아이 것만 */
       guidesOf: (childId) => (childId ? allGuides.filter((g) => g.childId === childId) : allGuides),
-      /** 처방(건강기록 id)별 복약 알림을 켰는지. 처음엔 모두 켜져 있어요. */
-      isAlarmOn: (visitId) => !state.alarmOff.includes(visitId),
+      /** 처방(건강기록 id)별 복약 알림을 켰는지. 처음엔 모두 켜져 있어요. 서버 처방은 저장된 값이에요. */
+      isAlarmOn,
       /** 알림을 켠 시각(ms). 이 시각 전에 지난 먹는 때는 알리지 않아요. 예시 처방처럼 기록이 없으면 null(제한 없음). */
       alarmSince: (visitId) => state.alarmSince[visitId] ?? null,
-      setAlarm: (visitId, on) =>
-        setState((prev) => ({
-          ...prev,
-          alarmOff: on ? prev.alarmOff.filter((id) => id !== visitId) : [...new Set([...prev.alarmOff, visitId])],
-          alarmSince: on ? { ...prev.alarmSince, [visitId]: Date.now() } : prev.alarmSince,
-        })),
+      /** 알림 켜기/끄기. 서버 처방은 저장하고, 저장에 실패하면 스위치를 되돌려요. */
+      setAlarm: (visitId, on) => {
+        if (on) setState((prev) => ({ ...prev, alarmSince: { ...prev.alarmSince, [visitId]: Date.now() } }));
+        saveAlarm(visitId, { enabled: on }, { enabled: on }).catch(() => {});
+      },
       /** 그 처방의 먹는 때 알림 시각 [시, 분]. 보호자가 바꾼 값이 없으면 기본 시각이에요. */
-      alarmTimeOf: (visitId, slot) => state.alarmTimes[visitId]?.[slot] ?? SLOT_TIME[slot] ?? [9, 0],
-      /** times: { 아침: [8, 0], ... } — 바꾼 먹는 때만 넣어도 돼요. null이면 기본 시각으로 되돌려요. */
-      setAlarmTimes: (visitId, times) =>
-        setState((prev) => {
-          const next = { ...prev.alarmTimes };
-          if (times) next[visitId] = times;
-          else delete next[visitId];
-          return { ...prev, alarmTimes: next };
-        }),
+      alarmTimeOf,
+      /**
+       * times: { 아침: [8, 0], ... } — 바꾼 먹는 때만 넣어도 돼요. null이면 slots의 먹는 때를 기본 시각으로 되돌려요.
+       * 서버 처방은 저장이 끝날 때까지 기다리고, 실패하면 서버 문구를 담은 오류를 던져요.
+       */
+      setAlarmTimes: (visitId, times, slots = Object.keys(times ?? {})) => {
+        const next = times ?? Object.fromEntries(slots.map((slot) => [slot, SLOT_TIME[slot] ?? [9, 0]]));
+        const body = { times: Object.fromEntries(Object.entries(next).map(([slot, time]) => [slot, hhmm(time)])) };
+        return saveAlarm(visitId, { times: { ...state.alarmTimes[visitId], ...next } }, body);
+      },
       /** 가이드 하나 */
       guideById: (id) => allGuides.find((g) => g.id === id) ?? null,
-      /** 그날 먹일 약 + 먹였는지 */
-      dosesOn: (childId, date) => scheduledOn(allCourses, childId, date).map((d) => ({ ...d, given: isGiven(d.key, d.course) })),
+      /** 그날 먹일 약 + 먹였는지(given) + 체크 기록이 있는지(recorded — 없으면 '기록 없음') */
+      dosesOn: (childId, date) =>
+        scheduledOn(allCourses, childId, date).map((d) => ({ ...d, given: isGiven(d.key, d.course), recorded: isRecorded(d.key, d.course) })),
       /** dose는 dosesOn이 돌려준 항목 */
-      toggleDose: (dose) => setState((prev) => ({ ...prev, doses: { ...prev.doses, [dose.key]: !dose.given } })),
-      /** group은 groupBySlot 결과 하나 — 다 먹였으면 모두 되돌리고, 아니면 안 먹인 약을 모두 먹인 것으로 */
-      toggleSlot: (group) =>
-        setState((prev) => ({
-          ...prev,
-          doses: { ...prev.doses, ...Object.fromEntries(group.doses.map((d) => [d.key, !group.done])) },
-        })),
+      toggleDose: (dose) => setGiven([dose], !dose.given),
+      /** group은 groupBySlot 결과 하나 — 다 먹였으면 모두 되돌리고, 아니면 모두 먹인 것으로 */
+      toggleSlot: (group) => setGiven(group.doses, !group.done),
+      /**
+       * 처방(건강기록 id) 하나의 복용 상태 — 홈·알림과 같은 기준이에요.
+       * active: 그날이 복용 기간 안이면 그 일정, 아니면 null
+       * ended: 복용 기간이 끝났는지. 일정이 없는 처방(필요시 약만 등)은 fallbackDate(처방일)가 지났는지로 봐요.
+       */
+      courseStatus: (visitId, fallbackDate, date = todayKey()) => {
+        const course = courseOfVisit(visitId);
+        if (!course) return { active: null, ended: Boolean(fallbackDate) && fallbackDate < date };
+        return { active: inCourse(course, date) ? course : null, ended: date >= shiftDays(course.start, course.days) };
+      },
       /** 지금 먹고 있는 처방(오늘이 일정 안에 있는 것) */
       activeCourse: (childId, date = todayKey()) =>
         allCourses.find((c) => c.childId === childId && date >= c.start && date < shiftDays(c.start, c.days)) ?? null,
@@ -447,7 +536,7 @@ export function RecordsProvider({ children }) {
       },
       /** 아이를 삭제할 때 — 그 아이의 복약 체크·건강기록·복약 일정을 모두 지워요. */
       forgetChild: (childId) =>
-        // ...prev로 알림 설정(alarmOff·alarmSince·alarmTimes)처럼 여기서 안 건드리는 값도 그대로 남겨요.
+        // ...prev로 알림 설정(alarmEnabled·alarmSince·alarmTimes)처럼 여기서 안 건드리는 값도 그대로 남겨요.
         // 빠뜨리면 알림 메뉴가 없는 값을 읽다가 앱 전체가 빈 화면이 돼요.
         setState((prev) => ({
           ...prev,

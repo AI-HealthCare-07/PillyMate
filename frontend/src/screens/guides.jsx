@@ -5,7 +5,7 @@ import { FilterChip } from '../components/ui/misc.jsx';
 import { AppShell, Body, Header } from '../components/ui/layout.jsx';
 import { AlarmTimeModal } from '../components/rx/AlarmTimeModal.jsx';
 import { AlarmBar, DangerSignals, Disclaimer, GuideSummary, HowTo, LifeTips, Schedule } from '../components/rx/guide.jsx';
-import { alarmSlots, hhmm, todayKey, useRecords } from '../state/records.jsx';
+import { alarmSlots, hhmm, useRecords } from '../state/records.jsx';
 import { useSelectedChild } from '../state/selectedChild.jsx';
 
 /**
@@ -14,7 +14,7 @@ import { useSelectedChild } from '../state/selectedChild.jsx';
  */
 export function GuidesScreen({ go, onTab }) {
   const { childList } = useSelectedChild();
-  const { guidesOf, activeCourse, isAlarmOn, setAlarm, alarmTimeOf, visitsOf } = useRecords();
+  const { guidesOf, courseStatus, isAlarmOn, setAlarm, alarmTimeOf, visitsOf } = useRecords();
   const [editing, setEditing] = useState(null); // 알림 시간을 바꾸는 가이드
   // 보던 아이 칩은 주소(?child=c1)에 남겨요. 홈의 '가이드' 바로가기는 ?child=아이&open=가이드로 들어와서
   // 그 아이 가이드만 보여 주고, 지금 먹는 약의 가이드 카드를 펴 둬요.
@@ -60,14 +60,15 @@ export function GuidesScreen({ go, onTab }) {
         ) : (
           <ul className="flex flex-col gap-3 lg:gap-4">
             {list.map((g) => {
-              const course = activeCourse(g.childId);
-              const active = course?.visitId === g.visitId ? course : null;
+              // 이 처방의 복용 기간으로 판단해요(홈 '오늘 먹을 약'·알림과 같은 기준).
+              const { active, ended } = courseStatus(g.visitId, g.date);
               return (
                 <li key={g.id}>
                   <GuideCard
                     guide={g}
                     child={childById.get(g.childId)}
                     active={active}
+                    ended={ended}
                     open={openIds.has(g.id)}
                     onToggle={() => toggle(g.id)}
                     alarmOn={isAlarmOn(g.visitId)}
@@ -97,9 +98,8 @@ export function GuidesScreen({ go, onTab }) {
 }
 
 /** 접었다 펴는 가이드 카드. 접힌 상태에선 병명·날짜·병원만, 펴면 가이드 전체를 보여 줘요. */
-function GuideCard({ guide: g, child, active, open, onToggle, alarmOn, onAlarmChange, alarmTimes, onEditTimes, timeOf, visitMeds }) {
+function GuideCard({ guide: g, child, active, ended, open, onToggle, alarmOn, onAlarmChange, alarmTimes, onEditTimes, timeOf, visitMeds }) {
   const id = useId();
-  const ended = !active && g.date < todayKey();
 
   return (
     <article className={`overflow-hidden rounded-xl border bg-surface transition-colors ${open ? 'border-edge/50' : 'border-line'}`}>

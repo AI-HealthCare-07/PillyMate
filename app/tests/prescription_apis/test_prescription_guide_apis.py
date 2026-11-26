@@ -132,6 +132,25 @@ class TestConfirmApi(PrescriptionApiBase):
         assert res.status_code == status.HTTP_200_OK, res.text
         assert {k: res.json()["medications"][0][k] for k in blank} == blank
 
+    async def test_confirm_saves_free_text_usage(self):
+        """용법(usage)은 정해진 값 목록이 아니라 문자열이다. 보호자가 직접 적은 글도 그대로 저장한다."""
+        free_text = "1일 3회 식후 즉시, 자기 전에는 빼고"
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            headers, p, meds = await self.prepare(client)
+            body = confirm_body_example(meds)
+            body["medications"][0]["usage"] = free_text
+            res = await client.put(f"/api/v1/prescriptions/{p.id}/confirm", json=body, headers=headers)
+        assert res.status_code == status.HTTP_200_OK, res.text
+        assert res.json()["medications"][0]["usage"] == free_text
+
+    async def test_confirm_usage_over_100_chars_422(self):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            headers, p, meds = await self.prepare(client)
+            body = confirm_body_example(meds)
+            body["medications"][0]["usage"] = "가" * 101
+            res = await client.put(f"/api/v1/prescriptions/{p.id}/confirm", json=body, headers=headers)
+        assert res.status_code == 422
+
     async def test_confirm_medication_without_route_400(self):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             headers, p, meds = await self.prepare(client)

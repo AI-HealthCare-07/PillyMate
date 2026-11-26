@@ -7,7 +7,7 @@ import { AlarmTimeModal } from '../components/rx/AlarmTimeModal.jsx';
 import { AlarmBar, DangerSignals, Disclaimer, GuideSummary, HowTo, LifeTips, Schedule } from '../components/rx/guide.jsx';
 import { createGuide } from '../api/prescriptionGuide.js';
 import { getPrescriptionDraft, setPrescriptionDraft } from './fe2Draft.js';
-import { alarmSlots, hhmm, todayKey, useRecords } from '../state/records.jsx';
+import { alarmSlots, hhmm, useRecords } from '../state/records.jsx';
 import { useSelectedChild } from '../state/selectedChild.jsx';
 import { BackLink } from './confirm.jsx';
 
@@ -22,7 +22,7 @@ import { BackLink } from './confirm.jsx';
 export function GuideScreen({ go, back, onTab }) {
   const { state } = useLocation();
   const navigate = useNavigate();
-  const { guideById, isAlarmOn, setAlarm, alarmTimeOf, activeCourse, visitsOf } = useRecords();
+  const { guideById, isAlarmOn, setAlarm, alarmTimeOf, courseStatus, visitsOf } = useRecords();
   const [editingTimes, setEditingTimes] = useState(false);
   // 휴대폰·브라우저의 뒤로가기도 홈으로 보내요. 그대로 두면 처방 확인 화면으로 돌아가요.
   useEffect(() => {
@@ -36,9 +36,8 @@ export function GuideScreen({ go, back, onTab }) {
   // 찾을 가이드가 없으면(주소로 바로 들어온 경우 등) 가이드 목록으로 보내요.
   if (!guide || !child) return <Navigate to="/guides" replace />;
 
-  const course = activeCourse(guide.childId);
-  const active = course?.visitId === guide.visitId ? course : null;
-  const ended = !active && guide.date < todayKey();
+  // 이 처방의 복용 기간으로 판단해요(홈 '오늘 먹을 약'·알림과 같은 기준). 같은 아이가 처방을 여러 개 먹어도 각각 맞게 보여요.
+  const { active, ended } = courseStatus(guide.visitId, guide.date);
   const slots = alarmSlots(guide.schedule);
   const alarmOn = isAlarmOn(guide.visitId);
   const timeOf = (slot) => alarmTimeOf(guide.visitId, slot);

@@ -13,6 +13,7 @@ TORTOISE_APP_MODELS = [
     "app.models.guides",
     "app.models.push_tokens",
     "app.models.medication_alarms",
+    "app.models.medication_dose_logs",
 ]
 
 TORTOISE_ORM = {
