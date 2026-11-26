@@ -84,8 +84,11 @@ def missing_fields(request: PrescriptionConfirmRequest) -> list[str]:
     if not (request.diagnosis_user_input or "").strip():
         missing.append("diagnosis_user_input")
     for i, m in enumerate(request.medications):
-        need = ["name", "dose_per_time", "unit", "total_days", "route", "dosage_form"]
-        need.append("max_daily_count" if m.as_needed else "daily_count")
+        need = ["name", "dose_per_time", "unit", "route", "dosage_form"]
+        # 필요할 때 먹는 약(해열제 등)은 처방전·약봉투에 기간이나 하루 최대 횟수가 없는 경우가 많아
+        # total_days·max_daily_count를 비워도 된다. 정해진 때 먹는 약만 하루 횟수·기간이 필수다.
+        if not m.as_needed:
+            need.extend(["daily_count", "total_days"])
         for key in need:
             value = getattr(m, key)
             if value is None or (isinstance(value, str) and not value.strip()):
