@@ -115,7 +115,7 @@ function validate({ name, birth, weight }) {
 
 /**
  * 아이 추가·편집 공통 폼. 저장하면 onSave(입력값)를 부르고 목록으로 돌아가요.
- * extraValidate는 화면별로 더 확인할 규칙이에요(예: 아이 추가의 만 18세 미만). 편집은 쓰지 않아요.
+ * extraValidate는 화면별로 더 확인할 규칙이에요(예: 만 18세 미만 — 아이 추가는 항상, 편집은 생년월일을 바꿨을 때만).
  */
 function ChildForm({ back, onTab, title, initial, onSave, onDelete, extraValidate }) {
   const [name, setName] = useState(initial.name);
@@ -291,7 +291,10 @@ function validateNewChildAge({ birth }) {
   return age !== null && age >= CHILD_AGE_LIMIT ? { birth: `만 ${CHILD_AGE_LIMIT}세 미만 자녀만 등록할 수 있어요.` } : {};
 }
 
-/** S-02 아이 정보 편집 — 목록의 편집 버튼에서 넘겨준 아이를 고쳐요. */
+/**
+ * S-02 아이 정보 편집 — 목록의 편집 버튼에서 넘겨준 아이를 고쳐요.
+ * 저장은 PATCH /api/v1/children/{id}, 삭제는 DELETE /api/v1/children/{id}. 서버에서 성공했을 때만 화면에 반영해요.
+ */
 export function ChildEditScreen(props) {
   const { state } = useLocation();
   const { childList, childId, updateChild, removeChild } = useSelectedChild();
@@ -299,12 +302,15 @@ export function ChildEditScreen(props) {
   const [confirming, setConfirming] = useState(false);
   const child = childList.find((c) => c.id === (state?.childId ?? childId));
   if (!child) return <Navigate to="/children" replace />;
-  const remove = () => {
-    // TODO(API): 아이 삭제 API 연결 후 성공했을 때만 목록에서 지워요.
+  const remove = async () => {
+    // 서버에서 지운 뒤에만 이번 방문의 복약 체크·기록·알림 설정을 지우고 목록에서 빼요. 실패하면 팝업에 문구가 남아요.
+    await removeChild(child.id);
     forgetChild(child.id);
-    removeChild(child.id);
     props.go('children', undefined, { replace: true });
   };
+  // 등록 뒤 시간이 지나 만 18세가 된 아이도 다른 항목은 고칠 수 있게, 생년월일을 바꿨을 때만 나이를 확인해요.
+  const validateEditedAge = (values) =>
+    String(values.birth).trim() === child.birth.replaceAll('.', '-') ? {} : validateNewChildAge(values);
   return (
     <>
       <ChildForm
@@ -312,11 +318,12 @@ export function ChildEditScreen(props) {
         {...props}
         title={`${child.name} 정보 편집`}
         initial={child}
-        onSave={(values) => {
-          updateChild(child.id, values);
+        onSave={async (values) => {
+          await updateChild(child.id, values);
           props.back('children');
         }}
         onDelete={() => setConfirming(true)}
+        extraValidate={validateEditedAge}
       />
       <DeleteChildModal open={confirming} name={child.name} onClose={() => setConfirming(false)} onConfirm={remove} />
     </>
@@ -328,10 +335,26 @@ export function ChildEditScreen(props) {
  */
 function DeleteChildModal({ open, name, onClose, onConfirm }) {
   const [typed, setTyped] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState('');
   const matches = typed.trim() === name;
   const close = () => {
+    if (deleting) return;
     setTyped('');
+    setError('');
     onClose();
+  };
+  // onConfirm은 서버 삭제를 기다려요. 성공하면 화면이 아이 목록으로 바뀌고, 실패하면 서버 문구를 보여 줘요.
+  const confirm = async () => {
+    if (!matches || deleting) return;
+    setDeleting(true);
+    setError('');
+    try {
+      await onConfirm();
+    } catch (failure) {
+      setError(failure.message || '삭제하지 못했어요. 잠시 후 다시 시도해 주세요.');
+      setDeleting(false);
+    }
   };
   return (
     <Modal open={open} onClose={close} title={`${name} 삭제`} className="max-w-[440px]">
@@ -339,7 +362,7 @@ function DeleteChildModal({ open, name, onClose, onConfirm }) {
         className="flex flex-col gap-5 p-5"
         onSubmit={(e) => {
           e.preventDefault();
-          if (matches) onConfirm();
+          confirm();
         }}
       >
         <div role="alert" className="flex gap-3 rounded-lg border border-danger/30 bg-danger-soft px-4 py-3.5">
@@ -360,14 +383,15 @@ function DeleteChildModal({ open, name, onClose, onConfirm }) {
           autoComplete="off"
           helper={matches ? '이름이 확인됐어요.' : '이름이 정확히 같아야 삭제할 수 있어요.'}
         />
+        {error && <p role="alert" className="rounded-lg border border-danger/30 bg-danger-soft px-4 py-3 text-14 font-medium text-danger">{error}</p>}
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <Button variant="secondary" onClick={close}>취소</Button>
+          <Button variant="secondary" onClick={close} disabled={deleting}>취소</Button>
           <button
             type="submit"
-            disabled={!matches}
+            disabled={!matches || deleting}
             className="inline-flex h-13 items-center justify-center rounded-lg bg-danger px-5 text-16 font-semibold text-on-brand transition-colors hover:bg-danger-hover disabled:cursor-not-allowed disabled:bg-sunk disabled:text-muted"
           >
-            영구 삭제하기
+            {deleting ? '삭제하는 중' : '영구 삭제하기'}
           </button>
         </div>
       </form>
