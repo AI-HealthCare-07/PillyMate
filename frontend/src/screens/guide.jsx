@@ -106,6 +106,25 @@ export function GuideLoadingScreen({ go, back, onTab }) {
   const { childList } = useSelectedChild();
   const childName = childList.find((c) => c.id === draft?.childId)?.name ?? '아이';
   const prescriptionId = draft?.prescriptionId;
+
+  // 가이드 생성 중 브라우저 뒤로 가기 제한
+  useEffect(() => {
+    const url = window.location.href;
+    const state = window.history.state;
+
+    window.history.pushState(state, '', url);
+
+    const preventBack = () => {
+      window.history.pushState(state, '', url);
+    };
+
+    window.addEventListener('popstate', preventBack);
+
+    return () => {
+      window.removeEventListener('popstate', preventBack);
+    };
+  }, []);
+
   useEffect(() => {
     if (!prescriptionId) {
       const t = setTimeout(() => go('guide', { guideId: draft?.guideId }, { replace: true }), 2500);
@@ -129,7 +148,7 @@ export function GuideLoadingScreen({ go, back, onTab }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prescriptionId]);
   return (
-    <AppShell tab="history" onTab={onTab} showTabs={false} width="reading" header={<Header title="" onBack={() => back('confirm')} />}>
+    <AppShell tab="history" onTab={() => {}} showTabs={false} showTopBar={false} width="reading" header={<Header title="" />}>
       <div className="flex flex-1 flex-col gap-8 px-5 pb-8 pt-1 lg:px-0 lg:pb-12 lg:pt-4" aria-busy="true" aria-live="polite">
         <div className="flex flex-col gap-2">
           <h1 className="text-22 font-bold lg:text-28">가이드를 만들고 있어요</h1>

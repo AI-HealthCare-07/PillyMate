@@ -1,4 +1,5 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { fetchPrescriptionDetail } from '../api/prescriptionRecords.js';
 import { Camera, ChevronLeft, Eye } from 'lucide-react';
 import { Button, SmallButton } from '../components/ui/Button.jsx';
 import { Field } from '../components/ui/Field.jsx';
@@ -66,7 +67,91 @@ function OriginalModal({ open, onClose, previewUrl, head, words }) {
   );
 }
 
-export function ConfirmScreen({ go, back, onTab }) {
+export function ConfirmScreen(props) {
+  const prescriptionId = getPrescriptionDraft()?.prescriptionId;
+  const [access, setAccess] = useState(null);
+  const [retry, setRetry] = useState(0);
+
+  useEffect(() => {
+    if (!prescriptionId) return;
+
+    let cancelled = false;
+
+    async function checkPrescription() {
+      try {
+        const detail = await fetchPrescriptionDetail(prescriptionId);
+
+        if (cancelled) return;
+
+        if (detail.status === 'GUIDE_DONE') {
+          setAccess({ id: prescriptionId, state: 'blocked' });
+        } else if (['OCR_DONE', 'CONFIRMED'].includes(detail.status)) {
+          setAccess({ id: prescriptionId, state: 'allowed' });
+        } else {
+          setAccess({ id: prescriptionId, state: 'error' });
+        }
+      } catch {
+        if (!cancelled) {
+          setAccess({ id: prescriptionId, state: 'error' });
+        }
+      }
+    }
+
+    checkPrescription();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [prescriptionId, retry]);
+
+  const state = access?.id === prescriptionId
+    ? access?.state
+    : null;
+
+  if (prescriptionId && state !== 'allowed') {
+    return (
+      <AppShell
+        tab="upload"
+        onTab={props.onTab}
+        showTabs={false}
+        header={<Header title="처방 내용 확인" />}
+      >
+        <div className="flex flex-col gap-4 p-6">
+          {state === 'blocked' ? (
+            <>
+              <h2 className="text-22 font-bold">
+                이미 가이드가 생성된 처방이에요.
+              </h2>
+              <p>가이드 생성이 완료된 처방은 수정할 수 없어요.</p>
+              <Button onClick={() => props.go('guides', undefined, { replace: true })}>
+                가이드 목록 보기
+              </Button>
+            </>
+          ) : state === 'error' ? (
+            <>
+              <p>처방 상태를 확인하지 못했어요.</p>
+              <Button onClick={() => {
+                setAccess(null);
+                setRetry((n) => n + 1);
+              }}>
+                다시 확인하기
+              </Button>
+            </>
+          ) : (
+            <p role="status">처방 상태를 확인하고 있어요…</p>
+          )}
+          <Button variant="secondary" onClick={() => props.go('home', undefined, { replace: true })}>
+            홈으로 돌아가기
+          </Button>
+        </div>
+      </AppShell>
+    );
+  }
+
+  return <ConfirmForm key={prescriptionId ?? 'demo'} {...props} />;
+}
+
+function ConfirmForm({ go, back, onTab }) {
   const draft = getPrescriptionDraft();
   const { recordPrescription } = useRecords();
   const { child: selectedChild, childList } = useSelectedChild();
@@ -162,12 +247,9 @@ export function ConfirmScreen({ go, back, onTab }) {
           medications: items,
         });
       } catch (error) {
-        // 409 = 이미 가이드를 만든 처방이에요. 다시 확정할 수는 없지만, 만든 가이드는 그대로 볼 수 있어서 넘어가요.
-        if (error?.status !== 409) {
-          setSaving(false);
-          fail(error.message);
-          return;
-        }
+        setSaving(false);
+        fail(error.message || '처방 내용을 저장하지 못했어요.');
+        return;
       }
       setSaving(false);
     }
