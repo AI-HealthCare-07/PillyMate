@@ -143,6 +143,7 @@ def infer_prescription_unit(name, dosage_form):
         return "mL"
     return DEFAULT_UNIT_BY_FORM.get(dosage_form)
 
+
 def bag_unit(raw_unit, name, dosage_form):
     """약봉투의 단위. 읽은 단위가 허용 목록에 없으면(앰플·흡입 등) 짐작하지 않고 None.
 
@@ -152,6 +153,7 @@ def bag_unit(raw_unit, name, dosage_form):
     if raw_unit and str(raw_unit).strip():
         return normalize_unit(raw_unit)
     return infer_prescription_unit(name, dosage_form)
+
 
 def clean_usage(text):
     """'->식후 30분' 같은 화살표·기호를 떼어 낸다."""

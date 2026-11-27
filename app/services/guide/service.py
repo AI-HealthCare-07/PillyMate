@@ -10,13 +10,13 @@ BE-2는 확정 API(PUT /prescriptions/{id}/confirm)로 저장한 값을 DB 모�
 
 from __future__ import annotations
 
-from typing import Any
-
 import logging
-logger = logging.getLogger(__name__)
+from typing import Any
 
 from app.services.guide.generator import TEMPLATE_DIR, CallLLM, generate, load
 from app.services.guide.merge import ingredient_of
+
+logger = logging.getLogger(__name__)
 
 # 확정 API·ERD의 코드값 → 가이드 스키마(guide_content.schema.json)의 값
 ROUTE_KO = {"ORAL": "내복", "EXTERNAL": "외용"}
@@ -95,6 +95,7 @@ def generate_guide(
         disease_group=groups[0] if groups else "other",  # 1차: 처음 나온 질환군 1개. 여러 개 함께 보여 주기는 다음 단계
         llm_label=llm_label,
     )
+
 
 def references_for(medications: list[dict[str, Any]]) -> dict[int, str]:
     """약 정보 파일(drug_refs.json)에서 약마다 효능·주의·부작용·보관 요약을 찾는다. 못 찾은 약은 빠진다."""

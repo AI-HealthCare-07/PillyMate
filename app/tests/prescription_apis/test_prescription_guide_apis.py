@@ -34,9 +34,7 @@ class PrescriptionApiBase(TestCase):
         signup = signup_payload(email=email, password=PASSWORD)
         joined = await client.post("/api/v1/auth/signup", json=signup)
         res = await client.post("/api/v1/auth/login", json={"email": email, "password": PASSWORD})
-        assert res.status_code == 200, (
-            f"가입 {joined.status_code}: {joined.text}\n로그인 {res.status_code}: {res.text}"
-        )
+        assert res.status_code == 200, f"가입 {joined.status_code}: {joined.text}\n로그인 {res.status_code}: {res.text}"
         return {"Authorization": f"Bearer {res.json()['access_token']}"}
 
     async def prepare(self, client: AsyncClient, email: str = "rx@example.com"):

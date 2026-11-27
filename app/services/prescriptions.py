@@ -24,13 +24,12 @@ from app.dtos.prescriptions import (
     PrescriptionConfirmRequest,
     PrescriptionDetailResponse,
 )
-
-from app.services.drug_lookup import efficacy_for, get_drug_index
 from app.models.children import Child
 from app.models.guides import Guide
-from app.models.medications import Medication, Route
+from app.models.medications import Medication
 from app.models.prescriptions import Prescription, PrescriptionStatus
 from app.repositories.prescription_repository import PrescriptionRepository
+from app.services.drug_lookup import efficacy_for, get_drug_index
 from app.services.guide.service import generate_guide
 from app.services.guide.view import VIEW_SCHEMA_VERSION, to_view
 

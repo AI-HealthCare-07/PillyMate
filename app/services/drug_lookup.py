@@ -335,6 +335,70 @@ def _efficacy_text_ok(label: str, efficacy_text: str | None) -> bool:
     return any(w in efficacy_text for w in words)
 
 
+def _gather(index: DrugIndex, p: ParsedName) -> tuple[list[DrugRecord], str]:
+    """후보 모으기: 상표 → 괄호 속 성분 → 상표 한 글자 오타 순서. (후보, 어떻게 모았는지)"""
+    cands = list(index.by_stem.get(p.stem, []))
+    if cands:
+        return cands, "stem"
+    if p.ingredient and index.by_ingredient.get(p.ingredient):
+        return list(index.by_ingredient[p.ingredient]), "ingredient"
+    if len(p.stem) >= 4:
+        near = [s for s in index.by_stem if _edit_distance_le1(s, p.stem)]
+        if len(near) == 1:
+            return list(index.by_stem[near[0]]), "fuzzy"
+    return [], "none"
+
+
+def _keep(cands: list[DrugRecord], same: Any, unknown: Any) -> tuple[list[DrugRecord], bool]:
+    """same(후보)가 참이거나 unknown(후보)가 참(비교할 값이 없음)인 후보만 남긴다. (남은 후보, 맞는 후보가 있었는지)"""
+    kept = [c for c in cands if same(c) or unknown(c)]
+    return kept, any(same(c) for c in kept)
+
+
+def _narrow(
+    cands: list[DrugRecord], p: ParsedName, unit: str | None, chart: str | None
+) -> tuple[list[DrugRecord], set[str]]:
+    """제형·함량·단위·성상 색으로 후보를 줄인다. 값을 모르는 후보는 빼지 않는다. (남은 후보, 맞은 근거)"""
+    checks = []
+    fam = FORM_FAMILY.get(p.form or "")
+    if fam:  # 이름의 제형과 같은 묶음
+        checks.append(("form", lambda c: c.form_family == fam, lambda c: c.form_family is None))
+    if p.strength:  # 이름의 함량과 같은 함량
+        checks.append(("strength", lambda c: c.parsed.strength == p.strength, lambda c: c.parsed.strength is None))
+    allowed = UNIT_FAMILIES.get(_unit_key(unit) or "")
+    if allowed:  # 약봉투의 1회 단위를 쓰는 제형
+        checks.append(("unit", lambda c: c.form_family in allowed, lambda c: c.form_family is None))
+    bag_colors = _colors(chart)
+    if bag_colors:  # 성상의 색이 하나라도 겹침
+        checks.append(("chart", lambda c: bool(_colors(c.chart) & bag_colors), lambda c: not _colors(c.chart)))
+
+    evidence: set[str] = set()
+    for name, same, unknown in checks:
+        cands, matched = _keep(cands, same, unknown)
+        if matched:
+            evidence.add(name)
+    return cands, evidence
+
+
+def _single_label(cands: list[DrugRecord]) -> tuple[str | None, str]:
+    """후보가 모두 같은 분류면 (그 분류, 'ok'), 아니면 (None, 이유)."""
+    if not cands:
+        return None, "교차 확인에서 모든 후보가 빠졌어요"
+    unknown = sorted({c.atc_code or c.class_no or "분류 정보 없음" for c in cands if c.label is None})
+    if unknown:
+        return None, f"분류 표에 없는 후보가 있어요: {', '.join(unknown)}"
+    labels = sorted({c.label for c in cands if c.label})
+    if len(labels) > 1:
+        return None, f"후보의 분류가 서로 달라요: {labels}"
+    return labels[0], "ok"
+
+
+def _match_kind(by: str, count: int) -> Match:
+    if by in ("fuzzy", "ingredient"):
+        return by  # type: ignore[return-value]
+    return "exact" if count == 1 else "class_agree"
+
+
 def find_by_name(
     index: DrugIndex,
     name: str,
@@ -347,78 +411,19 @@ def find_by_name(
     p = parse_name(name)
     if not p.stem:
         return Lookup(None, "이름이 비어 있어요")
-
-    fuzzy = False
-    by = "stem"
-    cands = list(index.by_stem.get(p.stem, []))
-    if not cands and p.ingredient:
-        cands, by = list(index.by_ingredient.get(p.ingredient, [])), "ingredient"
-    if not cands and len(p.stem) >= 4:
-        near = [s for s in index.by_stem if _edit_distance_le1(s, p.stem)]
-        if len(near) == 1:
-            cands, fuzzy = list(index.by_stem[near[0]]), True
+    cands, by = _gather(index, p)
     if not cands:
         return Lookup(None, "같은 이름의 품목이 없어요")
 
-    evidence: set[str] = set()
-
-    # 제형: 이름의 제형과 같은 묶음만 남긴다(제형을 모르는 품목은 남긴다).
-    fam = FORM_FAMILY.get(p.form or "")
-    if fam:
-        kept = [c for c in cands if c.form_family in (fam, None)]
-        if any(c.form_family == fam for c in kept):
-            evidence.add("form")
-        cands = kept
-
-    # 함량: 이름에 함량이 있으면 같은 함량만 남긴다.
-    if p.strength:
-        kept = [c for c in cands if c.parsed.strength in (p.strength, None)]
-        if any(c.parsed.strength == p.strength for c in kept):
-            evidence.add("strength")
-        cands = kept
-
-    # 단위: 약봉투의 1회 단위와 품목의 제형이 맞지 않으면 뺀다.
-    allowed = UNIT_FAMILIES.get(_unit_key(unit) or "")
-    if allowed:
-        kept = [c for c in cands if c.form_family is None or c.form_family in allowed]
-        if any(c.form_family in allowed for c in kept):
-            evidence.add("unit")
-        cands = kept
-
-    # 성상 색: 양쪽 다 색이 있는데 겹치는 색이 없으면 뺀다.
-    bag_colors = _colors(chart)
-    if bag_colors:
-        kept = [c for c in cands if not _colors(c.chart) or _colors(c.chart) & bag_colors]
-        if any(_colors(c.chart) & bag_colors for c in kept):
-            evidence.add("chart")
-        cands = kept
-
-    if not cands:
-        return Lookup(None, "교차 확인에서 모든 후보가 빠졌어요")
-
-    labels = {c.label for c in cands}
-    if None in labels:
-        unknown = sorted({c.atc_code or c.class_no or "분류 정보 없음" for c in cands if c.label is None})
-        return Lookup(None, f"분류 표에 없는 후보가 있어요: {', '.join(unknown)}", cands)
-    if len(labels) > 1:
-        return Lookup(None, f"후보의 분류가 서로 달라요: {sorted(labels)}", cands)  # type: ignore[type-var]
-    label = labels.pop()
-    assert label is not None
-
-    if fuzzy and (len(cands) > 1 or len(evidence) < 2):
+    cands, evidence = _narrow(cands, p, unit, chart)
+    label, reason = _single_label(cands)
+    if label is None:
+        return Lookup(None, reason, cands)
+    if by == "fuzzy" and (len(cands) > 1 or len(evidence) < 2):
         return Lookup(None, "오타로 보이는 이름인데 확인 근거가 부족해요", cands)
     if not _efficacy_text_ok(label, efficacy_text):
         return Lookup(None, f"약봉투 효능 문장과 분류({label})가 맞지 않아요", cands)
-
-    if fuzzy:
-        match: Match = "fuzzy"
-    elif by == "ingredient":
-        match = "ingredient"
-    elif len(cands) == 1:
-        match = "exact"
-    else:
-        match = "class_agree"
-    return Lookup(Efficacy(label, "name_lookup", match), "ok", cands)
+    return Lookup(Efficacy(label, "name_lookup", _match_kind(by, len(cands))), "ok", cands)
 
 
 def find_by_insurance_code(index: DrugIndex, code: str | None) -> Efficacy | None:
@@ -433,7 +438,9 @@ def find_by_insurance_code(index: DrugIndex, code: str | None) -> Efficacy | Non
 
 
 def efficacy_for(med: Mapping[str, Any], index: DrugIndex | None) -> Efficacy | None:
-    """약 1개의 약효 분류. med 키: name, insurance_code, printed_class(약봉투 분류), unit, chart(성상), efficacy_text(효능).
+    """약 1개의 약효 분류.
+
+    med 키: name, insurance_code, printed_class(약봉투 분류), unit, chart(성상), efficacy_text(효능).
 
     없으면 None — 화면은 '약효 정보 확인 중'으로 둔다.
     """

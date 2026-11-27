@@ -309,7 +309,8 @@ def test_load_records_api_columns(tmp_path):
     path = tmp_path / "drugs.csv"
     path.write_text(
         "ITEM_NAME,MAIN_ITEM_INGR,EDI_CODE,CHART,ATC_CODE\n"
-        "지스로맥스정250밀리그람(아지트로마이신수화물),[M250781]아지트로마이신수화물,648900880,분홍색 장방형 필름코팅정,J01FA10\n",
+        "지스로맥스정250밀리그람(아지트로마이신수화물),[M250781]아지트로마이신수화물,"
+        "648900880,분홍색 장방형 필름코팅정,J01FA10\n",
         encoding="utf-8-sig",
     )
     (record,) = load_records(path)
@@ -320,7 +321,9 @@ def test_load_records_multiline_field(tmp_path):
     # 성상 칸 안에 줄바꿈이 있어도 한 품목으로 읽는다 (실제 허가정보에 있음)
     path = tmp_path / "drugs.csv"
     path.write_text(
-        'ITEM_NAME,CHART,ATC_CODE\n대한멸균증류수(주사용수),"무색투명한 액을 충진한\n플라스틱제 용기",V07AB\n시네츄라시럽,갈색,R05\n',
+        "ITEM_NAME,CHART,ATC_CODE\n"
+        '대한멸균증류수(주사용수),"무색투명한 액을 충진한\n플라스틱제 용기",V07AB\n'
+        "시네츄라시럽,갈색,R05\n",
         encoding="utf-8-sig",
     )
     records = load_records(path)
