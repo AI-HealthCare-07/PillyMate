@@ -237,18 +237,40 @@ def _all_applicable(text: str, age_months: int) -> bool:
     return all(_applies(s, age_months) for s in _SENTENCE_END.split(text.strip()) if s)
 
 
+REASON_MAX = 80  # guide_content.schema.json의 pharmacist_check.reason maxLength
+REASON_SEP = "; "  # generator.assemble()이 코드 규칙 이유(알레르기 등)와 LLM 이유를 이을 때 쓰는 구분자
+
+
+def _reason_parts(reason: str | None) -> list[str]:
+    """약사 확인 이유 → 이유 하나씩. assemble()이 '알레르기 이유; LLM 이유'처럼 이어 붙인 것을 나눈다."""
+    return [p.strip() for p in (reason or "").split(REASON_SEP) if p.strip()]
+
+
+def _join_reasons(parts: list[str]) -> str:
+    """이유들을 앞에서부터 80자 안에 들어가는 만큼 잇는다. 같은 이유는 한 번만. 첫 이유는 길어도 둔다."""
+    out: list[str] = []
+    for p in dict.fromkeys(parts):
+        if not out or len(REASON_SEP.join([*out, p])) <= REASON_MAX:
+            out.append(p)
+    return REASON_SEP.join(out)
+
+
 def drop_inapplicable_age_conditions(guide: dict[str, Any], age_months: int) -> dict[str, Any]:
     """주의·약사 확인 이유에서 이 아이 나이에 맞지 않는 나이 조건('1세 미만 영아는…', '10세 이상은…' — 2살 아이)을 뺀다.
 
     프롬프트로 막아도 LLM이 reference의 나이 조건을 그대로 옮겨서 코드로 거른다. 해당하는 조건은 그대로 둔다.
     주의는 항목을 통째로 뺀다 — 한 문장만 빼면 '아이 나이가 이 기준에 해당하는지…'처럼 뒷문장이 혼자 남는다.
-    약사 확인 이유도 같은 이유로, 맞지 않는 문장이 하나라도 있으면 통째로 기본 문장으로 바꾼다.
+    약사 확인 이유도 같은 이유로, 이유(REASON_SEP로 나눈 하나) 안에 맞지 않는 문장이 있으면 그 이유를 통째로 뺀다.
+    다른 이유(알레르기 규칙 등)는 남기고, 남는 이유가 없으면 기본 문장으로 바꾼다.
     """
     for card in guide.get("medications", []):
         card["cautions"] = [c for c in card.get("cautions") or [] if _all_applicable(c, age_months)]
         check = card.get("pharmacist_check") or {}
-        if check.get("needed") and check.get("reason") and not _all_applicable(check["reason"], age_months):
-            check["reason"] = AGE_FALLBACK_REASON
+        if check.get("needed") and check.get("reason"):
+            parts = _reason_parts(check["reason"])
+            kept = [p for p in parts if _all_applicable(p, age_months)]
+            if len(kept) != len(parts):
+                check["reason"] = _join_reasons(kept) if kept else AGE_FALLBACK_REASON
     return guide
 
 
@@ -269,6 +291,7 @@ def require_pharmacist_check(guide: dict[str, Any], medication_ids: set[int]) ->
 _DUR_FIELD = re.compile(r"연령 금기\(DUR\): (.*?)(?= (?:투여 금기|소아|경고|주의\(e약은요\)|보관|흔한 부작용): |$)")
 _UNDER_AGE = re.compile(r"(\d+)\s*(세|개월)\s*미만")
 DUR_AGE_REASON = "식약처 DUR에 {limit} 미만 연령 금기가 있어요. 먹이기 전에 약사에게 꼭 확인해 주세요."  # 80자 이내
+DUR_AGE_REASON_SHORT = "식약처 DUR {limit} 미만 연령 금기예요"  # 다른 이유(알레르기 등)와 함께 80자 안에 넣을 때
 DUR_AGE_CAUTION = "식약처 연령 금기(DUR): {text} 먹이기 전에 처방한 곳이나 약사에게 꼭 확인해 주세요."
 DUR_CAUTION_TEXT_MAX = 90  # 주의 칸에 옮길 DUR 원문 길이 (문장 단위로 자른다)
 MAX_CAUTIONS = 4  # LLMMedication.cautions와 같게
@@ -282,6 +305,10 @@ class DurAgeAlert:
     @property
     def reason(self) -> str:
         return DUR_AGE_REASON.format(limit=self.limit)
+
+    @property
+    def short_reason(self) -> str:
+        return DUR_AGE_REASON_SHORT.format(limit=self.limit)
 
     @property
     def caution(self) -> str:
@@ -322,17 +349,24 @@ def dur_age_alerts(references: dict[int, str], age_months: int) -> dict[int, Dur
 
 
 def apply_dur_age_alerts(guide: dict[str, Any], alerts: dict[int, DurAgeAlert]) -> dict[str, Any]:
-    """DUR 연령 금기에 걸리는 약: 주의 칸 맨 앞에 DUR 원문을 두고, 약사 확인 이유를 DUR 문장으로 바꾼다.
+    """DUR 연령 금기에 걸리는 약: 주의 칸 맨 앞에 DUR 원문을 두고, 약사 확인 이유 맨 앞에 DUR 문장을 둔다.
 
-    LLM이 같은 나이 조건('12세 미만')으로 쓴 주의는 겹치니 뺀다 (약하게 옮긴 문장이 남지 않게).
+    LLM이 같은 나이 조건('12세 미만')으로 쓴 주의·이유는 겹치니 뺀다 (약하게 옮긴 문장이 남지 않게).
+    다른 이유(알레르기 규칙·같은 성분 등)는 DUR 짧은 문장 뒤에 남긴다. 기본 문장(검수 전·나이 대체)은 DUR 문장이 대신한다.
     """
+    generic = {UNREVIEWED_REASON, AGE_FALLBACK_REASON}
     for card in guide.get("medications", []):
         alert = alerts.get(card.get("medication_id"))
         if not alert:
             continue
-        others = [c for c in card.get("cautions") or [] if not re.search(rf"{re.escape(alert.limit)}\s*미만", c)]
+        same_limit = re.compile(rf"{re.escape(alert.limit)}\s*미만")
+        others = [c for c in card.get("cautions") or [] if not same_limit.search(c)]
         card["cautions"] = [alert.caution, *others][:MAX_CAUTIONS]
-        card["pharmacist_check"] = {"needed": True, "reason": alert.reason}
+        check = card.get("pharmacist_check") or {}
+        reasons = _reason_parts(check.get("reason")) if check.get("needed") else []
+        reasons = [r for r in reasons if r not in generic and not same_limit.search(r)]
+        reason = _join_reasons([alert.short_reason, *reasons]) if reasons else alert.reason
+        card["pharmacist_check"] = {"needed": True, "reason": reason}
     return guide
 
 

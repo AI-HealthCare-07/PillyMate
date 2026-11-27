@@ -75,7 +75,7 @@ SYSTEM_PROMPT = """너는 소아청소년과 진료 후 보호자에게 이 아�
 - reference가 "약국 안내(약봉투)"로 시작하면 조제 약사가 적은 안내야. 그 내용과 반대되는 말을 쓰지 말고, 간격·함께 쓰지 말 것 같은 지시는 how_to_give에 옮겨 써.
 - reference가 "[검수 전 정보"로 시작하면 사람이 아직 검수하지 않은 식약처 원문 발췌야(성인 기준·전문 용어).
   쉬운 말로 옮기되 뜻을 바꾸지 말고, 아이 나이에 맞지 않는 내용(임신·수유·고령자·운전)은 빼.
-  이 약은 pharmacist_check_needed를 true로 해. pharmacist_check_reason에는 알레르기·같은 성분처럼 다른 구체적인 이유가
+  이 약은 pharmacist_check_needed를 true로 해. pharmacist_check_reason에는 같은 성분 중복처럼 다른 구체적인 이유가
   있을 때만 그 이유를 쓰고, 없으면 null로 둬. '검수 전 정보'라는 이유는 시스템이 붙이니 쓰지 마.
 - pharmacist_check_needed가 true이면 pharmacist_check_reason(80자 이내)에 보호자가 약사에게 무엇을 물어보면 되는지 쉬운 말로 써. false이면 null로 둬.
   (검수 전 정보 약은 바로 위 규칙대로 다른 이유가 없으면 null)

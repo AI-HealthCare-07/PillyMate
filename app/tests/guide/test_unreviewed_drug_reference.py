@@ -216,7 +216,97 @@ def test_dur_age_alert_puts_official_caution_first_and_drops_soft_one():
     assert card["cautions"][0].startswith("식약처 연령 금기(DUR): 12세 미만 소아는 호흡억제 감수성이 큼.")
     assert not any("조심해야" in c for c in card["cautions"])
     assert len(card["cautions"]) <= service.MAX_CAUTIONS
+    assert card["pharmacist_check"] == {"needed": True, "reason": f"{alert.short_reason}; LLM 이유"}
+
+
+@pytest.mark.parametrize(
+    "reason",
+    [
+        None,
+        service.UNREVIEWED_REASON,
+        "12세 미만은 조심해서 먹여요",
+        f"12세 미만은 조심해요; {service.UNREVIEWED_REASON}",
+    ],
+)
+def test_dur_age_alert_replaces_generic_or_soft_reason(reason):
+    guide = {
+        "medications": [{"medication_id": 1, "cautions": [], "pharmacist_check": {"needed": True, "reason": reason}}]
+    }
+    alert = service.DurAgeAlert("12세", "12세 미만 소아에게 투여하지 않는다.")
+    card = service.apply_dur_age_alerts(guide, {1: alert})["medications"][0]
     assert card["pharmacist_check"] == {"needed": True, "reason": alert.reason}
+
+
+def test_join_reasons_fits_schema_length():
+    first, second, third = "가" * 30, "나" * 30, "다" * 30
+    assert service._join_reasons([first, second, third]) == f"{first}; {second}"  # 셋째는 80자를 넘겨 뺀다
+    assert service._join_reasons([first, first]) == first
+    assert service._join_reasons(["라" * 90]) == "라" * 90  # 첫 이유는 길어도 둔다
+
+
+# ------------------------------------------------------------------ dev의 알레르기 규칙 이유가 후처리 뒤에도 남는지
+
+_ALLERGY_MED = {
+    "medication_id": 1,
+    "name": "리소짐시럽",  # generator.ALLERGY_RULES: 계란 알레르기 ↔ 리소짐
+    "dosage_form": "SYRUP",
+    "route": "ORAL",
+    "dose_per_time": 3,
+    "unit": "mL",
+    "daily_count": 3,
+    "total_days": 3,
+    "as_needed": False,
+    "max_daily_count": None,
+    "usage": "식후 30분",
+}
+_ALLERGY_CHILD = {"birth_date": "2024-09-10", "weight_kg": 12.0, "allergies": ["계란"]}  # 처방일 기준 2살
+_ALLERGY_RX = {"prescription_id": 1, "prescription_date": "2026-11-20", "diagnosis_user_input": "감기"}
+
+
+def _llm_with_reason(reason):
+    def call(system, user):
+        return {
+            "summary": "2살 아이의 오늘 처방 약은 1개예요. 기침을 잘 지켜봐 주세요.",
+            "medications": [
+                {
+                    "medication_id": 1,
+                    "purpose": "기침을 줄여 주는 약이에요.",
+                    "how_to_give": ["식후 30분에 먹여요."],
+                    "cautions": [],
+                    "common_side_effects": [],
+                    "storage": None,
+                    "pharmacist_check_needed": reason is not None,
+                    "pharmacist_check_reason": reason,
+                }
+            ],
+            "home_care_picks": [],
+        }
+
+    return call
+
+
+def _final_reason(reference: str, llm_reason: str | None) -> str:
+    guide = service.generate_guide(
+        _ALLERGY_CHILD, _ALLERGY_RX, [_ALLERGY_MED], references={1: reference}, call_llm=_llm_with_reason(llm_reason)
+    )
+    check = guide["medications"][0]["pharmacist_check"]
+    assert check["needed"]
+    assert len(check["reason"]) <= service.REASON_MAX
+    return check["reason"]
+
+
+def test_allergy_reason_survives_dur_age_alert():
+    reason = _final_reason(
+        "[출처: 테스트] 효능: 기침을 줄여요. 연령 금기(DUR): 12세 미만 소아에게 투여하지 않는다.", None
+    )
+    assert reason.startswith("식약처 DUR 12세 미만 연령 금기예요; ")
+    assert "계란 알레르기" in reason
+
+
+def test_allergy_reason_survives_inapplicable_age_condition():
+    reason = _final_reason("[출처: 테스트] 효능: 기침을 줄여요.", "10세 이상은 정제로 바꿀 수 있는지 물어보세요.")
+    assert "계란 알레르기" in reason
+    assert "10세 이상" not in reason
 
 
 def test_leading_sentences_keeps_whole_sentences():
