@@ -10,6 +10,7 @@ from app.apis.v1.prescription_deletion_routers import prescription_deletion_rout
 from app.apis.v1.prescription_query_routers import prescription_query_router
 from app.apis.v1.prescription_registration_routers import prescription_registration_router
 from app.apis.v1.prescription_routers import prescription_router
+from app.apis.v1.push_routers import push_router
 
 v1_routers = APIRouter(prefix="/api/v1")
 v1_routers.include_router(auth_router)
@@ -22,3 +23,4 @@ v1_routers.include_router(prescription_router)
 v1_routers.include_router(chat_router)
 v1_routers.include_router(medication_alarm_router)
 v1_routers.include_router(medication_dose_router)
+v1_routers.include_router(push_router)
