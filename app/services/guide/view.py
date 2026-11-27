@@ -8,7 +8,9 @@
                 약별 복용법 표: dose·perDay·days·timing·asNeeded (없으면 화면이 일정표에서 찾아서 필요시 약이 비었다)
                 카드 윗부분: shortName·purpose·dose·when·keyPoint
                 자세히 보기: steps·cautions·sideEffects·storage·pharmacistCheck·form
-    life      : [문장, ...]                                                              → LifeTips
+    life      : [문장, ...]  생활 습관만 (집에서 돌보기 + 관리 포인트). 약 이야기는 없음      → LifeTips
+    medTips   : [문장, ...]  이번 약과 함께 챙길 것 (약 계열 팁)                          → 새 칸 (FE에서 추가)
+    allergyNotice : "약을 받을 때 약사에게 계란 알레르기가 있다고 알려 주세요." (없으면 "") → 약 카드 위 (FE에서 추가)
     danger    : [문장, ...]                                                              → DangerSignals
 그 밖에 title·summary·checklist·disclaimer·sources를 두고,
 원래 결과 전체는 detail에 넣어 둔다 (챗봇·근거 화면에서 쓸 수 있게).
@@ -22,7 +24,7 @@ from typing import Any
 from app.services.guide.generator import SLOT_ORDER
 
 # 화면 형식을 바꾸면 올린다. 저장된 가이드가 예전 버전이면 조회할 때 detail로 다시 만든다(prescriptions.guide_response).
-VIEW_SCHEMA_VERSION = "fe-2"
+VIEW_SCHEMA_VERSION = "fe-3"  # fe-3: life에서 약 팁을 빼고 medTips로 나눔, allergyNotice 추가
 MAX_LIFE = 8
 
 
@@ -118,20 +120,44 @@ def build_how_to(medications: list[dict]) -> list[dict]:
     return out
 
 
-def build_life(guide: dict) -> list[str]:
-    """약과 함께 챙길 것 → 관리 포인트 행동 → 집에서 돌보기 순서로, 겹치지 않게 MAX_LIFE개까지."""
-    texts: list[str] = [t["text"] for t in guide.get("with_this_medicine") or []]
-    for f in guide.get("focus_points") or []:
-        texts.extend(f.get("actions") or [])
-    for sec in (guide.get("home_care") or {}).get("sections") or []:
-        texts.extend(i["text"] for i in sec.get("items") or [])
+def _unique(texts: list[str]) -> list[str]:
     seen: set[str] = set()
     out = []
     for t in texts:
         if t and t not in seen:
             seen.add(t)
             out.append(t)
-    return out[:MAX_LIFE]
+    return out
+
+
+def build_life(guide: dict) -> list[str]:
+    """생활 습관: 집에서 돌보기 → 관리 포인트 행동 순서로, 겹치지 않게 MAX_LIFE개까지.
+
+    집에서 돌보기는 병명(질환군)·나이로 걸러진 템플릿에서 LLM이 이 아이에게 맞게 고른 문장이라 먼저 둔다.
+    LLM이 붙인 personal_note가 있으면 문장 뒤 괄호에 붙인다.
+    약 계열 팁(with_this_medicine)은 넣지 않는다 → medTips (복약/생활 경계).
+    """
+    texts: list[str] = []
+    for sec in (guide.get("home_care") or {}).get("sections") or []:
+        for i in sec.get("items") or []:
+            note = (i.get("personal_note") or "").strip()
+            texts.append(f"{i['text']} ({note})" if note else i["text"])
+    for f in guide.get("focus_points") or []:
+        texts.extend(f.get("actions") or [])
+    return _unique(texts)[:MAX_LIFE]
+
+
+def build_med_tips(guide: dict) -> list[str]:
+    """이번 약과 함께 챙길 것: 약 계열·제형 팁. 처방 약에 따라 정해진다."""
+    return _unique([t["text"] for t in guide.get("with_this_medicine") or []])
+
+
+def build_allergy_notice(guide: dict) -> str:
+    """알레르기가 입력된 아이면 약 카드 위에 한 번만 보이는 안내. 규칙에 없는 조합은 보호자가 약사에게 직접 확인한다."""
+    allergies = (guide.get("child") or {}).get("allergies") or []
+    if not allergies:
+        return ""
+    return f"약을 받을 때 약사에게 {', '.join(allergies)} 알레르기가 있다고 알려 주세요."
 
 
 def build_danger(guide: dict) -> list[str]:
@@ -152,6 +178,8 @@ def to_view(guide: dict[str, Any]) -> dict[str, Any]:
         "asNeeded": build_as_needed(meds),
         "howTo": build_how_to(meds),
         "life": build_life(guide),
+        "medTips": build_med_tips(guide),
+        "allergyNotice": build_allergy_notice(guide),
         "danger": build_danger(guide),
         "checklist": [c["text"] for c in guide.get("today_checklist") or []],
         "disclaimer": guide.get("disclaimer"),

@@ -1,8 +1,8 @@
 """PillyMate AI-2 가이드 모듈: 가이드 조립과 생성 (v0.3)
 
 역할 분리 원칙
-- LLM이 쓰는 것: 요약, 약별 설명(목적·먹이는 법·주의·부작용·보관), 생활 템플릿 문장 고르기, 오늘 체크리스트
-- 코드가 채우는 것: 용량·횟수·일수, 위험 신호, 나이별 주의, 약 계열 팁, 면책 문구, 출처
+- LLM이 쓰는 것: 요약, 약별 설명(목적·먹이는 법·주의·부작용·보관), 생활 템플릿 문장 고르기 + 한 줄 보충
+- 코드가 채우는 것: 용량·횟수·일수, 위험 신호, 나이별 주의, 약 계열 팁, 오늘 체크리스트, 면책 문구, 출처
 → 숫자와 안전 문구는 LLM이 바꿀 수 없다 (NFR-SAFE-001·002).
 
 v0.1 → v0.2 (1순위 안전 수정, 2026-11-19)
@@ -20,6 +20,11 @@ v0.2 → v0.3 (팀 피드백 6가지 반영, 2026-11-20)
 - 검증 정보(verification)와 실제로 쓴 출처만 표시, 약봉투 약국 안내를 LLM 참조로 사용
 + 스키마 v0.2에 맞춤: schedule.timing·min_interval_hours 추가, 제형 이름을 스키마 목록으로 통일
   (정→정제, 가루→산제, 흡입기·흡입액→흡입제), 템플릿이 없는 질환군은 "other"로 처리.
+v0.3 보완 (2026-11-27)
+- 약사 확인 이유: 코드 규칙 이유와 LLM 이유(알레르기 등)를 함께 남긴다 (전에는 코드 이유가 있으면 LLM 이유가 사라짐)
+- 해열제 간격 팁(숫자 고정 문장)은 처방 용법에 간격이 있으면 붙이지 않는다 (처방 숫자와 달라 헷갈리지 않게)
+- 알레르기 약사 확인: 검수한 성분-알레르기 짝(ALLERGY_RULES)에 맞을 때 코드가 켠다
+- 공통 위험 신호에도 나이 필터(usable)를 건다 (10세 아이에게 '생후 3개월 미만'·'기저귀' 문장이 나오던 문제)
 """
 
 from __future__ import annotations
@@ -221,6 +226,36 @@ def dose_text(m: dict) -> str:
 
 
 FORM_IS_LIQUID = {"시럽", "건조시럽", "현탁액", "액제"}
+# 알레르기 → 약 확인 규칙. LLM이 판단하지 않고, 여기 적힌 짝에 맞을 때만 코드가 약사 확인을 켠다.
+# (알레르기 입력에 든 단어, 성분 key(merge.ingredient_of 결과), 약 이름에 든 단어, 보호자에게 보일 이유)
+# 의료진·약사 검수 전 초안. 짝을 늘릴 때는 출처를 함께 적는다.
+ALLERGY_RULES: list[tuple[tuple[str, ...], frozenset[str], tuple[str, ...], str]] = [
+    (("계란", "달걀", "난백"), frozenset(), ("리소짐",), "달걀 흰자에서 얻은 성분(리소짐)이 들어 있을 수 있어요"),
+    (
+        ("페니실린", "아목시실린"),
+        frozenset({"amoxicillin", "amoxicillin/clavulanate"}),
+        ("아목시실린", "오구멘틴"),
+        "페니실린 계열 항생제예요",
+    ),
+]
+
+
+def allergy_flags(allergies: list[str], medications: list[dict]) -> dict[int, str]:
+    """ALLERGY_RULES에 맞는 약 → {medication_id: 약사 확인 이유}. 규칙에 없는 조합은 추측하지 않는다."""
+    flags: dict[int, str] = {}
+    for words, ingredients, name_words, why in ALLERGY_RULES:
+        hit = [a for a in allergies if any(w in a for w in words)]
+        if not hit:
+            continue
+        for m in medications:
+            names = f"{m.get('name') or ''} {m.get('name_on_prescription') or ''}"
+            if m.get("ingredient") in ingredients or any(w in names for w in name_words):
+                flags.setdefault(m["medication_id"], f"{', '.join(hit)} 알레르기: {why}")
+    return flags
+
+
+# 숫자가 고정된 일반 간격 문장 → 해당 약 계열. 처방 용법에 간격이 있으면 이 문장은 붙이지 않는다.
+INTERVAL_TIP_CLASS = {"apap.interval": "antipyretic_apap", "ibu.interval": "antipyretic_ibu"}
 DISEASE_GROUPS = {"cold_bronchitis", "otitis_sinusitis", "enteritis", "dermatitis", "conjunctivitis"}
 GROUP_KO = {
     "cold_bronchitis": "감기·기관지염",
@@ -368,7 +403,10 @@ def assemble(  # noqa: C901
     """LLM 결과와 DB·템플릿을 합쳐 guide_content(JSON Schema v0.3)를 만든다. llm=None이면 fallback."""
     common, tips = load("DATA-REF-006_common.json"), load("DATA-REF-007_med_tips.json")
     focus_tpl = load("DATA-REF-006_focus.json") if (TEMPLATE_DIR / "DATA-REF-006_focus.json").exists() else {}
-    rule_flags = rule_flags or {}
+    rule_flags = dict(rule_flags or {})
+    # 알레르기 규칙 이유를 앞에 둔다 (화면에 80자까지만 보이므로 가장 중요한 것을 먼저)
+    for mid, why in allergy_flags(child.get("allergies") or [], medications).items():
+        rule_flags[mid] = "; ".join(r for r in (why, rule_flags.get(mid)) if r)
     age_m = child["age_months"]
     symptoms = (prescription.get("symptom_notes") or "").strip()
     used: dict[str, set] = {}  # 출처 id → 어디에 쓰였는지
@@ -383,12 +421,16 @@ def assemble(  # noqa: C901
     by_id = {x.medication_id: x for x in (llm.medications if llm else [])}
     meds_out: list[dict] = []
     med_classes: dict[str, list[str]] = {}
+    rx_interval: dict[str, bool] = {}  # 약 계열 → 그 계열 약 모두 처방 용법에 간격이 있는지
     for m in medications:
         x = by_id.get(m["medication_id"])
         need = (x.pharmacist_check_needed if x else True) or m["medication_id"] in rule_flags
-        reason = rule_flags.get(m["medication_id"]) or (
-            x.pharmacist_check_reason if x else "자동 설명을 만들지 못했어요"
-        )
+        # 코드 규칙 이유(처방전·약봉투 불일치 등)를 앞에, LLM 이유(알레르기·성분 중복 등)를 뒤에 둔다. 같은 말은 한 번만.
+        if x is None:
+            llm_reason = "자동 설명을 만들지 못했어요"
+        else:
+            llm_reason = x.pharmacist_check_reason if x.pharmacist_check_needed else None
+        reason = "; ".join(dict.fromkeys(r for r in (rule_flags.get(m["medication_id"]), llm_reason) if r))
         cautions = x.cautions if x else ([m["pharmacy_caution"]] if m.get("pharmacy_caution") else [])
         meds_out.append(
             {
@@ -409,6 +451,8 @@ def assemble(  # noqa: C901
         cls = tips["ingredient_to_class"].get(m.get("ingredient") or "")
         if cls:
             med_classes.setdefault(cls, []).append(_short(m["name"], 12))
+            has_gap = bool(m.get("min_interval_h") or interval_hours(m.get("usage")))
+            rx_interval[cls] = rx_interval.get(cls, True) and has_gap
         if m.get("has_pharmacy_info"):
             use("PHARMACY_BAG", "약 설명")
 
@@ -416,6 +460,8 @@ def assemble(  # noqa: C901
     with_med, seen = [], set()
 
     def add_tip(item: dict, src_purpose: str = "약 계열 팁") -> None:
+        if rx_interval.get(INTERVAL_TIP_CLASS.get(item["id"], "")):
+            return  # 처방 용법에 간격이 있으면 숫자 고정 간격 문장은 빼고, 처방 숫자(필요시 안내·복용법 표)만 보여 준다
         if item["id"] not in seen and item.get("source") != "TODO_SOURCE" and not item.get("disabled"):
             seen.add(item["id"])
             with_med.append({"template_item_id": item["id"], "text": item["text"]})
@@ -457,7 +503,8 @@ def assemble(  # noqa: C901
     # ---------- 위험 신호·나이별 주의 (템플릿 복사)
     warning = {}
     for k in ("go_to_er", "see_doctor"):
-        ws = [w for w in common["warning_signs"][k]] + [
+        # 공통 위험 신호도 나이 조건(min_months·max_months)에 맞는 것만 (예: 3개월 미만 발열 문장은 영아에게만)
+        ws = [w for w in common["warning_signs"][k] if usable(w, age_m)] + [
             w for w in home_care_template.get("extra_warning_signs", {}).get(k, []) if usable(w, age_m)
         ]
         warning[k] = [w["text"] for w in ws]
@@ -489,7 +536,7 @@ def assemble(  # noqa: C901
         {
             "factor": "알레르기",
             "value": ", ".join(allergies) if allergies else "없음",
-            "applied": "알레르기와 관련될 수 있는 약이 있으면 그 약에 약사 확인을 켜요.",
+            "applied": "검수한 성분-알레르기 규칙에 맞는 약에 약사 확인을 켜고, 약을 받을 때 알레르기를 알리도록 안내해요.",
         },
         {
             "factor": "보호자 입력 증상",
