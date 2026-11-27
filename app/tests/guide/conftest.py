@@ -13,3 +13,11 @@ import pytest
 @pytest.fixture(scope="session", autouse=True)
 def initialize() -> Generator[None, None]:
     yield
+
+
+@pytest.fixture(autouse=True)
+def no_real_mfds_lookup(monkeypatch: pytest.MonkeyPatch) -> None:
+    """config가 .env를 읽어 MFDS_API_KEY가 있어도, 테스트에서는 식약처 API를 부르지 않는다."""
+    from app.services.guide import unreviewed_drug_reference
+
+    monkeypatch.setattr(unreviewed_drug_reference, "lookup_enabled", lambda: False)

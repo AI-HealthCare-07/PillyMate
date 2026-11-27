@@ -170,6 +170,7 @@ def guide_inputs(child: Child, p: Prescription, meds: list[Medication]) -> tuple
         {
             "medication_id": m.id,
             "name": m.name,
+            "insurance_code": m.insurance_code,  # 약 정보(reference)를 허가정보 성분 코드로 찾을 때 쓴다
             "dose_per_time": float(m.dose_per_time) if m.dose_per_time is not None else None,
             "unit": m.unit,
             "daily_count": m.daily_count,

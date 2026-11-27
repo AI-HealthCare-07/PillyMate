@@ -15,6 +15,7 @@
     "ambroxol": "cough_expectorant",
     "levodropropizine": "cough_expectorant",
     "hydrocortisone": "topical_steroid",
+    "hydrocortisone butyrate": "topical_steroid",
     "desonide": "topical_steroid",
     "tobramycin": "eye_drop"
   },

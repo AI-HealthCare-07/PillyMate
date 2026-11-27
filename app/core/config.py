@@ -58,6 +58,9 @@ class Config(BaseSettings):
     MFDS_PERMIT_URL: str = "https://apis.data.go.kr/1471000/DrugPrdtPrmsnInfoService08"
     # DUR: 연령금기·효능군중복·병용금기 (2차)
     MFDS_DUR_URL: str = "https://apis.data.go.kr/1471000/DURPrdlstInfoService03"
+    # 의약품개요정보(e약은요): 일반의약품 쉬운 말 설명. 활용신청한 키가 MFDS_API_KEY와 다르면 여기에 (Decoding 키)
+    DATA_GO_KR_KEY: str = ""
+    MFDS_EASY_DRUG_URL: str = "https://apis.data.go.kr/1471000/DrbEasyDrugInfoService"
 
     # 데모 로그인(A1): 배포 환경에서 false로 끄면 404. 데모 보호자는 app/scripts/seed_guardians.py로 만든다.
     DEMO_LOGIN_ENABLED: bool = False

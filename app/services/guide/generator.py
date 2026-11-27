@@ -579,6 +579,41 @@ def assemble(  # noqa: C901
 CallLLM = Callable[[str, str], str | dict[str, Any]]
 
 
+def _shorten(text: str, limit: int) -> str:
+    """limit자 안으로. 문장 끝('요.' 등)에서 자를 수 있으면 거기서, 아니면 잘라서 '…'."""
+    if len(text) <= limit:
+        return text
+    cut = text[:limit]
+    end = max(cut.rfind(". "), cut.rfind("요."), cut.rfind("다."))
+    return cut[: end + 2].strip() if end >= limit // 2 else text[: limit - 1] + "…"
+
+
+def parse_llm_output(raw: str | dict) -> LLMGuideOutput:
+    """LLM 답 → LLMGuideOutput. 글자 수만 넘긴 칸은 그 칸만 줄여서 받는다.
+
+    다른 형식 오류(빠진 칸·잘못된 타입·개수 초과)는 그대로 ValidationError — generate()가 다시 시도한다.
+    한 문장이 몇 글자 길다고 가이드 전체를 fallback으로 버리지 않기 위해서다.
+    """
+    data = json.loads(raw) if isinstance(raw, str) else raw
+    try:
+        return LLMGuideOutput.model_validate(data)
+    except ValidationError as e:
+        errors = e.errors()
+        if not errors or any(err["type"] != "string_too_long" for err in errors):
+            raise
+        data = json.loads(json.dumps(data))  # 원본은 바꾸지 않는다
+        for err in errors:
+            *path, last = err["loc"]
+            node = data
+            for key in path:
+                node = node[key]
+            node[last] = _shorten(node[last], err["ctx"]["max_length"])
+            logger.warning(
+                "LLM 답의 %s가 %d자를 넘어 줄였어요", ".".join(map(str, err["loc"])), err["ctx"]["max_length"]
+            )
+        return LLMGuideOutput.model_validate(data)
+
+
 def generate(
     call_llm: CallLLM,
     child: dict,
@@ -614,9 +649,7 @@ def generate(
     for attempt in range(retries + 1):
         try:
             raw = call_llm(SYSTEM_PROMPT, user)
-            parsed = (
-                LLMGuideOutput.model_validate_json(raw) if isinstance(raw, str) else LLMGuideOutput.model_validate(raw)
-            )
+            parsed = parse_llm_output(raw)
             got = [x.medication_id for x in parsed.medications]
             if set(got) != ids or len(got) != len(ids):
                 raise ValueError(f"약 목록이 처방과 다름: 받은 {sorted(got)}, 처방 {sorted(ids)}")
