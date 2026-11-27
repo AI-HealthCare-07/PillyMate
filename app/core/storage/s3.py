@@ -15,7 +15,7 @@ class S3ImageStorage:
         self.bucket = bucket
         self.default_expires_in = default_expires_in
         if client is None:
-            import boto3  # STORAGE_BACKEND=s3일 때만 필요
+            import boto3  # type: ignore[import-untyped]  # STORAGE_BACKEND=s3일 때만 필요
 
             client = boto3.client("s3", region_name=region)
         self.client = client

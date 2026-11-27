@@ -4,11 +4,11 @@ import { useId } from 'react';
 export function Field({ label, helper, error, multiline = false, className = '', inputClassName = '', ...props }) {
   const id = useId();
   const helpId = `${id}-help`;
-  const box = 'w-full rounded-md border bg-surface px-4 text-16 text-ink placeholder:text-faint focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20';
-  const border = error ? 'border-danger' : 'border-line';
+  const box = 'w-full rounded-md border bg-surface px-4 text-16 text-ink placeholder:text-faint hover:border-edge/70 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand-soft';
+  const border = error ? 'border-danger' : 'border-edge/50';
   return (
     <div className={`flex flex-col gap-2 ${className}`}>
-      <label htmlFor={id} className="text-14 font-medium text-muted">{label}</label>
+      <label htmlFor={id} className="text-14 font-semibold text-ink">{label}</label>
       {multiline ? (
         <textarea id={id} rows={3} aria-describedby={helper || error ? helpId : undefined} className={`${box} ${border} h-[104px] resize-none py-3.5 ${inputClassName}`} {...props} />
       ) : (
@@ -17,6 +17,27 @@ export function Field({ label, helper, error, multiline = false, className = '',
       {(error || helper) && (
         <p id={helpId} className={`text-13 ${error ? 'text-danger' : 'text-muted'}`}>{error || helper}</p>
       )}
+    </div>
+  );
+}
+
+/** Field와 같은 모양의 드롭다운. value가 ''이면 placeholder가 보이고, 고른 뒤에는 options 중에서만 바꿀 수 있어요. */
+export function SelectField({ label, helper, options, placeholder = '골라 주세요', className = '', ...props }) {
+  const id = useId();
+  const helpId = `${id}-help`;
+  return (
+    <div className={`flex flex-col gap-2 ${className}`}>
+      <label htmlFor={id} className="text-14 font-semibold text-ink">{label}</label>
+      <select
+        id={id}
+        aria-describedby={helper ? helpId : undefined}
+        className={`h-13 w-full rounded-md border border-edge/50 bg-surface px-3 text-16 hover:border-edge/70 focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand-soft ${props.value ? 'text-ink' : 'text-faint'}`}
+        {...props}
+      >
+        <option value="" disabled>{placeholder}</option>
+        {options.map((option) => <option key={option} value={option} className="text-ink">{option}</option>)}
+      </select>
+      {helper && <p id={helpId} className="text-13 text-muted">{helper}</p>}
     </div>
   );
 }

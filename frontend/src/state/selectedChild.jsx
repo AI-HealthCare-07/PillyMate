@@ -1,13 +1,12 @@
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
-import { children as sampleChildren } from '../data/sample.js';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { createChild, deleteChild, fetchChildren, hasLoginToken, updateChild as patchChild } from '../api/children.js';
 
 const STORAGE_KEY = 'pillymate.selectedChildId';
 const SelectedChildContext = createContext(null);
 
-function readStored(list) {
+function readStored() {
   try {
-    const id = localStorage.getItem(STORAGE_KEY);
-    return list.some((c) => c.id === id) ? id : null;
+    return localStorage.getItem(STORAGE_KEY);
   } catch {
     return null;
   }
@@ -38,51 +37,134 @@ function ageOf(birth, today = new Date()) {
   return months < 12 ? `${Math.max(months, 0)}개월` : `만 ${Math.floor(months / 12)}세`;
 }
 
-/** 폼에서 받은 값 → 화면에서 쓰는 아이 정보 */
-function toChild({ name, birth, weight, allergies, note }) {
-  const b = parseBirth(birth);
+const kgOf = (text) => {
+  const n = Number(String(text ?? '').replace(/[^\d.]/g, ''));
+  return n > 0 ? n : null;
+};
+
+/**
+ * 편집 폼 값 → 자녀 수정 요청 본문(PATCH /children/{id}). 지금 정보와 달라진 항목만 넣어요.
+ * 생년월일을 그대로 두면 보내지 않아서, 등록 뒤 만 18세가 된 아이도 체중·알레르기는 고칠 수 있어요.
+ * 비운 체중·알레르기·특이사항은 null로 보내 서버에서도 비워요.
+ */
+export function toChildUpdateRequest({ name, birth, weight, allergies, note }, current) {
+  const body = {};
+  const nextName = String(name ?? '').trim();
+  if (nextName !== current.name) body.name = nextName;
+  const nextBirth = String(birth ?? '').trim();
+  if (nextBirth !== current.birth.replaceAll('.', '-')) body.birth_date = nextBirth;
+  const nextWeight = kgOf(weight);
+  if (nextWeight !== kgOf(current.weight)) body.weight_kg = nextWeight;
+  const nextAllergies = (allergies ?? []).filter((a) => a !== '없음').join(', ') || null;
+  if (nextAllergies !== (current.allergies.join(', ') || null)) body.allergies = nextAllergies;
+  const nextNote = String(note ?? '').trim() || null;
+  if (nextNote !== (current.note.trim() || null)) body.notes = nextNote;
+  return body;
+}
+
+/** 서버 자녀(명세 3·4번 응답) → 화면에서 쓰는 아이 정보. id는 화면 전체가 문자열로 다뤄서 바꿔 둬요. */
+function fromServerChild(c) {
+  const b = parseBirth(c.birth_date);
   const pad = (n) => String(n).padStart(2, '0');
-  const list = allergies.filter((a) => a !== '없음');
+  const list = (c.allergies ?? '').split(',').map((a) => a.trim()).filter(Boolean);
   return {
-    name: name.trim(),
+    id: String(c.child_id),
+    name: c.name,
     birth: `${b.getFullYear()}.${pad(b.getMonth() + 1)}.${pad(b.getDate())}`,
     age: ageOf(b),
-    weight: `${Number(String(weight).replace(/[^\d.]/g, ''))}kg`,
+    weight: c.weight_kg === null || c.weight_kg === undefined ? '' : `${c.weight_kg}kg`,
     allergies: list,
     allergy: list.length ? `${list.join(', ')} 알레르기` : null,
-    note: note.trim(),
+    note: c.notes ?? '',
   };
 }
 
 /**
  * 아이 목록과 지금 보는 아이. 아이 화면에서 고르면 기록·처방 올리기·메뉴가 모두 이 아이 기준으로 바뀌어요.
- * 새로고침해도 유지되도록 브라우저에는 고른 아이 id만 저장해요.
- * 아이 정보(의료 정보)는 브라우저 저장소에 남기지 않아요. 그래서 추가·수정·삭제는 지금은 이번 방문 동안만 반영돼요.
- * TODO(API): 아이 목록 조회·추가·수정·삭제 API 연결.
+ * 목록은 로그인한 보호자의 자녀를 서버(GET /children)에서 받아 와요. 아이 추가는 POST /children,
+ * 수정은 PATCH /children/{id}, 삭제는 DELETE /children/{id}로 서버에 저장해서 새로고침·재로그인 뒤에도 그대로예요.
+ * 새로고침해도 유지되도록 브라우저에는 고른 아이 id만 저장해요. 아이 정보(의료 정보)는 브라우저 저장소에 남기지 않아요.
  */
 export function SelectedChildProvider({ children: content }) {
-  const [childList, setChildList] = useState(sampleChildren);
-  const [childId, setChildId] = useState(() => readStored(sampleChildren) ?? sampleChildren[0]?.id ?? null);
+  const [childList, setChildList] = useState([]);
+  const [childId, setChildId] = useState(readStored);
+  // idle: 아직 안 불러옴(로그인 전) · loading · ready · error
+  const [status, setStatus] = useState('idle');
+  const [loadError, setLoadError] = useState('');
+  // 앱 시작과 아이 화면 진입이 겹치면 같은 요청이 동시에 나가요. 진행 중인 요청이 있으면 그걸 같이 기다려요.
+  const inflight = useRef(null);
 
   const selectChild = useCallback((id) => {
     setChildId(id);
     store(id);
   }, []);
 
-  /** 아이를 목록에서 지워요. 지금 보던 아이였다면 남은 첫 아이로 바꿔요. */
+  /** 서버에서 내 자녀 목록을 다시 받아요. 로그인 직후(아이 화면 진입)와 앱을 열 때 불러요. */
+  const refreshChildren = useCallback(async () => {
+    if (!hasLoginToken()) {
+      setChildList([]);
+      setStatus('idle');
+      return;
+    }
+    if (inflight.current) {
+      await inflight.current.catch(() => {}); // 실패 처리는 먼저 보낸 쪽이 해요.
+      return;
+    }
+    setStatus('loading');
+    setLoadError('');
+    inflight.current = fetchChildren();
+    try {
+      const list = (await inflight.current).map(fromServerChild);
+      setChildList(list);
+      setChildId((current) => {
+        const next = list.some((c) => c.id === current) ? current : (list[0]?.id ?? null);
+        store(next);
+        return next;
+      });
+      setStatus('ready');
+    } catch (error) {
+      setChildList([]);
+      setLoadError(error.message);
+      setStatus('error');
+    } finally {
+      inflight.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshChildren();
+  }, [refreshChildren]);
+
+  /** 서버가 '없는 아이'(404)라고 하면 이미 지워졌거나 내 아이가 아니에요. 목록을 다시 받아 화면을 맞춰요. */
+  const syncIfMissing = useCallback(
+    (error) => {
+      if (error?.status === 404) refreshChildren();
+      throw error;
+    },
+    [refreshChildren],
+  );
+
+  /**
+   * 서버에서 아이를 삭제하고(처방·가이드·원본 사진까지 함께), 성공했을 때만 목록에서 지워요.
+   * 지금 보던 아이였다면 남은 첫 아이로 바꿔요. 실패하면 서버 문구를 담은 오류를 던져요.
+   */
   const removeChild = useCallback(
-    (id) => {
+    async (id) => {
+      await deleteChild(id).catch(syncIfMissing);
       const rest = childList.filter((c) => c.id !== id);
       setChildList(rest);
       if (childId === id) selectChild(rest[0]?.id ?? null);
     },
-    [childList, childId, selectChild],
+    [childList, childId, selectChild, syncIfMissing],
   );
 
-  /** 새 아이를 목록 끝에 넣고, 바로 그 아이를 보도록 골라요. 새 아이 정보를 돌려줘요. */
+  /**
+   * 서버에 아이를 등록하고, 성공하면 목록 끝에 넣어 바로 그 아이를 골라요.
+   * request는 toChildCreateRequest() 결과(명세 3번 본문). 실패하면 서버 문구를 담은 오류를 던져요.
+   */
   const addChild = useCallback(
-    (data) => {
-      const child = { id: `c${Date.now()}`, ...toChild(data) };
+    async (request) => {
+      const child = fromServerChild(await createChild(request));
       setChildList((prev) => [...prev, child]);
       selectChild(child.id);
       return child;
@@ -90,21 +172,37 @@ export function SelectedChildProvider({ children: content }) {
     [selectChild],
   );
 
-  const updateChild = useCallback((id, data) => {
-    setChildList((prev) => prev.map((c) => (c.id === id ? { ...c, ...toChild(data) } : c)));
-  }, []);
+  /**
+   * 편집 폼 값으로 서버의 아이 정보를 고치고, 서버가 돌려준 값으로 목록을 바꿔요. 바뀐 항목이 없으면 요청하지 않아요.
+   * 실패하면 서버 문구를 담은 오류를 던져요(폼 아래에 보여요).
+   */
+  const updateChild = useCallback(
+    async (id, values) => {
+      const current = childList.find((c) => c.id === id);
+      if (!current) throw new Error('아이 정보를 찾을 수 없어요.');
+      const body = toChildUpdateRequest(values, current);
+      if (!Object.keys(body).length) return current;
+      const updated = fromServerChild(await patchChild(id, body).catch(syncIfMissing));
+      setChildList((prev) => prev.map((c) => (c.id === id ? updated : c)));
+      return updated;
+    },
+    [childList, syncIfMissing],
+  );
 
   const value = useMemo(
     () => ({
       childList,
       childId,
       child: childList.find((c) => c.id === childId) ?? null,
+      status,
+      loadError,
+      refreshChildren,
       selectChild,
       addChild,
       updateChild,
       removeChild,
     }),
-    [childList, childId, selectChild, addChild, updateChild, removeChild],
+    [childList, childId, status, loadError, refreshChildren, selectChild, addChild, updateChild, removeChild],
   );
   return <SelectedChildContext.Provider value={value}>{content}</SelectedChildContext.Provider>;
 }

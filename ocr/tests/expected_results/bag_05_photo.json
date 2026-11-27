@@ -1,0 +1,46 @@
+{
+  "prescription_date": "2026-11-08",
+  "hospital_name": "고운결피부과의원",
+  "diagnosis_extracted": null,
+  "medications": [
+    {
+      "name": "로코이드크림0.1%",
+      "insurance_code": null,
+      "dose_per_time": null,
+      "unit": null,
+      "daily_count": 2,
+      "total_days": 14,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": "적당량",
+      "route": "EXTERNAL",
+      "dosage_form": "CREAM"
+    },
+    {
+      "name": "엘리델크림1%",
+      "insurance_code": null,
+      "dose_per_time": null,
+      "unit": null,
+      "daily_count": 2,
+      "total_days": 14,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": "적당량",
+      "route": "EXTERNAL",
+      "dosage_form": "CREAM"
+    },
+    {
+      "name": "유시락스시럽",
+      "insurance_code": null,
+      "dose_per_time": 4.0,
+      "unit": "mL",
+      "daily_count": 2,
+      "total_days": 7,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": "식후 30분",
+      "route": "ORAL",
+      "dosage_form": "SYRUP"
+    }
+  ]
+}

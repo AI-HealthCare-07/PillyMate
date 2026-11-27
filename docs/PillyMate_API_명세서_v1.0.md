@@ -10,7 +10,7 @@
 
 | 항목 | 결정 | 확정일 |
 | --- | --- | --- |
-| 회원가입 항목 | 이메일·비밀번호·**이름·생년월일** (네 항목 모두 필수) | 11/20 |
+| 회원가입 항목 | 이메일·비밀번호·**이름·성별·생년월일·휴대전화 번호** (여섯 항목 모두 필수). 처음 네 항목(이메일·비밀번호·이름·생년월일)은 11/20에 확정했고, 성별·휴대전화는 가입 화면(S-01)에 맞춰 11/25 추가 | 11/20, 11/25 변경 |
 | 오래 걸리는 요청 | **동기 처리** (OCR 최대 30초, 가이드 최대 60초) | 11/20 |
 | 자녀 등록 연령 | **만 18세 미만 미성년자**만 등록 가능 (NFR-SEC-004) | 11/24 결정 (근거: 11/17 회의록) |
 | 원본 이미지 보관 | **가이드 생성 시 삭제**, 가이드를 만들지 않은 사진은 **7일 뒤 자동 삭제** (NFR-SEC-007) | 11/23 채택 |
@@ -77,19 +77,20 @@ FastAPI는 필수값 누락도 기본으로 422를 보내므로, BE-1이 `Reques
 
 ### 1. `POST /auth/signup` 회원가입
 
-네 항목 모두 필수입니다.
+여섯 항목 모두 필수입니다. `gender`는 `MALE` 또는 `FEMALE`이고, `phone_number`는 `010-1234-5678`, `01012345678`, `+821012345678` 형식을 받아 **숫자만(`01012345678`)** 저장합니다.
 
 ```json
 // 요청
-{ "email": "parent@example.com", "password": "pilly1234!", "name": "김보호", "birth_date": "1990-05-14" }
+{ "email": "parent@example.com", "password": "pilly1234!", "name": "김보호", "gender": "FEMALE", "birth_date": "1990-05-14", "phone_number": "010-1234-5678" }
 
 // 응답 201
-{ "guardian_id": 1, "email": "parent@example.com", "name": "김보호", "birth_date": "1990-05-14" }
+{ "guardian_id": 1, "email": "parent@example.com", "name": "김보호", "birth_date": "1990-05-14", "gender": "FEMALE", "phone_number": "01012345678" }
 ```
 
 - 비밀번호 8~64자, bcrypt 해시로 저장
 - 이메일은 소문자로 바꿔 저장 (대소문자 구분 없이 로그인)
 - 만 19세 미만이면 `422` "만 19세 이상만 가입할 수 있어요." (NFR-SEC-005)
+- `gender`가 `MALE`·`FEMALE`이 아니거나 `phone_number` 형식이 맞지 않으면 `422`
 - 에러: `400` 필수값 누락, `409` 이미 가입된 이메일, `422` 이메일 형식·비밀번호 규칙·날짜 형식·나이 제한
 
 ### 2. `POST /auth/login` 로그인
@@ -118,7 +119,7 @@ FastAPI는 필수값 누락도 기본으로 422를 보내므로, BE-1이 `Reques
 
 ```json
 // 응답 200
-{ "guardian_id": 1, "email": "parent@example.com", "name": "김보호", "birth_date": "1990-05-14", "created_at": "2026-11-20T10:00:00+09:00" }
+{ "guardian_id": 1, "email": "parent@example.com", "name": "김보호", "birth_date": "1990-05-14", "gender": "FEMALE", "phone_number": "01012345678", "created_at": "2026-11-20T10:00:00+09:00" }
 ```
 
 앱을 다시 열었을 때 저장된 토큰이 유효한지 확인하는 데 씁니다. `401`이면 로그인 화면으로 보냅니다.
@@ -149,6 +150,7 @@ FastAPI는 필수값 누락도 기본으로 422를 보내므로, BE-1이 `Reques
 ### 4. `GET /children` 내 자녀 목록
 
 로그인한 보호자의 자녀만 등록 순서대로 반환합니다. 없으면 `[]`.
+11/25 구현: 처방 올리기 화면이 알레르기를 보여 주므로 각 항목은 3번 응답과 같은 값(`allergies`, `notes`, `created_at` 포함)을 돌려줍니다.
 
 ```json
 // 응답 200
@@ -177,13 +179,27 @@ FastAPI는 필수값 누락도 기본으로 422를 보내므로, BE-1이 `Reques
 1. `child_id`가 내 자녀인지 확인 → 아니면 `404`
 2. 형식·용량 검사 → 아니면 `422`
 3. S3 저장 (BE-1 `upload_image()`, 키 `prescriptions/{child_id}/{무작위값}.jpg`)
-4. AI-1 `run_ocr()` 호출 (마스킹까지 모듈 안에서 처리)
-5. OCR 성공 시 `prescription`(`status = OCR_DONE`)과 `medication` 행 저장
-6. 6번과 같은 형식으로 응답 `201`
+4. AI-1 `run_ocr()` 호출 (OCR 원문은 모듈 안에서만 쓰고 버림)
+5. 신뢰도 판정 `judge_ocr_confidence()` — 가장 낮은 약 신뢰도가 0.6 미만이거나 약을 하나도 못 읽으면 저장하지 않음 (아래)
+6. 판정을 통과하면 `prescription`(`status = OCR_DONE`)과 `medication` 행 저장. 정리된 항목만 저장하고 OCR 원문·마스킹 원문은 저장하지 않음 (11/25 변경)
+7. 6번과 같은 형식에 `ocr_confidence`를 더해 응답 `201`
 
 - OCR이 실패하거나 30초를 넘기면 **처방 행을 만들지 않고**, S3 이미지도 삭제한 뒤 `502`를 응답합니다. FE-2는 "다시 찍기"를 보여 줍니다.
+- 신뢰도 판정 (11/24 멘토링 3절 기준, 11/25 반영. 기준값은 실제 촬영 사진으로 다시 확인 필요):
+
+  | 가장 낮은 약 `confidence` | `ocr_confidence.level` | 처리 |
+  | --- | --- | --- |
+  | 0.8 이상 | `OK` | 저장 → S-04 확인 |
+  | 0.6 이상 ~ 0.8 미만 | `REVIEW` | 저장, 0.8 미만 약은 `low_confidence: true` → S-04에서 강조해 직접 수정 |
+  | 0.6 미만 또는 약 0개 | (저장 안 함) | 처방 행을 만들지 않고 이미지 삭제 → `422 {"detail": ..., "code": "OCR_LOW_CONFIDENCE"}` → FE-2는 다시 찍기 모달 |
+
+  ```json
+  // 응답 201에 추가되는 값
+  "ocr_confidence": { "level": "REVIEW", "min_confidence": 0.78, "low_confidence_count": 1 },
+  "medications": [{ "...": "6번과 같음", "low_confidence": true }]
+  ```
 - 서버 로그에 OCR 원문을 남기지 않습니다.
-- 에러: `400` 필수값 누락(`child_id`·`source_type`·`image`), `401` 로그인 필요, `404` 내 자녀가 아님, `422` 파일 형식·용량 오류, `502` OCR 실패·시간 초과
+- 에러: `400` 필수값 누락(`child_id`·`source_type`·`image`), `401` 로그인 필요, `404` 내 자녀가 아님, `422` 파일 형식·용량 오류 또는 신뢰도 부족(`code: OCR_LOW_CONFIDENCE`), `502` OCR 실패·시간 초과
 
 ### 6. `GET /prescriptions/{prescription_id}` 처방전 상세
 
@@ -228,8 +244,8 @@ FastAPI는 필수값 누락도 기본으로 422를 보내므로, BE-1이 `Reques
   - 가이드 생성 후 원본을 지워 `image_storage_key`가 `NULL`인 경우
   - `created_at`으로부터 7일이 지난 경우. 7일 자동 삭제는 S3 Lifecycle Rule(`prescriptions/` 경로, 7일)로 처리하므로 DB의 `image_storage_key`는 남아 있을 수 있습니다. 서버는 키 존재 여부가 아니라 생성일 기준으로 판단합니다.
 - `image_url`이 `null`이면 FE-2는 S-04에서 원본 대신 "원본 사진은 보관 기간(7일)이 지나 삭제됐어요." 안내를 보여 줍니다. 확정(7번)과 가이드 생성(8번)은 이미지 없이도 그대로 진행됩니다.
-- `confidence`가 낮은 항목은 S-04에서 강조합니다 (기준값은 FE-2·AI-1이 정함).
-- 환자 성명·주민등록번호는 응답에 포함하지 않습니다. 마스킹 원문(`raw_text_masked`)도 내려주지 않고 DB에만 저장합니다.
+- `confidence`가 0.8 미만인 약은 S-04에서 강조합니다 (5번 신뢰도 판정).
+- 환자 성명·주민등록번호는 응답에 포함하지 않습니다. OCR 원문은 마스킹본도 저장하지 않습니다 (11/25 변경).
 - 에러: `401` 로그인 필요, `404` 없거나 내 처방전이 아님
 
 ### 7. `PUT /prescriptions/{prescription_id}/confirm` 처방 확정
@@ -343,7 +359,6 @@ LLM이 실패해 기본 가이드를 반환할 때도 같은 5개 키를 모두 
   "prescription_date": "2026-11-19",
   "hospital_name": "행복소아과의원",
   "diagnosis_extracted": "J06",
-  "raw_text_masked": "환자 성명 [이름] 주민등록번호 [주민번호] ...",
   "medications": [
     { "name": "타이레놀현탁액", "insurance_code": "648500030", "dose_per_time": 5.0, "unit": "mL",
       "daily_count": 3, "total_days": 3, "max_daily_count": null, "as_needed": false,
@@ -353,7 +368,8 @@ LLM이 실패해 기본 가이드를 반환할 때도 같은 5개 키를 모두 
 ```
 
 - 모르는 값은 `null`입니다. 약봉투는 병원명·처방일·질병분류기호가 없을 수 있습니다.
-- 식별정보는 함수 안에서 `[이름]`, `[주민번호]`처럼 바꾸고, 원문은 밖으로 내보내지 않습니다 (NFR-SEC-007).
+- OCR 원문은 함수 안에서 파서에만 쓰고 밖으로 내보내지 않습니다. 결과에는 식별정보가 들어갈 자리가 없습니다 (NFR-SEC-007).
+- 신뢰도 판정은 같은 모듈의 `judge_ocr_confidence(result)`로 합니다 (5번).
 - 실패하면 예외를 던집니다. BE-2는 30초 타임아웃 안에서 호출합니다.
 
 ### AI-2 `generate_guide(child, prescription, medications) -> dict`
@@ -428,6 +444,7 @@ FE는 아래 문구를 그대로 보여 줍니다. 자동 검증 `422`(목록)�
 | 5, 10 | 404 | 내 자녀가 아님 | 자녀 정보를 찾을 수 없어요. |
 | 5 처방전 등록 | 422 | 파일 형식 | jpg 또는 png 사진만 올릴 수 있어요. |
 | 5 처방전 등록 | 422 | 10MB 초과 | 10MB 이하 사진만 올릴 수 있어요. |
+| 5 처방전 등록 | 422 | 신뢰도 0.6 미만·약 0개 (`code: OCR_LOW_CONFIDENCE`) | 사진이 흐릿해서 약 정보를 정확히 읽지 못했어요. 밝은 곳에서 처방전이나 약봉투 전체가 나오게 다시 찍어 주세요. |
 | 5 처방전 등록 | 502 | OCR 실패·30초 초과 | 처방전을 읽지 못했어요. 다시 찍어 주세요. |
 | 6, 7, 8, 9 | 404 | 없거나 내 처방전이 아님 | 처방전을 찾을 수 없어요. |
 | 7 처방 확정 | 409 | 가이드 생성 후 재확정 | 가이드를 만든 처방은 수정할 수 없어요. |
@@ -453,6 +470,7 @@ FE는 아래 문구를 그대로 보여 줍니다. 자동 검증 `422`(목록)�
 | 변경 | 쓰는 API | 담당 |
 | --- | --- | --- |
 | `guardian.name`, `guardian.birth_date` 추가 | 1, 2, A1, A2 | BE-2 (스키마) |
+| `guardian.gender`, `guardian.phone_number` 추가 (NULL 허용: 이전 가입자·데모 계정) | 1, A2 | BE-1 (마이그레이션 4번) |
 | `medication.route`, `medication.dosage_form` 추가 | 5, 6, 7, 8 | BE-2 |
 | `medication.ocr_value_snapshot`, `medication.is_user_edited` 추가 | 6, 7 | BE-2 |
 | `diagnosis_user_input` 필수 CHECK (`CONFIRMED`·`GUIDE_DONE`일 때) | 7 | BE-2 |
@@ -460,6 +478,7 @@ FE는 아래 문구를 그대로 보여 줍니다. 자동 검증 `422`(목록)�
 | `prescription.image_storage_key` NULL 허용 (원본 삭제 후 비움) | 6, 8 | BE-2 (현 스키마 그대로 가능) |
 | `prescription.status`의 `UPLOADED`·`FAILED` | 5, 8 | 1차 흐름에서는 쓰지 않으며, CHECK 목록에만 남김 |
 | 데모 보호자·자녀 시드 데이터 | A1 | BE-1(보호자), BE-2(자녀·처방 예시) |
+| `prescription.raw_text_masked` 삭제 (OCR 원문 미저장, 마이그레이션 3) | 5 | 11/25 반영 |
 
 DB 변경은 aerich 마이그레이션으로 추가합니다 (`aerich migrate` → `aerich upgrade`, 초기 세팅 BE-1, 이후 변경 BE-2).
 

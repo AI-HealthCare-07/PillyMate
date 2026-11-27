@@ -1,0 +1,59 @@
+{
+  "prescription_date": "2026-10-28",
+  "hospital_name": "새봄소아청소년과의원",
+  "diagnosis_extracted": null,
+  "medications": [
+    {
+      "name": "스멕타현탁액",
+      "insurance_code": null,
+      "dose_per_time": 0.3333,
+      "unit": "포",
+      "daily_count": 3,
+      "total_days": 3,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": null,
+      "route": "ORAL",
+      "dosage_form": "SYRUP"
+    },
+    {
+      "name": "비오플250산",
+      "insurance_code": null,
+      "dose_per_time": 1.0,
+      "unit": "포",
+      "daily_count": 2,
+      "total_days": 5,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": null,
+      "route": "ORAL",
+      "dosage_form": "POWDER"
+    },
+    {
+      "name": "돔페리돈현탁액",
+      "insurance_code": null,
+      "dose_per_time": 2.5,
+      "unit": "mL",
+      "daily_count": 3,
+      "total_days": 2,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": null,
+      "route": "ORAL",
+      "dosage_form": "SYRUP"
+    },
+    {
+      "name": "써스펜좌약125mg",
+      "insurance_code": null,
+      "dose_per_time": 1.0,
+      "unit": "개",
+      "daily_count": null,
+      "total_days": null,
+      "max_daily_count": null,
+      "as_needed": true,
+      "usage": "필요시",
+      "route": "EXTERNAL",
+      "dosage_form": "SUPPOSITORY"
+    }
+  ]
+}

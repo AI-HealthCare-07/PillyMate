@@ -1,4 +1,4 @@
-import { BookOpen, Check, ChevronDown, FileText, House, LogOut, MessageCircle, Plus, ScanLine, Settings2 } from 'lucide-react';
+import { BookOpen, Check, ChevronDown, FileText, House, LogOut, MessageCircle, ScanLine, Settings2 } from 'lucide-react';
 import { Avatar, Logo } from './misc.jsx';
 import { Popover } from './Popover.jsx';
 import { NotificationMenu } from './Notifications.jsx';
@@ -14,36 +14,17 @@ export const TABS = [
 ];
 
 /**
- * 상단 바 — 왼쪽 로고, (데스크톱) 가운데 주요 메뉴, 오른쪽 알림 버튼과 아이 전환 칩.
+ * 상단 바 — (모바일) 왼쪽 로고, 오른쪽 알림 버튼과 아이 전환 칩. 데스크톱 주요 메뉴는 왼쪽 사이드 메뉴(layout.jsx)에 있어요.
  * 아이 관리·로그아웃처럼 탭에 없는 메뉴는 아이 전환 칩을 눌러 여는 메뉴에 모았어요.
  * 높이: 모바일 56, 데스크톱(lg) 68.
  */
 export function NavBar({ active, onNavigate }) {
   return (
-    <header className="sticky top-0 z-30 border-b border-line bg-surface/95 backdrop-blur">
-      <div className="relative mx-auto flex h-14 max-w-content items-center gap-6 pl-5 pr-3 lg:h-17 lg:px-10">
-        <button type="button" onClick={() => onNavigate?.('home')} aria-label="PillyMate 홈으로" className="rounded-md">
-          <Logo size={26} />
+    <header className="sticky top-0 z-30 border-b border-line bg-paper/95 backdrop-blur lg:border-b-0">
+      <div className="relative flex h-14 items-center gap-3 pl-5 pr-3 lg:h-16 lg:px-10 xl:px-14">
+        <button type="button" onClick={() => onNavigate?.('home')} aria-label="PillyMate 홈으로" className="flex min-h-11 items-center rounded-md lg:hidden">
+          <Logo size={24} />
         </button>
-        <nav aria-label="주요 메뉴" className="hidden flex-1 lg:block">
-          <ul className="flex gap-1">
-            {TABS.map(({ key, label }) => {
-              const on = key === active;
-              return (
-                <li key={key}>
-                  <button
-                    type="button"
-                    aria-current={on ? 'page' : undefined}
-                    onClick={() => onNavigate?.(key)}
-                    className={`rounded-md px-3 py-2 text-15 ${on ? 'bg-brand-soft font-semibold text-brand' : 'font-medium text-muted hover:bg-paper hover:text-ink'}`}
-                  >
-                    {label}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
         <div className="ml-auto flex items-center gap-1.5">
           <NotificationMenu onNavigate={onNavigate} />
           <ChildMenu active={active} onNavigate={onNavigate} />
@@ -54,7 +35,7 @@ export function NavBar({ active, onNavigate }) {
 }
 
 /** 아이 전환 칩 + 펼침 메뉴. 아이를 바로 바꾸고, 아이 관리·추가·로그아웃으로 갈 수 있어요. */
-function ChildMenu({ active, onNavigate }) {
+export function ChildMenu({ active, onNavigate }) {
   const { childList, childId, child, selectChild } = useSelectedChild();
   const name = child?.name ?? '아이 없음';
 
@@ -67,7 +48,7 @@ function ChildMenu({ active, onNavigate }) {
           type="button"
           onClick={toggle}
           aria-label={`아이 바꾸기, 지금은 ${name}`}
-          className={`inline-flex h-10 items-center gap-1.5 rounded-pill border py-1.5 pl-1.5 pr-2.5 transition-colors ${open || active === 'children' ? 'border-brand bg-brand-soft' : 'border-line bg-surface hover:bg-paper'}`}
+          className={`inline-flex h-11 items-center gap-1.5 rounded-pill border py-1.5 pl-1.5 pr-3 transition-colors ${open || active === 'children' ? 'border-brand bg-brand-soft' : 'border-line bg-surface hover:bg-paper'}`}
           {...props}
         >
           {child ? <Avatar name={name} size={28} /> : <span className="size-7 rounded-full bg-sunk" aria-hidden />}
@@ -112,7 +93,6 @@ function ChildMenu({ active, onNavigate }) {
             </ul>
             <div className="my-2 border-t border-line" />
             <MenuItem icon={Settings2} onClick={() => go('children')}>아이 정보 관리</MenuItem>
-            <MenuItem icon={Plus} onClick={() => go('child-add')}>아이 추가하기</MenuItem>
             <MenuItem icon={LogOut} onClick={() => go('login')} muted>로그아웃</MenuItem>
           </>
         );

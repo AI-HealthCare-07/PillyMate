@@ -1,0 +1,59 @@
+{
+  "prescription_date": "2026-11-14",
+  "hospital_name": "다정소아청소년과의원",
+  "diagnosis_extracted": null,
+  "medications": [
+    {
+      "name": "세파클러건조시럽",
+      "insurance_code": null,
+      "dose_per_time": 4.5,
+      "unit": "mL",
+      "daily_count": 3,
+      "total_days": 7,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": null,
+      "route": "ORAL",
+      "dosage_form": "DRY_SYRUP"
+    },
+    {
+      "name": "타리비드이용액0.3%",
+      "insurance_code": null,
+      "dose_per_time": 3.0,
+      "unit": "방울",
+      "daily_count": 2,
+      "total_days": 7,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": null,
+      "route": "EXTERNAL",
+      "dosage_form": "ETC"
+    },
+    {
+      "name": "토브렉스점안액0.3%",
+      "insurance_code": null,
+      "dose_per_time": 1.0,
+      "unit": "방울",
+      "daily_count": 4,
+      "total_days": 7,
+      "max_daily_count": null,
+      "as_needed": false,
+      "usage": null,
+      "route": "EXTERNAL",
+      "dosage_form": "EYE_DROP"
+    },
+    {
+      "name": "부루펜시럽",
+      "insurance_code": null,
+      "dose_per_time": 5.0,
+      "unit": "mL",
+      "daily_count": null,
+      "total_days": null,
+      "max_daily_count": null,
+      "as_needed": true,
+      "usage": "필요시",
+      "route": "ORAL",
+      "dosage_form": "SYRUP"
+    }
+  ]
+}

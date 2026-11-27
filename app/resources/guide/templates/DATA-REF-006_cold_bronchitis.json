@@ -1,0 +1,154 @@
+{
+  "template_id": "DATA-REF-006/cold_bronchitis@0.1",
+  "disease_group": "cold_bronchitis",
+  "match_user_input": [
+    "감기",
+    "코감기",
+    "목감기",
+    "기침감기",
+    "기관지염",
+    "편도염",
+    "독감"
+  ],
+  "review_status": "초안 - 의료진 검수 전",
+  "usage_rule": "LLM은 아래 items 중에서 아이에게 맞는 것을 template_item_id로 고르고, 필요하면 personal_note에 한 줄을 붙인다. 문장 자체를 새로 만들지 않는다.",
+  "sections": [
+    {
+      "key": "recovery_course",
+      "title": "보통 이렇게 나아요",
+      "items": [
+        {
+          "id": "cold.course.peak",
+          "text": "감기 증상은 처음 1~3일에 가장 심하고, 보통 7~10일 정도 이어져요.",
+          "source": "KDCA_COLD",
+          "needs_review": true,
+          "source_check": "verified"
+        }
+      ]
+    },
+    {
+      "key": "hydration",
+      "title": "물 마시기",
+      "items": [
+        {
+          "id": "cold.water.often",
+          "text": "물을 평소보다 자주 조금씩 주세요. 수분이 부족하면 가래가 끈끈해져 잘 안 나와요.",
+          "source": "KDCA_COLD",
+          "needs_review": false,
+          "min_months": 6,
+          "source_check": "revised"
+        },
+        {
+          "id": "cold.water.fever",
+          "text": "열이 날 때는 평소보다 더 자주 수분을 챙겨 주세요.",
+          "source": "KDCA_FEVER",
+          "needs_review": false,
+          "min_months": 6,
+          "source_check": "revised"
+        },
+        {
+          "id": "cold.water.under6m",
+          "text": "생후 6개월 미만 아기는 의료진이 따로 말하지 않았다면 물을 더 먹이지 말고, 모유나 분유를 조금씩 자주 먹이세요.",
+          "source": "KDCA_FEVER",
+          "needs_review": false,
+          "max_months": 5,
+          "source_check": "verified"
+        }
+      ]
+    },
+    {
+      "key": "eating",
+      "title": "먹기",
+      "items": [
+        {
+          "id": "cold.eat.small",
+          "text": "회복하려면 충분한 영양 섭취가 필요해요.",
+          "source": "KDCA_COLD",
+          "needs_review": false,
+          "source_check": "revised"
+        }
+      ]
+    },
+    {
+      "key": "rest_sleep",
+      "title": "쉬기·잠",
+      "items": [
+        {
+          "id": "cold.rest",
+          "text": "충분히 쉬게 해 주세요. 휴식은 감기 회복의 기본이에요.",
+          "source": "KDCA_COLD",
+          "needs_review": false,
+          "source_check": "verified"
+        },
+        {
+          "id": "cold.clothes",
+          "text": "열이 날 때 두꺼운 옷이나 이불로 꽁꽁 싸매지 마세요. 체온이 더 오를 수 있어요.",
+          "source": "KDCA_FEVER",
+          "needs_review": false,
+          "source_check": "verified"
+        }
+      ]
+    },
+    {
+      "key": "home_environment",
+      "title": "집 안 환경",
+      "items": [
+        {
+          "id": "cold.humidity",
+          "text": "실내가 건조하지 않게 습도를 조절해 주세요.",
+          "source": "KDCA_COLD",
+          "needs_review": false,
+          "source_check": "verified"
+        },
+        {
+          "id": "cold.no_alcohol_rub",
+          "text": "열을 내리려고 알코올로 몸을 닦지 마세요.",
+          "source": "KDCA_FEVER",
+          "needs_review": false,
+          "source_check": "verified"
+        }
+      ]
+    },
+    {
+      "key": "hygiene",
+      "title": "위생·전파 막기",
+      "items": [
+        {
+          "id": "cold.handwash",
+          "text": "외출 뒤에는 손을 씻고, 손으로 코나 눈을 만지지 않게 해 주세요.",
+          "source": "KDCA_COLD",
+          "needs_review": false,
+          "source_check": "revised"
+        }
+      ]
+    },
+    {
+      "key": "daycare_outing",
+      "title": "등원·외출",
+      "items": [
+        {
+          "id": "cold.daycare",
+          "text": "열이 나는 동안에는 어린이집·학교를 쉬고 충분히 쉬게 해 주세요.",
+          "source": "KDCA_FEVER",
+          "needs_review": false,
+          "disabled": false,
+          "source_check": "revised"
+        }
+      ]
+    }
+  ],
+  "sources": {
+    "KDCA_COLD": {
+      "title": "질병관리청 국가건강정보포털 「감기」",
+      "url": "https://health.kdca.go.kr/healthinfo/biz/health/gnrlzHealthInfo/gnrlzHealthInfo/gnrlzHealthInfoView.do?cntnts_sn=5423"
+    },
+    "KDCA_FEVER": {
+      "title": "질병관리청 국가건강정보포털 「소아 발열 대처법」",
+      "url": "https://health.kdca.go.kr/healthinfo/biz/health/gnrlzHealthInfo/gnrlzHealthInfo/gnrlzHealthInfoView.do?cntnts_sn=6951"
+    }
+  },
+  "source_review": {
+    "date": "2026-11-24",
+    "rule": "공식 원문(질병관리청·식약처 등)만 출처로 씀. 원문과 대조 결과는 각 문장의 source_check에 표시. removed는 출처를 찾을 때까지 가이드에 나오지 않음."
+  }
+}

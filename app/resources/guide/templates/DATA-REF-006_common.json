@@ -1,0 +1,129 @@
+{
+  "template_id": "DATA-REF-006/common@0.1",
+  "description": "모든 질환군에 공통으로 붙는 위험 신호와 나이별 주의. 서버가 그대로 복사한다 (LLM이 고치지 않음). min_months·max_months가 있는 문장은 그 나이의 아이에게만 붙는다.",
+  "review_status": "초안 - 의료진 검수 전 (NFR-SAFE-002: 수치가 든 문장은 검수 필수)",
+  "warning_signs": {
+    "go_to_er": [
+      {
+        "id": "er.under3m_fever",
+        "text": "생후 3개월 미만 아기가 38℃ 이상이면 컨디션과 상관없이 바로 응급실에 가세요.",
+        "source": "KDCA_FEVER",
+        "needs_review": true,
+        "min_months": 0,
+        "max_months": 2,
+        "source_check": "verified"
+      },
+      {
+        "id": "er.lethargy",
+        "text": "잘 깨지 않거나 축 늘어질 때",
+        "source": "KDCA_FEVER",
+        "needs_review": false,
+        "source_check": "verified"
+      },
+      {
+        "id": "er.breathing",
+        "text": "숨 쉴 때 끙끙거리거나 숨이 매우 빠를 때",
+        "source": "KDCA_FEVER",
+        "needs_review": false,
+        "source_check": "verified"
+      },
+      {
+        "id": "er.cyanosis",
+        "text": "입술이나 손톱이 푸르스름할 때",
+        "source": "KDCA_FEVER",
+        "needs_review": false,
+        "source_check": "verified"
+      },
+      {
+        "id": "er.rash",
+        "text": "눌러도 사라지지 않는 점 모양 발진이 보일 때",
+        "source": "KDCA_FEVER",
+        "needs_review": false,
+        "source_check": "verified"
+      },
+      {
+        "id": "er.seizure",
+        "text": "경련이 5분 넘게 이어질 때",
+        "source": "KDCA_FEVER",
+        "needs_review": true,
+        "source_check": "verified"
+      }
+    ],
+    "see_doctor": [
+      {
+        "id": "doc.fever5d",
+        "text": "열이 5일 넘게 이어질 때",
+        "source": "KDCA_FEVER",
+        "needs_review": true,
+        "source_check": "verified"
+      },
+      {
+        "id": "doc.3to6m_39",
+        "text": "생후 3~6개월 아기가 39℃ 이상일 때",
+        "source": "KDCA_FEVER",
+        "needs_review": true,
+        "min_months": 3,
+        "max_months": 6,
+        "source_check": "verified"
+      },
+      {
+        "id": "doc.diaper6h",
+        "text": "기저귀가 6시간 넘게 젖지 않을 때",
+        "source": "KDCA_FEVER",
+        "needs_review": true,
+        "max_months": 35,
+        "source_check": "verified"
+      }
+    ]
+  },
+  "age_notes": [
+    {
+      "id": "age.under3m",
+      "min_months": 0,
+      "max_months": 2,
+      "text": "생후 3개월 미만 아기가 38℃ 이상 열이 나면 컨디션과 상관없이 바로 응급실 진료를 받으세요.",
+      "source": "KDCA_FEVER",
+      "needs_review": true,
+      "source_check": "revised"
+    },
+    {
+      "id": "age.3to6m",
+      "min_months": 3,
+      "max_months": 6,
+      "text": "생후 3~6개월 아기가 39℃ 이상이면 진료를 받으세요.",
+      "source": "KDCA_FEVER",
+      "needs_review": true,
+      "source_check": "revised"
+    },
+    {
+      "id": "age.measure_by_weight",
+      "min_months": 0,
+      "max_months": 227,
+      "text": "해열제 양은 나이보다 몸무게를 기준으로 정해요. 몸무게가 바뀌면 약사에게 다시 확인하세요.",
+      "source": "KDCA_FEVER",
+      "needs_review": false,
+      "source_check": "revised"
+    }
+  ],
+  "sources": {
+    "KDCA_FEVER": {
+      "title": "질병관리청 국가건강정보포털 「소아 발열 대처법」",
+      "url": "https://health.kdca.go.kr/healthinfo/biz/health/gnrlzHealthInfo/gnrlzHealthInfo/gnrlzHealthInfoView.do?cntnts_sn=6951"
+    }
+  },
+  "_removed_unverified": [
+    {
+      "id": "age.under12m_honey",
+      "min_months": 0,
+      "max_months": 11,
+      "text": "돌 전 아기에게는 꿀을 먹이지 마세요.",
+      "source": "TODO_SOURCE",
+      "needs_review": true,
+      "source_check": "removed"
+    }
+  ],
+  "source_review": {
+    "date": "2026-11-24",
+    "rule": "공식 원문(질병관리청·식약처 등)만 출처로 씀. 원문과 대조 결과는 각 문장의 source_check에 표시. removed는 출처를 찾을 때까지 가이드에 나오지 않음."
+  }
+}

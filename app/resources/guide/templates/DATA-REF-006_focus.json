@@ -1,0 +1,327 @@
+{
+  "template_id": "DATA-REF-006/focus@0.1",
+  "description": "오늘의 관리 포인트(생활 관리만, 약 이야기는 넣지 않음). 항목 → 왜 필요한지 → 보호자가 할 일 순서. 문장은 같은 DATA-REF-006 질환 템플릿의 출처 있는 문장을 다시 묶은 것이며 새 의학 정보를 넣지 않는다. 서버가 아이 나이·처방 약 계열·보호자 입력 증상으로 순서를 정해 최대 3개를 고른다 (LLM이 고르지 않음).",
+  "review_status": "초안 - 의료진 검수 전",
+  "selection_rule": "점수 = 기본 순서 점수 + 처방 약 계열이 boost_classes에 있으면 2 + 보호자 입력 증상에 symptom_keywords가 있으면 3. 같은 점수면 위에 있는 것 먼저.",
+  "groups": {
+    "cold_bronchitis": [
+      {
+        "id": "cold.focus.water",
+        "title": "물 자주 마시기",
+        "why": "수분이 부족하면 가래가 잘 안 나와요.",
+        "actions": [
+          "물을 평소보다 자주 챙겨 주세요.",
+          "열이 날 때는 더 자주 챙겨 주세요."
+        ],
+        "source": "KDCA_COLD",
+        "needs_review": false,
+        "boost_classes": [
+          "cough_expectorant",
+          "antipyretic_apap",
+          "antipyretic_ibu"
+        ],
+        "symptom_keywords": [
+          "가래",
+          "기침",
+          "열"
+        ],
+        "min_months": 6,
+        "source_check": "revised"
+      },
+      {
+        "id": "cold.focus.rest",
+        "title": "충분히 쉬기",
+        "why": "휴식은 감기 회복의 기본이에요.",
+        "actions": [
+          "쉬는 시간을 충분히 주세요.",
+          "열이 날 때 두꺼운 옷이나 이불로 꽁꽁 싸매지 마세요."
+        ],
+        "source": "KDCA_COLD",
+        "needs_review": false,
+        "boost_classes": [
+          "antipyretic_apap",
+          "antipyretic_ibu"
+        ],
+        "symptom_keywords": [
+          "열",
+          "처짐",
+          "피곤"
+        ],
+        "source_check": "verified"
+      },
+      {
+        "id": "cold.focus.air",
+        "title": "실내 습도 조절",
+        "why": "실내가 건조하지 않게 하는 것이 감기 관리 수칙에 들어 있어요.",
+        "actions": [
+          "실내가 건조하지 않게 습도를 조절해 주세요."
+        ],
+        "source": "KDCA_COLD",
+        "needs_review": false,
+        "boost_classes": [],
+        "symptom_keywords": [
+          "기침",
+          "코막힘",
+          "콧물"
+        ],
+        "source_check": "verified"
+      }
+    ],
+    "otitis_sinusitis": [
+      {
+        "id": "om.focus.followup",
+        "title": "다시 오라는 날 진료 받기",
+        "why": "열과 귀 통증이 나아져도 귀 안에 물이 한동안 남을 수 있어요.",
+        "actions": [
+          "다시 오라고 한 날짜에 꼭 진료를 받으세요."
+        ],
+        "source": "KDCA_OM",
+        "needs_review": false,
+        "boost_classes": [],
+        "symptom_keywords": [
+          "귀",
+          "통증"
+        ],
+        "source_check": "verified"
+      },
+      {
+        "id": "om.focus.bottle",
+        "title": "젖병 먹이는 자세",
+        "why": "눕혀서 먹이면 중이염이 더 잘 생긴다고 안내돼요.",
+        "actions": [
+          "아기 머리를 배보다 높게 하고 먹이세요.",
+          "눕혀서 먹이지 마세요."
+        ],
+        "source": "KDCA_OM",
+        "needs_review": false,
+        "max_months": 35,
+        "boost_classes": [],
+        "symptom_keywords": [],
+        "source_check": "revised"
+      },
+      {
+        "id": "om.focus.smoke",
+        "title": "담배 연기 피하기",
+        "why": "담배 연기는 중이염 예방 수칙에서 피하라고 안내돼요.",
+        "actions": [
+          "집 안과 차 안에서 담배 연기에 노출되지 않게 해 주세요."
+        ],
+        "source": "KDCA_OM",
+        "needs_review": false,
+        "boost_classes": [],
+        "symptom_keywords": [],
+        "source_check": "verified"
+      },
+      {
+        "id": "om.focus.hand",
+        "title": "손 씻기",
+        "why": "중이염은 감기 뒤에 잘 생겨요.",
+        "actions": [
+          "외출 뒤 손을 씻게 해 주세요."
+        ],
+        "source": "KDCA_OM",
+        "needs_review": false,
+        "boost_classes": [],
+        "symptom_keywords": [
+          "콧물",
+          "기침"
+        ],
+        "source_check": "verified"
+      }
+    ],
+    "enteritis": [
+      {
+        "id": "ent.focus.fluid",
+        "title": "탈수 막기",
+        "why": "장염 치료의 핵심은 탈수를 막는 거예요.",
+        "actions": [
+          "처방받은 경구수액이 있으면 먹여서 잃은 수분을 채워 주세요.",
+          "이온음료나 과일주스는 탈수를 고치는 데 맞지 않아요."
+        ],
+        "source": "KDCA_GE",
+        "needs_review": false,
+        "boost_classes": [
+          "probiotic",
+          "antidiarrheal"
+        ],
+        "symptom_keywords": [
+          "설사",
+          "구토",
+          "토"
+        ],
+        "source_check": "revised"
+      },
+      {
+        "id": "ent.focus.eat",
+        "title": "조금씩 다시 먹이기",
+        "why": "굶는다고 빨리 낫지 않아요. 적절히 먹는 게 회복에 도움이 돼요.",
+        "actions": [
+          "탈수가 나아지면 평소처럼 먹여 주세요.",
+          "기름지거나 매우 자극적인 음식은 피해 주세요."
+        ],
+        "source": "KDCA_STOOL",
+        "needs_review": false,
+        "boost_classes": [],
+        "symptom_keywords": [
+          "식욕",
+          "못 먹"
+        ],
+        "source_check": "revised"
+      },
+      {
+        "id": "ent.focus.hand",
+        "title": "손 씻기",
+        "why": "손 씻기가 장염이 퍼지는 걸 막는 기본 수칙이에요.",
+        "actions": [
+          "화장실에 다녀온 뒤와 기저귀를 간 뒤에는 흐르는 물에 비누로 30초 이상 손을 씻으세요."
+        ],
+        "source": "KDCA_GE",
+        "needs_review": false,
+        "boost_classes": [],
+        "symptom_keywords": [],
+        "source_check": "revised"
+      }
+    ],
+    "dermatitis": [
+      {
+        "id": "derm.focus.moist",
+        "title": "꾸준히 보습하기",
+        "why": "보습과 피부 관리가 아토피피부염 예방관리수칙의 첫 번째예요.",
+        "actions": [
+          "목욕 직후에 보습제를 발라 주세요.",
+          "보습제는 하루에 적어도 두 번 이상 발라 주세요."
+        ],
+        "source": "KDCA_AD",
+        "needs_review": false,
+        "boost_classes": [
+          "topical_steroid"
+        ],
+        "symptom_keywords": [
+          "건조",
+          "가려"
+        ],
+        "source_check": "revised"
+      },
+      {
+        "id": "derm.focus.bath",
+        "title": "미지근한 물로 짧게 목욕",
+        "why": "관리 수칙에서 미지근한 물로 10분 정도 목욕하라고 안내해요.",
+        "actions": [
+          "미지근한 물로 10분 정도 씻겨 주세요.",
+          "때를 밀지 마세요."
+        ],
+        "source": "KDCA_AD",
+        "needs_review": false,
+        "boost_classes": [],
+        "symptom_keywords": [],
+        "source_check": "revised"
+      },
+      {
+        "id": "derm.focus.env",
+        "title": "옷과 실내 환경",
+        "why": "피부 자극을 줄이는 것이 아토피 관리 수칙에 들어 있어요.",
+        "actions": [
+          "거친 옷감보다 부드러운 옷감의 옷을 입혀 주세요.",
+          "실내 온도와 습도가 너무 높거나 낮지 않게 해 주세요."
+        ],
+        "source": "KDCA_AD",
+        "needs_review": false,
+        "boost_classes": [],
+        "symptom_keywords": [
+          "가려"
+        ],
+        "source_check": "revised"
+      }
+    ],
+    "conjunctivitis": [
+      {
+        "id": "conj.focus.hand",
+        "title": "손 씻고 눈 만지지 않기",
+        "why": "유행성 눈병은 눈 분비물이나 손을 통해 쉽게 옮아요.",
+        "actions": [
+          "눈을 만졌다면 꼭 손을 깨끗이 씻게 해 주세요.",
+          "가려워도 눈을 비비지 않게 해 주세요."
+        ],
+        "source": "KDCA_EYE",
+        "needs_review": false,
+        "boost_classes": [],
+        "symptom_keywords": [
+          "눈곱",
+          "충혈"
+        ],
+        "source_check": "revised"
+      },
+      {
+        "id": "conj.focus.separate",
+        "title": "수건·베개 따로 쓰기",
+        "why": "수건이나 세면도구를 같이 쓰면 가족에게 옮을 수 있어요.",
+        "actions": [
+          "수건, 세면도구, 침구는 따로 쓰게 해 주세요."
+        ],
+        "source": "KDCA_EYE",
+        "needs_review": false,
+        "boost_classes": [
+          "eye_drop"
+        ],
+        "symptom_keywords": [],
+        "source_check": "revised"
+      }
+    ],
+    "common": [
+      {
+        "id": "common.focus.observe",
+        "title": "아이 상태 살펴보기",
+        "why": "열 숫자보다 아이가 처지는지, 숨쉬기가 괜찮은지가 더 중요한 신호예요.",
+        "actions": [
+          "잘 깨지 않거나 축 늘어지는지 살펴보세요.",
+          "숨 쉴 때 끙끙거리거나 숨이 빠른지 보세요."
+        ],
+        "source": "KDCA_FEVER",
+        "needs_review": false,
+        "boost_classes": [
+          "antipyretic_apap",
+          "antipyretic_ibu"
+        ],
+        "symptom_keywords": [
+          "열",
+          "숨"
+        ],
+        "source_check": "verified"
+      }
+    ]
+  },
+  "sources": {
+    "KDCA_AD": {
+      "title": "질병관리청 국가건강정보포털 이달의 건강정보 「알레르기 예방관리수칙」 중 아토피피부염 예방관리수칙",
+      "url": "https://health.kdca.go.kr/healthinfo/biz/health/ntcnInfo/healthSourc/thtimtCntnts/thtimtCntntsView.do?thtimt_cntnts_sn=25"
+    },
+    "KDCA_COLD": {
+      "title": "질병관리청 국가건강정보포털 「감기」",
+      "url": "https://health.kdca.go.kr/healthinfo/biz/health/gnrlzHealthInfo/gnrlzHealthInfo/gnrlzHealthInfoView.do?cntnts_sn=5423"
+    },
+    "KDCA_EYE": {
+      "title": "질병관리청 국가건강정보포털 「유행각결막염」",
+      "url": "https://health.kdca.go.kr/healthinfo/biz/health/gnrlzHealthInfo/gnrlzHealthInfo/gnrlzHealthInfoView.do?cntnts_sn=5270"
+    },
+    "KDCA_FEVER": {
+      "title": "질병관리청 국가건강정보포털 「소아 발열 대처법」",
+      "url": "https://health.kdca.go.kr/healthinfo/biz/health/gnrlzHealthInfo/gnrlzHealthInfo/gnrlzHealthInfoView.do?cntnts_sn=6951"
+    },
+    "KDCA_GE": {
+      "title": "질병관리청 국가건강정보포털 「급성 바이러스 위장관염」",
+      "url": "https://health.kdca.go.kr/healthinfo/biz/health/gnrlzHealthInfo/gnrlzHealthInfo/gnrlzHealthInfoView.do?cntnts_sn=6756"
+    },
+    "KDCA_OM": {
+      "title": "질병관리청 국가건강정보포털 「중이염」",
+      "url": "https://health.kdca.go.kr/healthinfo/biz/health/gnrlzHealthInfo/gnrlzHealthInfo/gnrlzHealthInfoView.do?cntnts_sn=3568"
+    },
+    "KDCA_STOOL": {
+      "title": "질병관리청 국가건강정보포털 「대변 이상」",
+      "url": "https://health.kdca.go.kr/healthinfo/biz/health/gnrlzHealthInfo/gnrlzHealthInfo/gnrlzHealthInfoView.do?cntnts_sn=5722"
+    }
+  },
+  "source_review": {
+    "date": "2026-11-24",
+    "rule": "공식 원문(질병관리청·식약처 등)만 출처로 씀. 원문과 대조 결과는 각 문장의 source_check에 표시. removed는 출처를 찾을 때까지 가이드에 나오지 않음."
+  }
+}
