@@ -1,6 +1,6 @@
 {
   "template_id": "DATA-REF-006/common@0.1",
-  "description": "모든 질환군에 공통으로 붙는 위험 신호와 나이별 주의. 서버가 그대로 복사한다 (LLM이 고치지 않음).",
+  "description": "모든 질환군에 공통으로 붙는 위험 신호와 나이별 주의. 서버가 그대로 복사한다 (LLM이 고치지 않음). min_months·max_months가 있는 문장은 그 나이의 아이에게만 붙는다.",
   "review_status": "초안 - 의료진 검수 전 (NFR-SAFE-002: 수치가 든 문장은 검수 필수)",
   "warning_signs": {
     "go_to_er": [
@@ -9,6 +9,8 @@
         "text": "생후 3개월 미만 아기가 38℃ 이상이면 컨디션과 상관없이 바로 응급실에 가세요.",
         "source": "KDCA_FEVER",
         "needs_review": true,
+        "min_months": 0,
+        "max_months": 2,
         "source_check": "verified"
       },
       {
@@ -60,6 +62,8 @@
         "text": "생후 3~6개월 아기가 39℃ 이상일 때",
         "source": "KDCA_FEVER",
         "needs_review": true,
+        "min_months": 3,
+        "max_months": 6,
         "source_check": "verified"
       },
       {
@@ -67,6 +71,7 @@
         "text": "기저귀가 6시간 넘게 젖지 않을 때",
         "source": "KDCA_FEVER",
         "needs_review": true,
+        "max_months": 35,
         "source_check": "verified"
       }
     ]
