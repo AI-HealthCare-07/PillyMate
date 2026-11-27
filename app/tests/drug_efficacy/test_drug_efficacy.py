@@ -1,7 +1,9 @@
 """약효 분류 찾기 (services/drug_efficacy.py). 식약처 API는 부르지 않고 가짜 응답으로 확인한다."""
 
 import asyncio
+from collections.abc import Coroutine
 from types import SimpleNamespace
+from typing import Any
 from unittest.mock import patch
 
 import httpx
@@ -20,6 +22,16 @@ DATA = {
 }
 
 
+def _run[T](coro: Coroutine[Any, Any, T]) -> T:
+    """asyncio.run()은 끝나면서 '현재 이벤트 루프' 설정을 지워서, 뒤에 도는 DB 테스트(tortoise)가 깨진다.
+    그래서 따로 만든 루프에서만 돌리고 현재 루프 설정은 건드리지 않는다."""
+    loop = asyncio.new_event_loop()
+    try:
+        return loop.run_until_complete(coro)
+    finally:
+        loop.close()
+
+
 def _handler(request: httpx.Request) -> httpx.Response:
     items = DATA.get(request.url.params["item_name"], [])
     return httpx.Response(200, json={"header": {"resultCode": "00"}, "body": {"items": items}})
@@ -32,7 +44,7 @@ def _find(name: str, insurance_code: str | None = None) -> de.Efficacy | None:
 
     de._cache.clear()
     with patch.object(de, "config", FAKE_CONFIG):
-        return asyncio.run(run())
+        return _run(run())
 
 
 def test_atc_prefix_uses_most_specific_label() -> None:
@@ -69,4 +81,4 @@ def test_api_failure_is_none() -> None:
 
     de._cache.clear()
     with patch.object(de, "config", FAKE_CONFIG):
-        assert asyncio.run(run()) is None
+        assert _run(run()) is None
