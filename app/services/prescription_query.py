@@ -10,18 +10,19 @@ from tortoise.functions import Count
 from tortoise.timezone import now
 
 from app.dtos.prescription_query import PrescriptionDetailResponse, PrescriptionSummaryResponse
-from app.dtos.prescription_registration import RegisteredMedication
+from app.dtos.prescription_registration import MedicationEfficacy, RegisteredMedication
 from app.models.children import Child
 from app.models.guides import Guide
 from app.models.medications import Medication
 from app.models.prescriptions import Prescription
+from app.services.drug_efficacy import Efficacy, efficacy_for_medications
 from app.services.prescription_registration import image_url_of, low_confidence_of
 
 # 명세 6번: 원본 사진은 S3 Lifecycle Rule로 7일 뒤 지워진다. 서버는 키가 아니라 생성일로 판단한다.
 IMAGE_RETENTION = timedelta(days=7)
 
 
-def to_registered_medication(medication: Medication) -> RegisteredMedication:
+def to_registered_medication(medication: Medication, efficacy: Efficacy | None = None) -> RegisteredMedication:
     return RegisteredMedication(
         medication_id=medication.id,
         name=medication.name,
@@ -38,6 +39,9 @@ def to_registered_medication(medication: Medication) -> RegisteredMedication:
         confidence=None if medication.confidence is None else float(medication.confidence),
         low_confidence=low_confidence_of(medication),
         is_user_edited=medication.is_user_edited,
+        efficacy=None
+        if efficacy is None
+        else MedicationEfficacy(label=efficacy.label, atc_code=efficacy.atc_code, source=efficacy.source),
     )
 
 
@@ -50,6 +54,8 @@ async def retained_image_url_of(prescription: Prescription) -> str | None:
 
 async def get_prescription_detail(prescription: Prescription) -> PrescriptionDetailResponse:
     medications = await Medication.filter(prescription_id=prescription.id).order_by("id")
+    # 약효 분류: 식약처 허가정보(ATC)로 찾는다. 실패하거나 키가 없으면 빈 dict라 응답은 그대로 나간다.
+    efficacies = await efficacy_for_medications(medications)
     return PrescriptionDetailResponse(
         prescription_id=prescription.id,
         child_id=prescription.child_id,  # type: ignore[attr-defined]
@@ -63,7 +69,7 @@ async def get_prescription_detail(prescription: Prescription) -> PrescriptionDet
         image_url=await retained_image_url_of(prescription),
         has_guide=await Guide.exists(prescription_id=prescription.id),
         created_at=prescription.created_at,
-        medications=[to_registered_medication(medication) for medication in medications],
+        medications=[to_registered_medication(m, efficacies.get(m.id)) for m in medications],
     )
 
 

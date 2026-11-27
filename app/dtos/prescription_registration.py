@@ -15,6 +15,17 @@ class OcrConfidenceJudgement(BaseModel):
     low_confidence_count: int
 
 
+class MedicationEfficacy(BaseModel):
+    """약효 분류 (홈 '오늘 먹을 약' 배지). 식약처 허가정보의 ATC 코드로 찾는다 (services/drug_efficacy.py).
+
+    source: mfds_atc(ATC 코드로 찾음) | mfds_ingredient(ATC가 없어 주성분으로 찾음)
+    """
+
+    label: str
+    atc_code: str | None
+    source: Literal["mfds_atc", "mfds_ingredient"]
+
+
 class RegisteredMedication(BaseModel):
     medication_id: int
     name: str
@@ -31,6 +42,8 @@ class RegisteredMedication(BaseModel):
     confidence: float | None
     low_confidence: bool
     is_user_edited: bool
+    # 6번 상세에서만 채운다. 찾지 못했거나 조회하지 않았으면 null
+    efficacy: MedicationEfficacy | None = None
 
 
 class PrescriptionRegistrationResponse(BaseModel):

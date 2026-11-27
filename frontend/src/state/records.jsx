@@ -82,8 +82,9 @@ export function scheduleFromMeds(meds) {
     const days = firstNumber(m.days?.value);
     if (!count || !days) continue;
     const slots = count === 1 && /자기\s*전|취침/.test(m.timing?.value ?? '') ? ['자기 전'] : SLOTS_BY_COUNT[count];
-    // 네 번째 값은 서버 약 번호(복약 체크 저장용). 화면은 [이름, 양, 기간]만 써요.
-    for (const slot of slots) bySlot.get(slot).push([m.name, m.dose?.value ?? '', days, m.medicationId ?? null]);
+    // 네 번째 값은 서버 약 번호(복약 체크 저장용), 다섯 번째 값은 서버가 찾은 약효 분류(홈 배지용).
+    // 화면은 [이름, 양, 기간]만 써요.
+    for (const slot of slots) bySlot.get(slot).push([m.name, m.dose?.value ?? '', days, m.medicationId ?? null, m.efficacy ?? null]);
   }
   return [...bySlot].filter(([, items]) => items.length).map(([slot, items]) => ({ slot, items }));
 }
@@ -161,7 +162,8 @@ const CONFIRMED_STATUSES = ['CONFIRMED', 'GUIDE_DONE'];
  * 약봉투의 날짜는 조제일자(약 받은 날)예요. 날짜를 못 읽은 처방은 올린 날(created_at, KST)을 날짜로 써요.
  */
 function recordFromServerPrescription(detail, guideResponse) {
-  const ocrMeds = detail.medications.map(toConfirmMed);
+  // 서버가 약효 분류(efficacy: { label, atc_code, source })를 찾았으면 약 카드에 같이 들고 가요.
+  const ocrMeds = detail.medications.map((med) => ({ ...toConfirmMed(med), efficacy: med.efficacy ?? null }));
   const base = {
     prescriptionId: detail.prescription_id,
     childId: String(detail.child_id),
@@ -292,7 +294,7 @@ function scheduledOn(courseList, childId, date) {
       c.schedule.flatMap(({ slot, items }) =>
         items
           .filter(([, , days]) => !days || date < shiftDays(c.start, days))
-          .map(([name, dose, , medicationId]) => ({ key: doseKey(childId, date, slot, name), date, slot, name, dose, medicationId, course: c })),
+          .map(([name, dose, , medicationId, efficacy]) => ({ key: doseKey(childId, date, slot, name), date, slot, name, dose, medicationId, efficacy, course: c })),
       ),
     );
 }

@@ -47,6 +47,9 @@ def main() -> None:
         sys.exit(f"연결 실패: {e}")
 
     print(f"HTTP {res.status_code}")
+    if res.status_code != 200:
+        print(res.text[:500].replace(key, "***"))  # 실패 이유 (인증키는 가려요)
+        return
     try:
         data = res.json()
     except json.JSONDecodeError:

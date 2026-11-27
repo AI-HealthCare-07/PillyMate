@@ -4,24 +4,27 @@ import { AppShell } from '../components/ui/layout.jsx';
 import { dateParts, fromKey, groupBySlot, todayKey, useRecords } from '../state/records.jsx';
 import { useSelectedChild } from '../state/selectedChild.jsx';
 import { draftFromVisit } from './fe2Draft.js';
-import { EFFICACY_PENDING_LABEL, efficacyOf } from '../data/efficacy.js';
+import { efficacyOf } from '../data/efficacy.js';
 import { useAddChildConsent } from '../components/child/AddChildConsent.jsx';
 
 /**
- * 약 이름 아래 약효 분류 배지. 확인된 분류가 없으면 짐작하지 않고 '약효 정보 확인 중'으로 보여 줘요.
+ * 약 이름 아래 약효 분류 배지 (해열진통제, 항생제 등).
+ * 분류는 식약처 허가 정보로 검수한 약 데이터(drug_refs.json)에서 제품 이름 → 성분 순으로 찾아요.
+ * 찾지 못한 약은 짐작하지 않고 배지를 그리지 않아요.
+ * 마우스를 올리면(title) 효능 한 줄 설명이 보여요.
  * inline-flex라서 먹인 약의 취소선이 배지까지 내려오지 않아요.
  */
 const EfficacyBadge = ({ med, dim }) => {
   const info = efficacyOf(med);
-  const tone = !info
-    ? 'border-dashed border-edge/60 bg-surface text-muted'
-    : dim
-      ? 'border-line bg-surface text-muted'
-      : 'border-transparent bg-lav text-lav-ink';
+  if (!info) return null;
+  const tone = dim ? 'border-line bg-surface text-muted' : 'border-transparent bg-lav text-lav-ink';
   return (
-    <span className={`inline-flex max-w-full items-center rounded-pill border px-2 py-px text-12 font-semibold ${tone}`}>
+    <span
+      title={info.summary ?? undefined}
+      className={`inline-flex max-w-full items-center rounded-pill border px-2 py-px text-12 font-semibold ${tone}`}
+    >
       <span className="sr-only">약효 분류: </span>
-      <span className="break-keep">{info?.label ?? EFFICACY_PENDING_LABEL}</span>
+      <span className="break-keep">{info.label}</span>
     </span>
   );
 };
