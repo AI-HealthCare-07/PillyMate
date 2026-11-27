@@ -55,8 +55,8 @@ def no_llm(system: str, user: str) -> dict:
     raise ValueError("offline")
 
 
-def view() -> dict:
-    return to_view(generate_guide(CHILD, PRESCRIPTION, MEDS, call_llm=no_llm))
+def view(prescription: dict = PRESCRIPTION) -> dict:
+    return to_view(generate_guide(CHILD, prescription, MEDS, call_llm=no_llm))
 
 
 def test_short_name_strips_spec():
@@ -66,7 +66,18 @@ def test_short_name_strips_spec():
 
 def test_frontend_keys():
     v = view()
-    for key in ("schedule", "asNeeded", "howTo", "life", "danger", "summary", "disclaimer", "detail"):
+    for key in (
+        "schedule",
+        "asNeeded",
+        "howTo",
+        "life",
+        "medTips",
+        "allergyNotice",
+        "danger",
+        "summary",
+        "disclaimer",
+        "detail",
+    ):
         assert key in v
     assert v["title"] == "감기, 급성 기관지염"
     assert v["detail"]["schema_version"] == "0.3"
@@ -122,3 +133,63 @@ def test_old_view_is_rebuilt_from_detail():
     assert rebuilt["schema_version"] == new["schema_version"]
     assert all("dose" in h for h in rebuilt["howTo"])
     assert current_view({"schema_version": "fe-1", "howTo": []}) == {"schema_version": "fe-1", "howTo": []}
+
+
+def test_life_has_no_medicine_tips():
+    """생활 습관(life)에는 집에서 돌보기·관리 포인트만, 약 계열 팁은 medTips로 따로 나간다."""
+    v = view()
+    assert v["schema_version"] == "fe-3"
+    assert v["life"] and v["medTips"]
+    assert not set(v["life"]) & set(v["medTips"])
+
+
+def test_life_follows_disease_group():
+    cold = view()["life"]
+    other = view({**PRESCRIPTION, "diagnosis_user_input": "변비"})["life"]  # 템플릿 없는 질환군(other)
+    assert cold != other
+
+
+def test_interval_tip_skipped_when_prescription_has_interval():
+    """세토펜 용법에 '4시간 이상 간격'이 있으므로 숫자가 고정된 일반 간격 문장(4~6시간)은 붙이지 않는다."""
+    assert not any("4~6시간 간격" in t for t in view()["medTips"])
+
+
+def test_allergy_rule_flags_matching_medicine():
+    from app.services.guide.generator import allergy_flags
+
+    meds = [
+        {"medication_id": 1, "name": "리소짐시럽", "ingredient": None},
+        {"medication_id": 2, "name": "오구멘틴시럽", "ingredient": "amoxicillin/clavulanate"},
+        {"medication_id": 3, "name": "세토펜현탁액", "ingredient": "acetaminophen"},
+    ]
+    assert set(allergy_flags(["계란"], meds)) == {1}
+    assert set(allergy_flags(["페니실린"], meds)) == {2}
+    assert allergy_flags(["우유"], meds) == {}  # 규칙에 없는 조합은 추측하지 않는다
+
+
+def test_allergy_notice():
+    assert view()["allergyNotice"] == "약을 받을 때 약사에게 계란 알레르기가 있다고 알려 주세요."
+
+
+def danger_for(birth_date: str) -> list[str]:
+    child = {**CHILD, "birth_date": birth_date}
+    return to_view(generate_guide(child, PRESCRIPTION, MEDS, call_llm=no_llm))["danger"]
+
+
+def test_danger_signs_follow_age():
+    """처방일(2026-11-12) 기준 나이에 맞는 위험 신호만 나온다."""
+    school = " ".join(danger_for("2016-05-01"))  # 10세
+    assert "생후" not in school and "기저귀" not in school
+    assert "축 늘어질 때" in school  # 나이와 상관없는 신호는 그대로
+
+    infant = " ".join(danger_for("2026-09-01"))  # 생후 2개월
+    assert "생후 3개월 미만" in infant and "기저귀" in infant
+    assert "생후 3~6개월" not in infant
+
+
+def test_danger_signs_keep_both_levels_for_every_age():
+    """스키마상 go_to_er·see_doctor는 1개 이상이어야 한다. 나이로 걸러도 둘 다 남는지 확인."""
+    for birth in ("2026-09-01", "2026-06-01", "2023-04-02", "2016-05-01", "2010-01-01"):
+        danger = danger_for(birth)
+        assert any(d.startswith("바로 응급실:") for d in danger), birth
+        assert any(d.startswith("진료 필요:") for d in danger), birth
