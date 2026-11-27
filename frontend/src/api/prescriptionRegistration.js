@@ -78,7 +78,9 @@ export function toConfirmMed(med) {
     medicationId: med.medication_id,
     name: med.name,
     confidence: med.confidence,
-    // 카드에는 보이지 않지만 확정 API(7번)에 보낼 값. 1회 양에 단위를 지우고 고쳐도 원래 단위를 써요.
+
+    // 카드에는 보이지 않지만 확정 API(PUT /confirm)에 그대로 돌려보내야 하는 OCR 값이에요.
+    // 카드를 고쳐도 MedEdit가 ...med로 남겨 두고, 1회 양에서 단위를 지우고 고쳐도 원래 단위를 써요.
     unit: med.unit ?? null,
     route: med.route ?? null,
     dosageForm: med.dosage_form ?? null,

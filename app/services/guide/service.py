@@ -10,10 +10,13 @@ BE-2는 확정 API(PUT /prescriptions/{id}/confirm)로 저장한 값을 DB 모�
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from app.services.guide.generator import TEMPLATE_DIR, CallLLM, generate, load
 from app.services.guide.merge import ingredient_of
+
+logger = logging.getLogger(__name__)
 
 # 확정 API·ERD의 코드값 → 가이드 스키마(guide_content.schema.json)의 값
 ROUTE_KO = {"ORAL": "내복", "EXTERNAL": "외용"}
@@ -80,12 +83,25 @@ def generate_guide(
         from app.services.guide.llm_client import LLM_LABEL, call_haiku  # 키가 필요할 때만 불러온다
 
         call_llm, llm_label = call_haiku, LLM_LABEL
+    meds = [normalize_medication(m) for m in medications]
+    if references is None:  # 넘겨받은 게 없으면 약 정보 파일에서 찾는다 (RAG, GUIDE-004)
+        references = references_for(meds)
     return generate(
         call_llm=call_llm,
         child=child,
         prescription=prescription,
-        medications=[normalize_medication(m) for m in medications],
-        references=references or {},
+        medications=meds,
+        references=references,
         disease_group=groups[0] if groups else "other",  # 1차: 처음 나온 질환군 1개. 여러 개 함께 보여 주기는 다음 단계
         llm_label=llm_label,
     )
+
+
+def references_for(medications: list[dict[str, Any]]) -> dict[int, str]:
+    """약 정보 파일(drug_refs.json)에서 약마다 효능·주의·부작용·보관 요약을 찾는다. 못 찾은 약은 빠진다."""
+    try:
+        from ai_worker.tasks.rag.references import build_references
+    except ImportError:  # 서버에 ai_worker 폴더가 없을 때도 가이드는 만들어지게
+        logger.warning("약 정보(RAG) 모듈을 불러오지 못해 참조 없이 가이드를 만들어요")
+        return {}
+    return build_references(medications)

@@ -17,6 +17,7 @@ from tortoise.exceptions import IntegrityError
 from tortoise.transactions import in_transaction
 
 from app.dtos.prescriptions import (
+    EfficacyResponse,
     GuideResponse,
     MedicationConfirmItem,
     MedicationResponse,
@@ -28,6 +29,7 @@ from app.models.guides import Guide
 from app.models.medications import Medication
 from app.models.prescriptions import Prescription, PrescriptionStatus
 from app.repositories.prescription_repository import PrescriptionRepository
+from app.services.drug_lookup import efficacy_for, get_drug_index
 from app.services.guide.service import generate_guide
 from app.services.guide.view import VIEW_SCHEMA_VERSION, to_view
 
@@ -99,6 +101,20 @@ def medication_values(m: MedicationConfirmItem) -> dict[str, Any]:
     return data
 
 
+def efficacy_of(m: Medication) -> EfficacyResponse | None:
+    """약 1개의 약효 분류. 확실하지 않으면 None (화면은 '약효 정보 확인 중')."""
+    found = efficacy_for(
+        {
+            "name": m.name,
+            "insurance_code": m.insurance_code,
+            "unit": str(m.unit) if m.unit else None,
+            # TODO: 약봉투 OCR의 분류·성상·효능을 저장하게 되면 printed_class·chart·efficacy_text로 넘긴다
+        },
+        get_drug_index(),
+    )
+    return EfficacyResponse(**found.as_dict()) if found else None
+
+
 def prescription_detail(p: Prescription, meds: list[Medication], has_guide: bool) -> PrescriptionDetailResponse:
     return PrescriptionDetailResponse(
         prescription_id=p.id,
@@ -129,6 +145,7 @@ def prescription_detail(p: Prescription, meds: list[Medication], has_guide: bool
                 dosage_form=m.dosage_form,
                 confidence=float(m.confidence) if m.confidence is not None else None,
                 is_user_edited=m.is_user_edited,
+                efficacy=efficacy_of(m),
             )
             for m in meds
         ],
@@ -228,7 +245,7 @@ class PrescriptionService:
                     "prescription_date": request.prescription_date or p.prescription_date,
                     "hospital_name": request.hospital_name or p.hospital_name,
                     "diagnosis_user_input": (request.diagnosis_user_input or "").strip(),
-                    "symptom_notes": request.symptom_notes,
+                    "symptom_notes": request.symptom_notes if request.symptom_notes is not None else p.symptom_notes,
                     "status": PrescriptionStatus.CONFIRMED,
                 },
             )

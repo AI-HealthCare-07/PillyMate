@@ -12,7 +12,7 @@ import { confirmPrescription, toConfirmItem } from '../api/prescriptionConfirm.j
 import { suggestDiseaseName } from '../data/diseaseCodes.js';
 import { medFields, meds as sampleMeds, prescription as rx } from '../data/sample.js';
 import { getPrescriptionDraft, setPrescriptionDraft } from './fe2Draft.js';
-import { dateParts, isAsNeeded, todayKey, useRecords } from '../state/records.jsx';
+import { dateParts, todayKey, useRecords } from '../state/records.jsx';
 import { useSelectedChild } from '../state/selectedChild.jsx';
 
 const MARKS = [[140, 186, 30], [190, 226, 22]];
@@ -162,9 +162,12 @@ export function ConfirmScreen({ go, back, onTab }) {
           medications: items,
         });
       } catch (error) {
-        setSaving(false);
-        fail(error.message);
-        return;
+        // 409 = 이미 가이드를 만든 처방이에요. 다시 확정할 수는 없지만, 만든 가이드는 그대로 볼 수 있어서 넘어가요.
+        if (error?.status !== 409) {
+          setSaving(false);
+          fail(error.message);
+          return;
+        }
       }
       setSaving(false);
     }
@@ -199,7 +202,7 @@ export function ConfirmScreen({ go, back, onTab }) {
       <>
         {errorNote && <div className="lg:hidden">{errorNote}</div>}
         <Button className="w-full" onClick={make} disabled={saving}>{saving ? '저장하는 중…' : '확인했어요, 가이드 만들기'}</Button>
-        <Button variant="secondary" className="w-full" onClick={retake}>다시 찍기</Button>
+        <Button variant="secondary" className="w-full" onClick={retake} disabled={saving}>다시 찍기</Button>
       </>
     ),
     desktop: null,
@@ -282,7 +285,7 @@ export function ConfirmScreen({ go, back, onTab }) {
 
             {errorNote && <div className="hidden lg:block">{errorNote}</div>}
             <div className="hidden justify-end gap-3 border-t border-line pt-6 lg:flex">
-              <Button variant="secondary" className="min-w-[140px]" onClick={retake}>다시 찍기</Button>
+              <Button variant="secondary" className="min-w-[140px]" onClick={retake} disabled={saving}>다시 찍기</Button>
               <Button className="min-w-[260px]" onClick={make} disabled={saving}>{saving ? '저장하는 중…' : '확인했어요, 가이드 만들기'}</Button>
             </div>
           </div>

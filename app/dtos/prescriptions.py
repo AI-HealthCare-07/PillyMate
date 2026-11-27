@@ -43,6 +43,14 @@ class PrescriptionConfirmRequest(BaseModel):
     medications: list[MedicationConfirmItem] = Field(default_factory=list)
 
 
+class EfficacyResponse(BaseSerializerModel):
+    """약효 분류 (홈 '오늘 먹을 약' 배지). 확실하지 않으면 응답에서 null."""
+
+    label: str  # 예: 항생제
+    source: str  # pharmacy_bag(약봉투 인쇄) | insurance_code(보험코드) | name_lookup(약 이름)
+    match: str
+
+
 class MedicationResponse(BaseSerializerModel):
     medication_id: int
     name: str
@@ -58,6 +66,7 @@ class MedicationResponse(BaseSerializerModel):
     dosage_form: DosageForm | None
     confidence: float | None
     is_user_edited: bool
+    efficacy: EfficacyResponse | None = None
 
 
 class PrescriptionDetailResponse(BaseSerializerModel):

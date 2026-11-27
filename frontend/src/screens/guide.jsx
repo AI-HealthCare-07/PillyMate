@@ -133,7 +133,7 @@ export function GuideLoadingScreen({ go, back, onTab }) {
       <div className="flex flex-1 flex-col gap-8 px-5 pb-8 pt-1 lg:px-0 lg:pb-12 lg:pt-4" aria-busy="true" aria-live="polite">
         <div className="flex flex-col gap-2">
           <h1 className="text-22 font-bold lg:text-28">가이드를 만들고 있어요</h1>
-          <p className="text-15 text-muted">처방과 {childName}의 정보를 정리하는 중이에요. 20초쯤 걸릴 수 있어요.</p>
+          <p className="text-15 text-muted">처방과 {childName}의 정보를 정리하는 중이에요. 20초쯤 걸릴 수 있어요. 화면을 닫지 말고 기다려 주세요.</p>
         </div>
         <div className="flex flex-col gap-3">
           <Sk className="h-[18px] w-[120px]" />

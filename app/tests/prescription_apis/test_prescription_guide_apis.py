@@ -32,8 +32,9 @@ def offline_generate_guide(child: dict, prescription: dict, medications: list[di
 class PrescriptionApiBase(TestCase):
     async def login(self, client: AsyncClient, email: str) -> dict[str, str]:
         signup = signup_payload(email=email, password=PASSWORD)
-        await client.post("/api/v1/auth/signup", json=signup)
+        joined = await client.post("/api/v1/auth/signup", json=signup)
         res = await client.post("/api/v1/auth/login", json={"email": email, "password": PASSWORD})
+        assert res.status_code == 200, f"가입 {joined.status_code}: {joined.text}\n로그인 {res.status_code}: {res.text}"
         return {"Authorization": f"Bearer {res.json()['access_token']}"}
 
     async def prepare(self, client: AsyncClient, email: str = "rx@example.com"):

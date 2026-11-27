@@ -2,6 +2,12 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { ArrowUp } from 'lucide-react';
 import { AppShell, Body, Header } from '../components/ui/layout.jsx';
 import { chat as sample } from '../data/sample.js';
+import { askChat } from '../api/prescriptionFlow.js';
+import { useRecords } from '../state/records.jsx';
+import { useSelectedChild } from '../state/selectedChild.jsx';
+
+/** 건강기록 id('rx305') → 서버 처방 id(305). 예시 기록이면 null */
+const prescriptionIdOf = (visitId) => (/^rx\d+$/.test(visitId ?? '') ? Number(visitId.slice(2)) : null);
 
 /** 챗봇 프로필 — 로고의 알약 모양 */
 function BotAvatar() {
@@ -18,7 +24,7 @@ function BotAvatar() {
 }
 
 /** 말풍선 — 챗봇은 왼쪽 흰 바탕, 보호자는 오른쪽 브랜드 바탕. 최대 폭 80%, 모서리 14(꼬리 쪽 4) */
-function Bubble({ from, children }) {
+function Bubble({ from, warn, children }) {
   if (from === 'me') {
     return (
       <li className="flex justify-end">
@@ -29,7 +35,10 @@ function Bubble({ from, children }) {
   return (
     <li className="flex items-start gap-2">
       <BotAvatar />
-      <p className="min-w-0 max-w-[85%] whitespace-pre-line break-words rounded-xl rounded-tl-[4px] border border-line bg-surface px-4 py-3 text-15 lg:max-w-[80%] lg:text-16">{children}</p>
+      <div className="flex min-w-0 max-w-[85%] flex-col gap-1.5 lg:max-w-[80%]">
+        <p className={`whitespace-pre-line break-words rounded-xl rounded-tl-[4px] border bg-surface px-4 py-3 text-15 lg:text-16 ${warn ? 'border-danger' : 'border-line'}`}>{children}</p>
+        {warn && <p className="pl-1 text-13 font-semibold text-danger">의사·약사와 꼭 상의해 주세요</p>}
+      </div>
     </li>
   );
 }
@@ -83,25 +92,57 @@ function Composer({ onSend, disabled }) {
 }
 
 /**
- * 챗봇 — 지금 보는 아이의 처방을 바탕으로 복약 질문에 답해요.
- * 데모에서는 1초 뒤 예시 답변을 돌려줘요. API 연동 시 send()에서 요청을 보내 주세요.
+ * 챗봇 — 지금 고른 아이의 가장 최근 가이드(서버 처방)를 바탕으로 복약 질문에 답해요.
+ * POST /prescriptions/{id}/chat. 대화는 서버에 저장하지 않아서, 최근 대화를 history로 같이 보내요.
+ * 서버 가이드가 없으면(예시 데이터) 예전처럼 예시 답변을 보여 줘요.
  */
 export function ChatScreen({ onTab }) {
-  const [messages, setMessages] = useState(sample.messages);
+  const { child } = useSelectedChild();
+  const { guidesOf } = useRecords();
+  const guides = child ? guidesOf(child.id) : [];
+  // 서버에 올린 처방의 가이드를 먼저 골라요(최근 것부터). 없으면 예시 가이드
+  const guide = guides.find((g) => prescriptionIdOf(g.visitId)) ?? null;
+  const prescriptionId = prescriptionIdOf(guide?.visitId);
+  const childName = child?.name ?? sample.childName;
+  const context = guide?.title ?? sample.context;
+
+  const greeting = () =>
+    prescriptionId
+      ? [{ id: 'hello', from: 'bot', text: `${childName}의 ${context} 처방에 대해 궁금한 걸 물어보세요. 먹이는 법, 보관, 부작용 같은 걸 알려 드릴게요.` }]
+      : sample.messages;
+  const [messages, setMessages] = useState(greeting);
   const [waiting, setWaiting] = useState(false);
   const endRef = useRef(null);
+
+  // 아이나 처방이 바뀌면 대화를 새로 시작해요(다른 아이의 대화가 섞이지 않게).
+  useEffect(() => {
+    setMessages(greeting());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prescriptionId, child?.id]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: 'end', behavior: 'smooth' });
   }, [messages, waiting]);
 
-  const send = (text) => {
+  const send = async (text) => {
+    const before = messages.filter((m) => !m.error && m.id !== 'hello');
     setMessages((m) => [...m, { id: crypto.randomUUID(), from: 'me', text }]);
     setWaiting(true);
-    setTimeout(() => {
-      setMessages((m) => [...m, { id: crypto.randomUUID(), from: 'bot', text: sample.demoReply }]);
+    if (!prescriptionId) {
+      setTimeout(() => {
+        setMessages((m) => [...m, { id: crypto.randomUUID(), from: 'bot', text: sample.demoReply }]);
+        setWaiting(false);
+      }, 1000);
+      return;
+    }
+    try {
+      const res = await askChat(prescriptionId, text, before);
+      setMessages((m) => [...m, { id: crypto.randomUUID(), from: 'bot', text: res.reply, warn: res.needs_professional }]);
+    } catch (error) {
+      setMessages((m) => [...m, { id: crypto.randomUUID(), from: 'bot', text: error.message, error: true }]);
+    } finally {
       setWaiting(false);
-    }, 1000);
+    }
   };
 
   const composer = <Composer onSend={send} disabled={waiting} />;
@@ -110,11 +151,11 @@ export function ChatScreen({ onTab }) {
     <AppShell tab="chat" onTab={onTab} width="reading" header={<Header title="챗봇" />} actions={{ mobile: composer }}>
       <Body className="gap-5 pt-1 lg:gap-6">
         <p className="border-b border-line pb-4 text-13 text-muted">
-          {sample.childName}의 {sample.context} 처방을 바탕으로 답해요. 답변은 참고용이고, 진단이나 처방을 대신하지 않아요.
+          {childName}의 {context} 처방을 바탕으로 답해요. 답변은 참고용이고, 진단이나 처방을 대신하지 않아요.
         </p>
 
         <ol className="flex flex-col gap-4" aria-label="대화" aria-live="polite">
-          {messages.map((m) => <Bubble key={m.id} from={m.from}>{m.text}</Bubble>)}
+          {messages.map((m) => <Bubble key={m.id} from={m.from} warn={m.warn}>{m.text}</Bubble>)}
           {waiting && <Typing />}
         </ol>
 
