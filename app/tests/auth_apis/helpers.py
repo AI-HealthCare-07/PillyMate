@@ -26,6 +26,7 @@ def birth_date_years_ago(years: int, days: int = 0) -> str:
     today = datetime.now(tz=config.TIMEZONE).date()
     return (today - relativedelta(years=years) + relativedelta(days=days)).isoformat()
 
+
 async def post(path: str, json: object | None = None, headers: dict[str, str] | None = None) -> Response:
     async with AsyncClient(transport=ASGITransport(app=app), base_url=BASE_URL) as client:
         return await client.post(f"/api/v1{path}", json=json, headers=headers)
