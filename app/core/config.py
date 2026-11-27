@@ -59,6 +59,11 @@ class Config(BaseSettings):
     # DUR: 연령금기·효능군중복·병용금기 (2차)
     MFDS_DUR_URL: str = "https://apis.data.go.kr/1471000/DURPrdlstInfoService03"
 
+    # 웹 푸시(VAPID): 한 번 생성한 키 쌍을 계속 쓴다. 실서버 키를 바꾸면 기존 구독이 모두 무효가 됨
+    VAPID_PUBLIC_KEY: str = ""  # 프론트가 구독할 때 쓰는 공개 키 (노출돼도 됨)
+    VAPID_PRIVATE_KEY: str = ""  # 비밀값: .env 에만 넣는다
+    VAPID_SUBJECT: str = ""  # 푸시 서버가 연락할 주소. 예: "mailto:team@pillymate.com"
+
     # 데모 로그인(A1): 배포 환경에서 false로 끄면 404. 데모 보호자는 app/scripts/seed_guardians.py로 만든다.
     DEMO_LOGIN_ENABLED: bool = False
     DEMO_GUARDIAN_EMAIL: str = "demo@pillymate.com"
