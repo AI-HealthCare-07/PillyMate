@@ -25,7 +25,7 @@ from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-REFS = ROOT / "ai_worker" / "data" / "drug_refs.json"
+REFS = ROOT / "app" / "data" / "drug_refs.json"
 ENDPOINT = "https://apis.data.go.kr/1471000/DrbEasyDrugInfoService/getDrbEasyDrugList"
 
 

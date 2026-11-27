@@ -58,6 +58,9 @@ class Config(BaseSettings):
     MFDS_PERMIT_URL: str = "https://apis.data.go.kr/1471000/DrugPrdtPrmsnInfoService08"
     # DUR: 연령금기·효능군중복·병용금기 (2차)
     MFDS_DUR_URL: str = "https://apis.data.go.kr/1471000/DURPrdlstInfoService03"
+    # 의약품개요정보(e약은요): 일반의약품 쉬운 말 설명. 활용신청한 키가 MFDS_API_KEY와 다르면 여기에 (Decoding 키)
+    DATA_GO_KR_KEY: str = ""
+    MFDS_EASY_DRUG_URL: str = "https://apis.data.go.kr/1471000/DrbEasyDrugInfoService"
 
     # 웹 푸시(VAPID): 한 번 생성한 키 쌍을 계속 쓴다. 실서버 키를 바꾸면 기존 구독이 모두 무효가 됨
     VAPID_PUBLIC_KEY: str = ""  # 프론트가 구독할 때 쓰는 공개 키 (노출돼도 됨)

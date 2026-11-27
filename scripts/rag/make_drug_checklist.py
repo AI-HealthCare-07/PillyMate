@@ -6,8 +6,8 @@
         --provenance data/sample/provenance_medication.csv
 
 결과:
-    ai_worker/data/drug_checklist.csv   ← 사람이 보면서 하나씩 찾는 목록 (처방 많은 순)
-    ai_worker/data/drug_refs.json       ← 빈칸을 채울 틀. 이미 채운 항목은 덮어쓰지 않음
+    app/data/drug_checklist.csv   ← 사람이 보면서 하나씩 찾는 목록 (처방 많은 순)
+    app/data/drug_refs.json       ← 빈칸을 채울 틀. 이미 채운 항목은 덮어쓰지 않음
 
 컬럼 이름이 다르면 --name-col, --ingredient-col 로 지정한다.
 """
@@ -22,9 +22,9 @@ from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
-from ai_worker.tasks.rag.normalize import bracket_text, normalize_name  # noqa: E402
+from app.services.guide.drug_name_normalize import bracket_text, normalize_name  # noqa: E402
 
-DATA_DIR = ROOT / "ai_worker" / "data"
+DATA_DIR = ROOT / "app" / "data"
 NAME_CANDIDATES = ["name", "drug_name", "product_name", "약품명", "제품명"]
 INGR_CANDIDATES = ["ingredient", "ingredient_name", "성분", "성분명", "main_ingredient"]
 FORM_CANDIDATES = ["dosage_form", "제형"]

@@ -139,3 +139,43 @@ def test_failure_falls_back(bad_llm: Any) -> None:
     assert guide["status"] == "fallback"
     assert all(m["pharmacist_check"]["needed"] for m in guide["medications"])
     _assert_schema(guide)
+
+
+# ------------------------------------------------------------------ LLM 답 받기: 글자 수만 넘긴 칸은 줄인다
+
+
+def _llm_answer(purpose: str, how_to_give: list[str] | None = None) -> dict:
+    return {
+        "summary": "요약이에요.",
+        "medications": [
+            {
+                "medication_id": 1,
+                "purpose": purpose,
+                "how_to_give": how_to_give if how_to_give is not None else ["식후에 먹여요."],
+                "cautions": [],
+                "common_side_effects": [],
+                "storage": None,
+                "pharmacist_check_needed": False,
+            }
+        ],
+        "home_care_picks": [],
+    }
+
+
+def test_too_long_text_is_shortened_not_rejected():
+    from app.services.guide.generator import parse_llm_output
+
+    long_purpose = "배가 아프거나 소화가 안 될 때 장의 움직임을 조절해 주는 약이에요. " * 3
+    out = parse_llm_output(_llm_answer(long_purpose))
+    assert len(out.medications[0].purpose) <= 60
+    assert out.medications[0].purpose.endswith("요.")  # 문장 끝에서 잘랐다
+
+
+def test_other_format_errors_are_still_rejected():
+    import pytest
+    from pydantic import ValidationError
+
+    from app.services.guide.generator import parse_llm_output
+
+    with pytest.raises(ValidationError):
+        parse_llm_output(_llm_answer("짧아요.", how_to_give=[]))  # how_to_give는 1개 이상
